@@ -79,15 +79,21 @@
       Promise.all([
         sb.from('checklist_items').select('id,part,sort').eq('level',lvl).order('sort'),
         sb.from('progress').select('item_key,done').eq('email',email),
-        sb.from('revenues').select('period,amount').eq('email',email).order('period',{ascending:false})
+        sb.from('revenues').select('period,amount').eq('email',email).order('period',{ascending:false}),
+        sb.from('competencies').select('id,domain,name,sort').order('sort'),
+        sb.from('competency_scores').select('competency_id,score').eq('email',email),
+        sb.from('role_assignments').select('level,dept').eq('email',ME.email.toLowerCase()).maybeSingle()
       ]).then(function(res){
         var items=(res[0].data||[]), prog=(res[1].data||[]), revs=(res[2].data||[]);
-        render(prof, lvl, items, prog, revs);
+        var comps=(res[3].data||[]), scoreRows=(res[4].data||[]), my=(res[5]&&res[5].data)||{};
+        var scores={}; scoreRows.forEach(function(x){ scores[x.competency_id]=x.score; });
+        var canEdit = (my.level==='c4') || (my.level==='c3' && my.dept && my.dept===prof.dept);
+        render(prof, lvl, items, prog, revs, comps, scores, canEdit, email);
       });
     });
   }
 
-  function render(prof, lvl, items, prog, revs){
+  function render(prof, lvl, items, prog, revs, comps, scores, canEdit, email){
     var LV={c1:'Nhân viên',c2:'Chuyên gia',c3:'Trưởng phòng',c4:'Giám đốc Trung tâm'};
     var doneSet={}; prog.forEach(function(p){ if(p.done) doneSet[p.item_key]=1; });
     var KEY=function(id){ return lvl+'_ck_'+id; };
@@ -112,7 +118,7 @@
       +'<span class="pill">Thành thạo '+pctAll+'%</span></div></div></div>';
 
     html+='<div class="grid">'
-      +'<div class="card"><h3>Sơ đồ năng lực</h3><canvas id="radar" height="240"></canvas>'
+      +'<div class="card"><h3>Kiến thức kỹ năng (checklist)</h3><canvas id="radar" height="240"></canvas>'
       + order.map(function(p,i){ return '<div class="barrow"><span class="lab">'+esc(p)+'</span><div class="mini"><div class="minif" style="width:'+data[i]+'%"></div></div><span class="v">'+data[i]+'%</span></div>'; }).join('')
       +'</div>'
       +'<div class="card"><h3>Doanh thu theo tháng</h3>'
@@ -122,11 +128,39 @@
           : '<p class="muted">Chưa có dữ liệu doanh thu. Quản lý nhập ở trang Admin → Doanh thu.</p>')
       +'</div></div>';
 
+    // Năng lực tổng quan (13 năng lực, điểm 1-5)
+    html+='<div class="card" style="margin-top:16px"><h3>Năng lực tổng quan (đánh giá 1–5)</h3>'
+      +'<div class="grid"><div><canvas id="radar2" height="300"></canvas></div><div>'
+      + comps.map(function(c){ var sc=scores[c.id]||0;
+          if(canEdit){ var opts=[0,1,2,3,4,5].map(function(v){return '<option value="'+v+'"'+(v===sc?' selected':'')+'>'+(v===0?'—':v+'★')+'</option>';}).join('');
+            return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line)"><span style="font-size:13px">'+esc(c.name)+'</span><select data-cid="'+esc(c.id)+'" style="padding:4px 7px;border:1px solid var(--line);border-radius:7px;font-family:inherit">'+opts+'</select></div>';
+          }
+          return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line)"><span style="font-size:13px">'+esc(c.name)+'</span><span style="color:#FFAE06">'+'★'.repeat(sc)+'<span class="muted">'+(sc?'':'—')+'</span></span></div>';
+        }).join('')
+      + (canEdit?'<div class="muted" style="margin-top:8px">Chọn điểm là lưu ngay. <span id="csflash"></span></div>':'')
+      +'</div></div></div>';
+
     document.getElementById('root').innerHTML=html;
 
     var ctx=document.getElementById('radar');
     new Chart(ctx,{type:'radar',data:{labels:labels,datasets:[{label:'% thành thạo',data:data,fill:true,backgroundColor:'rgba(0,122,255,.18)',borderColor:'#007AFF',pointBackgroundColor:'#16D865',borderWidth:2}]},
       options:{responsive:true,scales:{r:{min:0,max:100,ticks:{stepSize:25,backdropColor:'transparent'},pointLabels:{font:{size:12}}}},plugins:{legend:{display:false}}}});
+
+    var clabels=comps.map(function(c){return c.name;}), cdata=comps.map(function(c){return scores[c.id]||0;});
+    var chart2=new Chart(document.getElementById('radar2'),{type:'radar',data:{labels:clabels,datasets:[{label:'Điểm',data:cdata,fill:true,backgroundColor:'rgba(255,174,6,.16)',borderColor:'#FFAE06',pointBackgroundColor:'#007AFF',borderWidth:2}]},
+      options:{responsive:true,scales:{r:{min:0,max:5,ticks:{stepSize:1,backdropColor:'transparent'},pointLabels:{font:{size:10}}}},plugins:{legend:{display:false}}}});
+    if(canEdit){
+      document.querySelectorAll('select[data-cid]').forEach(function(sel){
+        sel.onchange=function(){
+          var cid=sel.getAttribute('data-cid'); var v=parseInt(sel.value,10)||0;
+          var fl=document.getElementById('csflash'); if(fl){fl.textContent='đang lưu…';fl.style.color='#007AFF';}
+          sb.from('competency_scores').upsert({email:email, competency_id:cid, score:v, updated_at:new Date().toISOString()},{onConflict:'email,competency_id'}).then(function(r){
+            if(fl){ fl.textContent=r.error?('lỗi: '+r.error.message):'✓ đã lưu'; fl.style.color=r.error?'#b00020':'#0a8a3a'; }
+            var idx=comps.findIndex(function(c){return c.id===cid;}); if(idx>=0){ chart2.data.datasets[0].data[idx]=v; chart2.update(); }
+          });
+        };
+      });
+    }
   }
 
   if(!window.SUPA || SUPA.URL.indexOf('YOUR-PROJECT')>=0){ notAllowed('Chưa cấu hình config.js'); }

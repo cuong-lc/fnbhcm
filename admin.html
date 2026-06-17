@@ -71,12 +71,51 @@
 
   function modeBar(active){
     return '<div class="toolbar"><button class="btn '+(active==='ck'?'':'ghost')+'" id="m-ck">Checklist</button>'
-      +'<button class="btn '+(active==='rev'?'':'ghost')+'" id="m-rev">Doanh thu</button></div>';
+      +'<button class="btn '+(active==='rev'?'':'ghost')+'" id="m-rev">Doanh thu &amp; Sao</button>'
+      +'<button class="btn '+(active==='comp'?'':'ghost')+'" id="m-comp">Năng lực</button></div>';
   }
   function wireMode(){
-    var a=document.getElementById('m-ck'), b=document.getElementById('m-rev');
+    var a=document.getElementById('m-ck'), b=document.getElementById('m-rev'), c=document.getElementById('m-comp');
     if(a) a.onclick=function(){ load(); };
     if(b) b.onclick=renderRevenue;
+    if(c) c.onclick=renderComp;
+  }
+
+  function renderComp(){
+    document.getElementById('root').innerHTML=modeBar('comp')+'<div class="loading">Đang tải năng lực…</div>'; wireMode();
+    sb.from('competencies').select('*').order('sort').then(function(r){
+      if(r.error){ document.getElementById('root').innerHTML=modeBar('comp')+'<p class="muted">Lỗi: '+esc(r.error.message)+'</p>'; wireMode(); return; }
+      var items=r.data||[];
+      var h=modeBar('comp')+'<h2>Quản lý năng lực</h2><p class="muted">Đây là danh sách năng lực dùng cho radar "Năng lực tổng quan". Sửa trực tiếp rồi bấm Lưu.</p>'
+        +'<div class="toolbar"><span class="muted">'+items.length+' năng lực</span><button class="btn green" id="addc" style="margin-left:auto">+ Thêm năng lực</button></div>'
+        +'<table><thead><tr><th class="colid">Mã</th><th class="colcat">Nhóm</th><th>Tên năng lực</th><th class="colact">Thao tác</th></tr></thead><tbody id="ctb"></tbody></table>';
+      document.getElementById('root').innerHTML=h; wireMode();
+      document.getElementById('addc').onclick=function(){ compRow({id:'nl'+Date.now(),domain:'',name:'',sort:items.length}, true); };
+      items.forEach(function(it){ compRow(it,false); });
+    });
+  }
+  function compRow(it,isNew){
+    var tb=document.getElementById('ctb'); var tr=document.createElement('tr'); if(isNew)tr.className='row-new';
+    tr.innerHTML='<td class="colid"><input class="f-id" value="'+esc(it.id)+'" '+(isNew?'':'readonly')+'></td>'
+      +'<td><input class="f-dom" value="'+esc(it.domain||'')+'"></td>'
+      +'<td><input class="f-name" value="'+esc(it.name||'')+'"></td>'
+      +'<td class="colact"><button class="btn save">Lưu</button> <button class="btn del">Xoá</button><span class="savedflash"></span></td>';
+    var flash=tr.querySelector('.savedflash');
+    tr.querySelector('.save').onclick=function(){
+      var rec={id:tr.querySelector('.f-id').value.trim(),domain:tr.querySelector('.f-dom').value.trim(),name:tr.querySelector('.f-name').value.trim(),sort:(typeof it.sort==='number'?it.sort:0)};
+      if(!rec.id){ flash.textContent='Thiếu mã'; flash.style.color='#b00020'; return; }
+      sb.from('competencies').upsert(rec,{onConflict:'id'}).then(function(r){
+        if(r.error){ flash.textContent='Lỗi: '+r.error.message; flash.style.color='#b00020'; }
+        else { flash.textContent='✓ Đã lưu'; flash.style.color='#0a8a3a'; it.id=rec.id; tr.classList.remove('row-new'); tr.querySelector('.f-id').setAttribute('readonly',''); setTimeout(function(){flash.textContent='';},2200); }
+      });
+    };
+    tr.querySelector('.del').onclick=function(){
+      if(!confirm('Xoá năng lực này? (điểm đã chấm cho năng lực này cũng mất)')) return;
+      var id=tr.querySelector('.f-id').value.trim();
+      if(isNew){ tr.remove(); return; }
+      sb.from('competencies').delete().eq('id',id).then(function(r){ if(r.error){flash.textContent='Lỗi';flash.style.color='#b00020';} else tr.remove(); });
+    };
+    tb.appendChild(tr);
   }
   function vnd(n){ n=Number(n)||0; return n.toLocaleString('vi-VN'); }
 
