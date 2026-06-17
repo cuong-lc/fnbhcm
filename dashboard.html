@@ -99,7 +99,7 @@
     if(!emails.length){ html+='<tr><td colspan="'+(parts.length+3)+'" class="muted">Chưa có ai tick.</td></tr>'; }
     emails.forEach(function(e){
       var d=byEmail[e]; var pc=total?Math.round(d.done/total*100):0;
-      html+='<tr><td class="email">'+esc(e)+'</td>'
+      html+='<tr><td class="email"><a href="profile.html?email='+encodeURIComponent(e)+'" style="color:#0F1437;text-decoration:none;border-bottom:1px dotted #9bb">'+esc(e)+'</a></td>'
         +'<td><div class="barc"><div class="mini"><div class="minif" style="width:'+pc+'%"></div></div><span>'+pc+'%</span></div></td>'
         + parts.map(function(p){ var pt=totalPart[p]||0; var pp=pt?Math.round((d.part[p]||0)/pt*100):0; return '<td>'+pp+'%</td>'; }).join('')
         +'<td>'+d.done+'/'+total+'</td></tr>';

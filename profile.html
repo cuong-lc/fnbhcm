@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hồ sơ năng lực · Sapo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--blue:#007AFF;--green:#16D865;--berkeley:#0F1437;--offblue:#F0F4F9;--gray:#5B6472;--line:#E2E9F2}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Inter',system-ui,sans-serif;background:var(--offblue);color:#1F2533}
+  .wrap{max-width:980px;margin:0 auto;padding:0 16px 70px}
+  header.h{background:var(--berkeley);color:#fff;padding:18px 0}
+  header.h .wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .logo{font-weight:700;display:flex;align-items:center;gap:9px}
+  .dot{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,var(--blue),var(--green))}
+  .me{margin-left:auto;font-size:13px;color:#c7d2e8}.me a{color:#9ECCFF;cursor:pointer}
+  .hero{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-top:18px;display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+  .avatar{width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--green));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px;flex:none}
+  .hero h1{margin:0;font-size:22px;color:var(--berkeley)}
+  .hero .sub{color:var(--gray);font-size:14px;margin-top:3px}
+  .pill{display:inline-block;background:var(--offblue);color:var(--blue);font-weight:600;font-size:12.5px;padding:3px 11px;border-radius:20px;margin-right:6px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px}
+  .card h3{margin:0 0 12px;font-size:16px;color:var(--berkeley)}
+  .big{font-size:30px;font-weight:700;color:var(--blue)}
+  table{border-collapse:collapse;width:100%;font-size:14px}
+  th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
+  th{color:var(--gray);font-weight:600;font-size:12.5px;text-transform:uppercase;letter-spacing:.3px}
+  td.amount{text-align:right;font-weight:600;color:var(--berkeley)}
+  .muted{color:var(--gray);font-size:13px}
+  .loading{padding:50px;text-align:center;color:var(--gray)}
+  .center{max-width:440px;margin:60px auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:30px;text-align:center}
+  .barrow{display:flex;align-items:center;gap:10px;margin:7px 0}
+  .barrow .lab{width:110px;font-size:13px;color:var(--berkeley);font-weight:600}
+  .mini{flex:1;height:11px;background:var(--offblue);border-radius:7px;overflow:hidden}
+  .minif{height:100%;background:linear-gradient(90deg,var(--blue),var(--green))}
+  .barrow .v{width:54px;text-align:right;font-size:13px;color:var(--gray)}
+  a.back{color:#9ECCFF;text-decoration:none}
+</style>
+</head>
+<body>
+<header class="h"><div class="wrap">
+  <div class="logo"><span class="dot"></span> Hồ sơ năng lực</div>
+  <div class="me" id="me"></div>
+</div></header>
+<main class="wrap" id="root"><div class="loading">Đang tải…</div></main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="config.js"></script>
+<script>
+  var sb = supabase.createClient(SUPA.URL, SUPA.ANON_KEY);
+  var ME=null;
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function vnd(n){ n=Number(n)||0; return n.toLocaleString('vi-VN')+' đ'; }
+  function notAllowed(m){ document.getElementById('root').innerHTML='<div class="center"><h2>Không xem được</h2><p class="muted">'+esc(m)+'</p></div>'; }
+  function param(k){ return new URLSearchParams(location.search).get(k); }
+
+  sb.auth.getSession().then(function(r){
+    var s=r.data.session;
+    if(!s){ notAllowed('Bạn chưa đăng nhập. Hãy đăng nhập ở trang chính rồi quay lại.'); return; }
+    ME=s.user;
+    document.getElementById('me').innerHTML='<a class="back" href="dashboard.html">← Dashboard</a> · <b style="color:#fff">'+esc(ME.email)+'</b> · <a id="lo">Đăng xuất</a>';
+    document.getElementById('lo').onclick=function(){ sb.auth.signOut().then(function(){ location.replace('login.html'); }); };
+    var target=(param('email')||ME.email).toLowerCase();
+    loadProfile(target);
+  });
+
+  function loadProfile(email){
+    document.getElementById('root').innerHTML='<div class="loading">Đang tải hồ sơ…</div>';
+    // hồ sơ (RLS chặn nếu không có quyền xem)
+    sb.from('profiles').select('email,full_name,role,level,dept').eq('email',email).maybeSingle().then(function(pr){
+      if(pr.error){ notAllowed('Lỗi: '+pr.error.message); return; }
+      var prof = pr.data;
+      if(!prof){ notAllowed('Bạn không có quyền xem hồ sơ này, hoặc người này chưa đăng nhập lần nào.'); return; }
+      var lvl = prof.level || 'c1';
+      Promise.all([
+        sb.from('checklist_items').select('id,part,sort').eq('level',lvl).order('sort'),
+        sb.from('progress').select('item_key,done').eq('email',email),
+        sb.from('revenues').select('period,amount').eq('email',email).order('period',{ascending:false})
+      ]).then(function(res){
+        var items=(res[0].data||[]), prog=(res[1].data||[]), revs=(res[2].data||[]);
+        render(prof, lvl, items, prog, revs);
+      });
+    });
+  }
+
+  function render(prof, lvl, items, prog, revs){
+    var LV={c1:'Nhân viên',c2:'Chuyên gia',c3:'Trưởng phòng',c4:'Giám đốc Trung tâm'};
+    var doneSet={}; prog.forEach(function(p){ if(p.done) doneSet[p.item_key]=1; });
+    var KEY=function(id){ return lvl+'_ck_'+id; };
+    // % theo 3 phần
+    var partTotal={}, partDone={}, order=[];
+    items.forEach(function(it){
+      var pt=it.part||'(khác)';
+      if(order.indexOf(pt)===-1){ order.push(pt); partTotal[pt]=0; partDone[pt]=0; }
+      partTotal[pt]++; if(doneSet[KEY(it.id)]) partDone[pt]++;
+    });
+    var totalAll=items.length, doneAll=0; items.forEach(function(it){ if(doneSet[KEY(it.id)]) doneAll++; });
+    var pctAll= totalAll? Math.round(doneAll/totalAll*100):0;
+    var labels=order, data=order.map(function(p){ return partTotal[p]? Math.round(partDone[p]/partTotal[p]*100):0; });
+
+    var initials=(prof.full_name||prof.email||'?').trim().split(/\s+/).slice(-1)[0].charAt(0).toUpperCase();
+    var html=''
+      +'<div class="hero"><div class="avatar">'+esc(initials)+'</div>'
+      +'<div><h1>'+esc(prof.full_name||prof.email)+'</h1>'
+      +'<div class="sub">'+esc(prof.email)+'</div>'
+      +'<div style="margin-top:8px"><span class="pill">'+esc(LV[prof.level]||prof.level||'—')+'</span>'
+      +'<span class="pill">'+esc(prof.dept||'—')+'</span>'
+      +'<span class="pill">Thành thạo '+pctAll+'%</span></div></div></div>';
+
+    html+='<div class="grid">'
+      +'<div class="card"><h3>Sơ đồ năng lực</h3><canvas id="radar" height="240"></canvas>'
+      + order.map(function(p,i){ return '<div class="barrow"><span class="lab">'+esc(p)+'</span><div class="mini"><div class="minif" style="width:'+data[i]+'%"></div></div><span class="v">'+data[i]+'%</span></div>'; }).join('')
+      +'</div>'
+      +'<div class="card"><h3>Doanh thu theo tháng</h3>'
+      + (revs.length? '<table><tr><th>Tháng</th><th style="text-align:right">Doanh thu</th></tr>'
+          + revs.map(function(r){ return '<tr><td>'+esc(r.period)+'</td><td class="amount">'+vnd(r.amount)+'</td></tr>'; }).join('')
+          + '</table>'
+          : '<p class="muted">Chưa có dữ liệu doanh thu. Quản lý nhập ở trang Admin → Doanh thu.</p>')
+      +'</div></div>';
+
+    document.getElementById('root').innerHTML=html;
+
+    var ctx=document.getElementById('radar');
+    new Chart(ctx,{type:'radar',data:{labels:labels,datasets:[{label:'% thành thạo',data:data,fill:true,backgroundColor:'rgba(0,122,255,.18)',borderColor:'#007AFF',pointBackgroundColor:'#16D865',borderWidth:2}]},
+      options:{responsive:true,scales:{r:{min:0,max:100,ticks:{stepSize:25,backdropColor:'transparent'},pointLabels:{font:{size:12}}}},plugins:{legend:{display:false}}}});
+  }
+
+  if(!window.SUPA || SUPA.URL.indexOf('YOUR-PROJECT')>=0){ notAllowed('Chưa cấu hình config.js'); }
+</script>
+</body>
+</html>
