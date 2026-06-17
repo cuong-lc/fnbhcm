@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · Quản lý checklist · Sapo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--blue:#007AFF;--green:#16D865;--berkeley:#0F1437;--offblue:#F0F4F9;--gray:#5B6472;--line:#E2E9F2}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Inter',system-ui,sans-serif;background:var(--offblue);color:#1F2533}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 14px 80px}
+  header.h{background:var(--berkeley);color:#fff;padding:18px 0}
+  header.h .wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .logo{font-weight:700;display:flex;align-items:center;gap:9px}
+  .dot{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,var(--blue),var(--green))}
+  .me{margin-left:auto;font-size:13px;color:#c7d2e8}.me a{color:#9ECCFF;cursor:pointer}
+  h2{color:var(--berkeley)}
+  .toolbar{display:flex;gap:10px;align-items:center;margin:16px 0;flex-wrap:wrap}
+  .btn{background:var(--blue);color:#fff;border:none;padding:9px 15px;border-radius:9px;font-weight:600;cursor:pointer;font-family:inherit;font-size:14px}
+  .btn.green{background:var(--green)} .btn.ghost{background:#fff;color:var(--blue);border:1px solid var(--line)}
+  .btn.del{background:#fff;color:#b00020;border:1px solid #f0c0c0;padding:7px 11px}
+  .btn.save{background:var(--green);padding:7px 13px}
+  select,input{font-family:inherit;font-size:13px;border:1px solid var(--line);border-radius:8px;padding:7px 9px;width:100%;background:#fff}
+  table{border-collapse:collapse;width:100%;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:10px}
+  th,td{border-bottom:1px solid var(--line);padding:8px 9px;text-align:left;vertical-align:top;font-size:13px}
+  th{background:var(--berkeley);color:#fff;font-weight:600;position:sticky;top:0}
+  td textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-family:inherit;font-size:13px;resize:vertical;min-height:36px}
+  .center{max-width:440px;margin:60px auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:30px;text-align:center}
+  .loading{padding:50px;text-align:center;color:var(--gray)}
+  .muted{color:var(--gray);font-size:13px}
+  .row-new{background:#FFF9E6}
+  .savedflash{color:var(--green);font-size:12px;margin-left:6px}
+  .colid{width:78px} .colpart{width:120px} .colcat{width:130px} .colreq{width:64px;text-align:center} .colact{width:120px}
+</style>
+</head>
+<body>
+<header class="h"><div class="wrap">
+  <div class="logo"><span class="dot"></span> Admin · Quản lý checklist</div>
+  <div class="me" id="me"></div>
+</div></header>
+<main class="wrap" id="root"><div class="loading">Đang tải…</div></main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+  var sb = supabase.createClient(SUPA.URL, SUPA.ANON_KEY);
+  var USER=null, ITEMS=[], LEVEL='c1';
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function notAllowed(m){ document.getElementById('root').innerHTML='<div class="center"><h2>Không truy cập được</h2><p class="muted">'+esc(m)+'</p></div>'; }
+
+  sb.auth.getSession().then(function(r){
+    var s=r.data.session;
+    if(!s){ notAllowed('Bạn chưa đăng nhập. Hãy đăng nhập ở trang chính rồi quay lại.'); return; }
+    USER=s.user;
+    document.getElementById('me').innerHTML='<b style="color:#fff">'+esc(USER.email)+'</b> · <a id="lo">Đăng xuất</a>';
+    document.getElementById('lo').onclick=function(){ sb.auth.signOut().then(function(){ location.replace('login.html'); }); };
+    sb.from('profiles').select('role').eq('id',USER.id).single().then(function(p){
+      if(p.error||!p.data||p.data.role!=='manager'){ notAllowed('Tài khoản này không có quyền quản lý (cần role = manager).'); return; }
+      load();
+    });
+  });
+
+  function load(){
+    document.getElementById('root').innerHTML='<div class="loading">Đang tải danh mục…</div>';
+    sb.from('checklist_items').select('*').eq('level',LEVEL).order('sort').then(function(r){
+      if(r.error){ notAllowed('Lỗi: '+r.error.message); return; }
+      ITEMS=r.data||[]; render();
+    });
+  }
+
+  function render(){
+    var h='<h2>Quản lý mục checklist</h2>'
+      +'<p class="muted">Sửa trực tiếp rồi bấm Lưu trên từng dòng. Thêm dòng mới bằng nút bên dưới. Lưu ý: không đổi mã (id) của mục đã có.</p>'
+      +'<div class="toolbar"><label>Cấp:</label><select id="lvl" style="width:auto">'
+      + ['c1','c2','c3','c4'].map(function(l){return '<option value="'+l+'"'+(l===LEVEL?' selected':'')+'>'+l+'</option>';}).join('')
+      +'</select><button class="btn ghost" id="reload">Tải lại</button>'
+      +'<span class="muted">'+ITEMS.length+' mục</span>'
+      +'<button class="btn green" id="add" style="margin-left:auto">+ Thêm mục</button></div>'
+      +'<table><thead><tr><th class="colid">Mã</th><th class="colpart">Phần</th><th class="colcat">Danh mục</th><th>Nội dung</th><th>Chi tiết</th><th class="colreq">Bắt buộc</th><th class="colact">Thao tác</th></tr></thead><tbody id="tb"></tbody></table>';
+    document.getElementById('root').innerHTML=h;
+    document.getElementById('lvl').onchange=function(e){ LEVEL=e.target.value; load(); };
+    document.getElementById('reload').onclick=load;
+    document.getElementById('add').onclick=addRow;
+    var tb=document.getElementById('tb');
+    ITEMS.forEach(function(it){ tb.appendChild(rowEl(it,false)); });
+  }
+
+  function rowEl(it, isNew){
+    var tr=document.createElement('tr'); if(isNew) tr.className='row-new';
+    tr.innerHTML=
+      '<td class="colid"><input class="f-id" value="'+esc(it.id)+'" '+(isNew?'':'readonly')+'></td>'
+      +'<td><textarea class="f-part">'+esc(it.part)+'</textarea></td>'
+      +'<td><textarea class="f-cat">'+esc(it.category)+'</textarea></td>'
+      +'<td><textarea class="f-content">'+esc(it.content)+'</textarea></td>'
+      +'<td><textarea class="f-detail">'+esc(it.detail)+'</textarea></td>'
+      +'<td class="colreq"><input type="checkbox" class="f-req" '+(it.required!==false?'checked':'')+'></td>'
+      +'<td class="colact"><button class="btn save">Lưu</button> <button class="btn del">Xoá</button><span class="savedflash"></span></td>';
+    var flash=tr.querySelector('.savedflash');
+    tr.querySelector('.save').onclick=function(){
+      var rec={
+        id:tr.querySelector('.f-id').value.trim(),
+        level:LEVEL,
+        part:tr.querySelector('.f-part').value.trim(),
+        category:tr.querySelector('.f-cat').value.trim(),
+        content:tr.querySelector('.f-content').value.trim(),
+        detail:tr.querySelector('.f-detail').value.trim(),
+        required:tr.querySelector('.f-req').checked,
+        sort:(typeof it.sort==='number'?it.sort:ITEMS.length),
+        updated_at:new Date().toISOString()
+      };
+      if(!rec.id){ flash.textContent='Thiếu mã'; flash.style.color='#b00020'; return; }
+      sb.from('checklist_items').upsert(rec,{onConflict:'id'}).then(function(r){
+        if(r.error){ flash.textContent='Lỗi: '+r.error.message; flash.style.color='#b00020'; }
+        else { flash.textContent='✓ Đã lưu'; flash.style.color='#0a8a3a'; it.id=rec.id; it.sort=rec.sort; tr.classList.remove('row-new'); tr.querySelector('.f-id').setAttribute('readonly','');
+          setTimeout(function(){flash.textContent='';},2500); }
+      });
+    };
+    tr.querySelector('.del').onclick=function(){
+      if(!confirm('Xoá mục này? (Tiến độ đã tick của mục này cũng sẽ không còn được tính)')) return;
+      var id=tr.querySelector('.f-id').value.trim();
+      if(isNew && !ITEMS.some(function(x){return x.id===id;})){ tr.remove(); return; }
+      sb.from('checklist_items').delete().eq('id',id).then(function(r){
+        if(r.error){ flash.textContent='Lỗi: '+r.error.message; flash.style.color='#b00020'; }
+        else tr.remove();
+      });
+    };
+    return tr;
+  }
+
+  function nextId(){
+    var max=0; ITEMS.forEach(function(it){ var m=/^NV(\d+)$/.exec(it.id); if(m) max=Math.max(max,parseInt(m[1],10)); });
+    return 'NV'+String(max+1).padStart(3,'0');
+  }
+  function addRow(){
+    var it={id:nextId(),level:LEVEL,part:'',category:'',content:'',detail:'',required:true,sort:ITEMS.length};
+    document.getElementById('tb').appendChild(rowEl(it,true));
+  }
+
+  if(!window.SUPA || SUPA.URL.indexOf('YOUR-PROJECT')>=0){ notAllowed('Chưa cấu hình config.js'); }
+</script>
+</body>
+</html>

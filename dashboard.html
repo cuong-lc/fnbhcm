@@ -64,9 +64,15 @@
 
   function load(){
     document.getElementById('root').innerHTML='<div class="loading">Đang tải tiến độ cả đội…</div>';
-    sb.from('progress').select('email,item_key,done').then(function(r){
-      if(r.error){ notAllowed('Lỗi tải dữ liệu: '+r.error.message); return; }
-      render(r.data||[]);
+    var lvl = window.LEVEL_ID || 'c1';
+    sb.from('checklist_items').select('id,part,category,content,detail,required,sort').eq('level', lvl).order('sort').then(function(ir){
+      if(ir.data && ir.data.length){
+        window.CHECKLIST_ITEMS = ir.data.map(function(x){ return {id:x.id,phan:x.part,danhmuc:x.category,noidung:x.content,chitiet:x.detail,batbuoc:x.required}; });
+      }
+      sb.from('progress').select('email,item_key,done').then(function(r){
+        if(r.error){ notAllowed('Lỗi tải dữ liệu: '+r.error.message); return; }
+        render(r.data||[]);
+      });
     });
   }
 

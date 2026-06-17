@@ -99,11 +99,17 @@
   function loadAndRender(){
     document.getElementById('me').innerHTML = 'Đăng nhập: <b>'+esc(USER.email)+'</b> · <a id="logout">Đăng xuất</a>';
     document.getElementById('logout').onclick=function(){ sb.auth.signOut().then(function(){ location.reload(); }); };
-    document.getElementById('root').innerHTML='<div class="loading">Đang tải tiến độ…</div>';
-    sb.from('progress').select('item_key,done').eq('user_id', USER.id).then(function(r){
-      STATE={};
-      if(r.data) r.data.forEach(function(row){ STATE[row.item_key]= row.done===true; });
-      render();
+    document.getElementById('root').innerHTML='<div class="loading">Đang tải checklist…</div>';
+    var lvl = window.LEVEL_ID || 'c1';
+    sb.from('checklist_items').select('id,part,category,content,detail,required,sort').eq('level', lvl).order('sort').then(function(ir){
+      if(ir.data && ir.data.length){
+        window.CHECKLIST_ITEMS = ir.data.map(function(x){ return {id:x.id,phan:x.part,danhmuc:x.category,noidung:x.content,chitiet:x.detail,batbuoc:x.required}; });
+      }
+      sb.from('progress').select('item_key,done').eq('user_id', USER.id).then(function(r){
+        STATE={};
+        if(r.data) r.data.forEach(function(row){ STATE[row.item_key]= row.done===true; });
+        render();
+      });
     });
   }
 

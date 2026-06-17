@@ -36,6 +36,7 @@
       '<a href="index.html" style="color:#9ECCFF;text-decoration:none">Lộ trình</a>' +
       '<a href="checklist.html" style="color:#9ECCFF;text-decoration:none">Checklist (lưu)</a>' +
       (isM ? '<a href="dashboard.html" style="color:#9ECCFF;text-decoration:none">Dashboard</a>' : '') +
+      (isM ? '<a href="admin.html" style="color:#9ECCFF;text-decoration:none">Admin</a>' : '') +
       '<a id="clf-logout" style="color:#ff9b9b;text-decoration:none;cursor:pointer">Đăng xuất</a>';
     document.body.insertBefore(bar, document.body.firstChild);
     var lo = document.getElementById('clf-logout');
