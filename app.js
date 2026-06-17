@@ -106,9 +106,9 @@
     if (lv.gate) secs.push(["sec-gate", "Tiêu chuẩn"]);
     secs.push(["sec-kpi", "KPI"]);
     if (lv.managerSkills) secs.push(["sec-ms", "Kỹ năng quản lý"]);
-    secs.push(["sec-comp", "Năng lực"]);
+    if (lv.id !== 'c1') secs.push(["sec-comp", "Năng lực"]);
     if (lv.valueStages) secs.push(["sec-cv", "Giá trị cốt lõi"]);
-    if (hasCk) secs.push(["sec-ck", "Checklist"]);
+    if (hasCk) secs.push(["sec-ck", lv.id === 'c1' ? "Kiến thức kỹ năng" : "Checklist"]);
     secs.push(["sec-promote", lv.reviewBased ? "Điều kiện cần" : "Điều kiện lên cấp"]);
     if (lv.reviewBased && lv.appointment) secs.push(["sec-appoint", "Bổ nhiệm"]);
     html += `<nav class="secnav">${secs.map((s) => `<a href="#${s[0]}">${esc(s[1])}</a>`).join("")}</nav>`;
@@ -151,7 +151,8 @@
     }
 
 
-    // competency groups
+    // competency groups (Nhân viên dùng checklist 3 nhóm thay cho 5 domain)
+    if (lv.id !== 'c1') {
     html += `<h2 id="sec-comp" style="font-size:20px;margin-top:26px">Chuẩn cần đạt theo năng lực</h2>
       <div class="sub" style="margin-top:4px">Tích vào ô khi đã đạt chuẩn — tiến độ tự lưu trên máy của bạn.</div>`;
     GROUPS.forEach((g) => {
@@ -178,6 +179,7 @@
       });
       html += `</div>`;
     });
+    }
 
     // core values + mastery stage for this level
     if (lv.valueStages && CLF.CORE_VALUES) {
@@ -199,8 +201,8 @@
     // detailed mastery checklist (onboarding) if defined for this level
     const ckData = (CLF.CHECKLISTS || {})[lv.id];
     if (ckData) {
-      html += `<h2 id="sec-ck" style="font-size:20px;margin-top:32px">Checklist thành thạo</h2>
-        <div class="sub" style="margin-top:4px">Danh mục chi tiết cần thành thạo ở cấp này. Tích khi đã làm được — tiến độ tự lưu trên máy.</div>
+      html += `<h2 id="sec-ck" style="font-size:20px;margin-top:32px">${lv.id === 'c1' ? 'Kiến thức kỹ năng chuyên môn' : 'Checklist thành thạo'}</h2>
+        <div class="sub" style="margin-top:4px">${lv.id === 'c1' ? 'Gồm 3 nhóm: Sản phẩm · Triển khai · Kỹ năng khác. Tích khi đã thành thạo — tiến độ tự lưu trên máy.' : 'Danh mục chi tiết cần thành thạo ở cấp này. Tích khi đã làm được — tiến độ tự lưu trên máy.'}</div>
         <div class="progress-wrap"><span class="ptxt">Tiến độ checklist</span>
           <div class="bar-track"><div class="bar-fill" id="ckFill"></div></div>
           <span class="ptxt" id="ckPct">0%</span></div>`;

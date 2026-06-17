@@ -160,7 +160,7 @@ const LEVELS = [
 
 /* 5 domain */
 const GROUPS = [
-  { id: "d1", name: "Kiến thức chuyên môn", en: "Domain Knowledge", icon: "📘", color: "#007AFF" },
+  { id: "d1", name: "Kiến thức kỹ năng chuyên môn", en: "Domain Knowledge & Skills", icon: "📘", color: "#007AFF" },
   { id: "d2", name: "Kỹ năng bán hàng", en: "Selling Skills", icon: "🎯", color: "#16D865" },
   { id: "d3", name: "Quản lý khách hàng & dữ liệu", en: "Customer & Data Management", icon: "🗂️", color: "#0196FF" },
   { id: "d4", name: "Thái độ & tố chất cá nhân", en: "Mindset & Personal Effectiveness", icon: "🧭", color: "#FFAE06" },
