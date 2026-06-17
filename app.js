@@ -6,10 +6,21 @@
   const groupById = (id) => GROUPS.find((g) => g.id === id);
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-  // ---- storage (safe on file://) ----
+  // ---- storage: đồng bộ Supabase (hydrate qua auth.js -> window.CLF_PROGRESS) ----
+  const PROG = window.CLF_PROGRESS || (window.CLF_PROGRESS = {});
   const store = {
-    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
-    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+    get(k) { return PROG[k] === true ? "1" : "0"; },
+    set(k, v) {
+      const on = (v === "1" || v === 1 || v === true);
+      PROG[k] = on;
+      try { localStorage.setItem(k, on ? "1" : "0"); } catch (e) {}
+      if (window.SB && window.CLF_USER) {
+        window.SB.from('progress').upsert(
+          { user_id: window.CLF_USER.id, email: window.CLF_USER.email, item_key: k, done: on, updated_at: new Date().toISOString() },
+          { onConflict: 'user_id,item_key' }
+        ).then(function(){}, function(){});
+      }
+    },
   };
 
   // ---- shared: nav + footer ----
@@ -106,9 +117,8 @@
     if (lv.gate) secs.push(["sec-gate", "Tiêu chuẩn"]);
     secs.push(["sec-kpi", "KPI"]);
     if (lv.managerSkills) secs.push(["sec-ms", "Kỹ năng quản lý"]);
-    if (lv.id !== 'c1') secs.push(["sec-comp", "Năng lực"]);
+    secs.push(["sec-comp", "Năng lực"]);
     if (lv.valueStages) secs.push(["sec-cv", "Giá trị cốt lõi"]);
-    if (hasCk) secs.push(["sec-ck", lv.id === 'c1' ? "Kiến thức kỹ năng" : "Checklist"]);
     secs.push(["sec-promote", lv.reviewBased ? "Điều kiện cần" : "Điều kiện lên cấp"]);
     if (lv.reviewBased && lv.appointment) secs.push(["sec-appoint", "Bổ nhiệm"]);
     html += `<nav class="secnav">${secs.map((s) => `<a href="#${s[0]}">${esc(s[1])}</a>`).join("")}</nav>`;
@@ -151,10 +161,10 @@
     }
 
 
-    // competency groups (Nhân viên dùng checklist 3 nhóm thay cho 5 domain)
-    if (lv.id !== 'c1') {
+    // competency groups (5 domain). Nhân viên: domain "Kiến thức kỹ năng chuyên môn" = checklist 3 nhóm.
+    const ckData = (CLF.CHECKLISTS || {})[lv.id];
     html += `<h2 id="sec-comp" style="font-size:20px;margin-top:26px">Chuẩn cần đạt theo năng lực</h2>
-      <div class="sub" style="margin-top:4px">Tích vào ô khi đã đạt chuẩn — tiến độ tự lưu trên máy của bạn.</div>`;
+      <div class="sub" style="margin-top:4px">Tích vào ô khi đã đạt chuẩn — tiến độ tự lưu & đồng bộ.</div>`;
     GROUPS.forEach((g) => {
       const comps = COMPETENCIES.filter((c) => c.group === g.id);
       html += `<div class="grp">
@@ -163,23 +173,42 @@
           <h3>${esc(g.name)}</h3><span class="en">${esc(g.en)}</span>
           <span class="grp-prog" data-grp="${g.id}"></span>
         </div>`;
-      comps.forEach((c) => {
-        const key = `clf_${lv.id}_comp_${c.id}`;
-        const checked = store.get(key) === "1";
-        const pb = c.playbook ? c.playbook[lv.id] : "";
-        const pbLabel = lv.order === LEVELS.length ? "Duy trì & mở rộng" : "Cần bổ sung để lên cấp tiếp theo";
-        html += `<div class="comp ${checked ? "done" : ""}" id="${c.id}" data-grp="${g.id}">
-          <label class="chk"><input type="checkbox" data-key="${key}" ${checked ? "checked" : ""}></label>
-          <div class="ctext">
-            <div class="cname">${esc(c.name)}</div>
-            <div class="cstd">${esc(c.levels[lv.id])}</div>
-            ${pb ? `<div class="cpb"><span class="cpb-lab">${pbLabel}</span><span class="cpb-txt">${esc(pb)}</span></div>` : ""}
-          </div>
-        </div>`;
-      });
+      if (lv.id === 'c1' && g.id === 'd1' && ckData) {
+        html += `<div class="sub" style="margin:2px 0 8px">Checklist thành thạo — 3 nhóm: Sản phẩm · Triển khai · Kỹ năng khác.</div>`;
+        ckData.forEach((p, pi) => {
+          html += `<details class="ck-part" open><summary><span class="ck-pt">${esc(p.part)}</span><span class="ck-count" data-part="${pi}"></span></summary>`;
+          p.categories.forEach((cat, ci) => {
+            html += `<div class="ck-cat"><div class="ck-cat-h">${esc(cat.cat)}${cat.opt ? ` <span class="opt-tag">không bắt buộc</span>` : ""}</div>`;
+            cat.items.forEach((it, ii) => {
+              const key = `clf_${lv.id}_ck_${pi}_${ci}_${ii}`;
+              const ck = store.get(key) === "1";
+              html += `<label class="ck-item ${ck ? "done" : ""}">
+                <input type="checkbox" data-key="${key}" data-ck="1" data-part="${pi}" ${ck ? "checked" : ""}>
+                <span class="ck-txt"><span class="ck-n">${esc(it.n)}${it.opt ? ` <span class="opt-tag">tùy chọn</span>` : ""}</span>${it.d ? `<span class="ck-d">${esc(it.d)}</span>` : ""}</span>
+              </label>`;
+            });
+            html += `</div>`;
+          });
+          html += `</details>`;
+        });
+      } else {
+        comps.forEach((c) => {
+          const key = `clf_${lv.id}_comp_${c.id}`;
+          const checked = store.get(key) === "1";
+          const pb = c.playbook ? c.playbook[lv.id] : "";
+          const pbLabel = lv.order === LEVELS.length ? "Duy trì & mở rộng" : "Cần bổ sung để lên cấp tiếp theo";
+          html += `<div class="comp ${checked ? "done" : ""}" id="${c.id}" data-grp="${g.id}">
+            <label class="chk"><input type="checkbox" data-key="${key}" ${checked ? "checked" : ""}></label>
+            <div class="ctext">
+              <div class="cname">${esc(c.name)}</div>
+              <div class="cstd">${esc(c.levels[lv.id])}</div>
+              ${pb ? `<div class="cpb"><span class="cpb-lab">${pbLabel}</span><span class="cpb-txt">${esc(pb)}</span></div>` : ""}
+            </div>
+          </div>`;
+        });
+      }
       html += `</div>`;
     });
-    }
 
     // core values + mastery stage for this level
     if (lv.valueStages && CLF.CORE_VALUES) {
@@ -196,32 +225,6 @@
           <div class="cv"><div class="cv-h"><span class="cv-num">${i + 1}</span>${esc(v.name)}</div>
             <ul class="cv-b">${v.behaviors.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>
           </div>`).join("")}</div>`;
-    }
-
-    // detailed mastery checklist (onboarding) if defined for this level
-    const ckData = (CLF.CHECKLISTS || {})[lv.id];
-    if (ckData) {
-      html += `<h2 id="sec-ck" style="font-size:20px;margin-top:32px">${lv.id === 'c1' ? 'Kiến thức kỹ năng chuyên môn' : 'Checklist thành thạo'}</h2>
-        <div class="sub" style="margin-top:4px">${lv.id === 'c1' ? 'Gồm 3 nhóm: Sản phẩm · Triển khai · Kỹ năng khác. Tích khi đã thành thạo — tiến độ tự lưu trên máy.' : 'Danh mục chi tiết cần thành thạo ở cấp này. Tích khi đã làm được — tiến độ tự lưu trên máy.'}</div>
-        <div class="progress-wrap"><span class="ptxt">Tiến độ checklist</span>
-          <div class="bar-track"><div class="bar-fill" id="ckFill"></div></div>
-          <span class="ptxt" id="ckPct">0%</span></div>`;
-      ckData.forEach((p, pi) => {
-        html += `<details class="ck-part" open><summary><span class="ck-pt">${esc(p.part)}</span><span class="ck-count" data-part="${pi}"></span></summary>`;
-        p.categories.forEach((cat, ci) => {
-          html += `<div class="ck-cat"><div class="ck-cat-h">${esc(cat.cat)}${cat.opt ? ` <span class="opt-tag">không bắt buộc</span>` : ""}</div>`;
-          cat.items.forEach((it, ii) => {
-            const key = `clf_${lv.id}_ck_${pi}_${ci}_${ii}`;
-            const ck = store.get(key) === "1";
-            html += `<label class="ck-item ${ck ? "done" : ""}">
-              <input type="checkbox" data-key="${key}" data-ck="1" data-part="${pi}" ${ck ? "checked" : ""}>
-              <span class="ck-txt"><span class="ck-n">${esc(it.n)}${it.opt ? ` <span class="opt-tag">tùy chọn</span>` : ""}</span>${it.d ? `<span class="ck-d">${esc(it.d)}</span>` : ""}</span>
-            </label>`;
-          });
-          html += `</div>`;
-        });
-        html += `</details>`;
-      });
     }
 
     // promote checklist (necessary, measurable, tickable)
@@ -468,15 +471,19 @@
     return `rgba(${r},${g},${b},${a})`;
   }
 
-  // ---- init ----
-  document.addEventListener("DOMContentLoaded", () => {
+  // ---- init (chờ auth.js nạp xong tiến độ: window.CLF_READY / sự kiện 'clf-ready') ----
+  function startRender() {
     const page = document.body.dataset.page;
-    const file = location.pathname.split("/").pop() || "index.html";
-    buildNav(file);
-    buildFoot();
     if (page === "index") renderIndex();
     else if (page === "level") renderLevel(document.body.dataset.level);
     else if (page === "rubric") renderRubric();
     else if (page === "assess") renderAssess();
+  }
+  document.addEventListener("DOMContentLoaded", () => {
+    const file = location.pathname.split("/").pop() || "index.html";
+    buildNav(file);
+    buildFoot();
+    if (window.CLF_READY || !window.SB) startRender();
+    else document.addEventListener("clf-ready", startRender, { once: true });
   });
 })();

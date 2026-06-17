@@ -128,16 +128,16 @@
           : '<p class="muted">Chưa có dữ liệu doanh thu. Quản lý nhập ở trang Admin → Doanh thu.</p>')
       +'</div></div>';
 
-    // Năng lực tổng quan (13 năng lực, điểm 1-5)
-    html+='<div class="card" style="margin-top:16px"><h3>Năng lực tổng quan (đánh giá 1–5)</h3>'
+    // Tổng quan năng lực (5 mảng, mỗi cấp 25%) — tính từ tick
+    var _done={}; prog.forEach(function(p){ if(p.done)_done[p.item_key]=true; });
+    var _ckTotal=items.length||71, _D1='Kiến thức kỹ năng chuyên môn';
+    var _byDom={}, _order=[]; (comps||[]).forEach(function(c){ if(_order.indexOf(c.domain)<0)_order.push(c.domain); (_byDom[c.domain]=_byDom[c.domain]||[]).push(c); });
+    function _ckFrac(){ var n=0; for(var k in _done){ if(k.indexOf('clf_c1_ck_')===0)n++; } return _ckTotal?Math.min(1,n/_ckTotal):0; }
+    var _ds=_order.map(function(dom){ var cs=_byDom[dom],sum=0; ['c1','c2','c3','c4'].forEach(function(lv){ var f; if(dom===_D1&&lv==='c1'){f=_ckFrac();} else { var dn=0; cs.forEach(function(c){ if(_done['clf_'+lv+'_comp_'+c.id])dn++; }); f=cs.length?dn/cs.length:0; } sum+=f; }); return {domain:dom,pct:Math.round(sum/4*100)}; });
+    html+='<div class="card" style="margin-top:16px"><h3>Tổng quan năng lực (5 mảng)</h3>'
+      +'<div class="muted" style="margin-bottom:6px">Mỗi cấp 25%. Tự cập nhật khi tick chuẩn ở các trang cấp.</div>'
       +'<div class="grid"><div><canvas id="radar2" height="300"></canvas></div><div>'
-      + comps.map(function(c){ var sc=scores[c.id]||0;
-          if(canEdit){ var opts=[0,1,2,3,4,5].map(function(v){return '<option value="'+v+'"'+(v===sc?' selected':'')+'>'+(v===0?'—':v+'★')+'</option>';}).join('');
-            return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line)"><span style="font-size:13px">'+esc(c.name)+'</span><select data-cid="'+esc(c.id)+'" style="padding:4px 7px;border:1px solid var(--line);border-radius:7px;font-family:inherit">'+opts+'</select></div>';
-          }
-          return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line)"><span style="font-size:13px">'+esc(c.name)+'</span><span style="color:#FFAE06">'+'★'.repeat(sc)+'<span class="muted">'+(sc?'':'—')+'</span></span></div>';
-        }).join('')
-      + (canEdit?'<div class="muted" style="margin-top:8px">Chọn điểm là lưu ngay. <span id="csflash"></span></div>':'')
+      + _ds.map(function(x){ return '<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><b>'+esc(x.domain)+'</b><span class="muted">'+x.pct+'%</span></div><div style="height:10px;background:#F0F4F9;border-radius:6px;overflow:hidden;margin-top:4px"><div style="height:100%;background:linear-gradient(90deg,#007AFF,#16D865);width:'+x.pct+'%"></div></div></div>'; }).join('')
       +'</div></div></div>';
 
     document.getElementById('root').innerHTML=html;
@@ -146,21 +146,9 @@
     new Chart(ctx,{type:'radar',data:{labels:labels,datasets:[{label:'% thành thạo',data:data,fill:true,backgroundColor:'rgba(0,122,255,.18)',borderColor:'#007AFF',pointBackgroundColor:'#16D865',borderWidth:2}]},
       options:{responsive:true,scales:{r:{min:0,max:100,ticks:{stepSize:25,backdropColor:'transparent'},pointLabels:{font:{size:12}}}},plugins:{legend:{display:false}}}});
 
-    var clabels=comps.map(function(c){return c.name;}), cdata=comps.map(function(c){return scores[c.id]||0;});
-    var chart2=new Chart(document.getElementById('radar2'),{type:'radar',data:{labels:clabels,datasets:[{label:'Điểm',data:cdata,fill:true,backgroundColor:'rgba(255,174,6,.16)',borderColor:'#FFAE06',pointBackgroundColor:'#007AFF',borderWidth:2}]},
-      options:{responsive:true,scales:{r:{min:0,max:5,ticks:{stepSize:1,backdropColor:'transparent'},pointLabels:{font:{size:10}}}},plugins:{legend:{display:false}}}});
-    if(canEdit){
-      document.querySelectorAll('select[data-cid]').forEach(function(sel){
-        sel.onchange=function(){
-          var cid=sel.getAttribute('data-cid'); var v=parseInt(sel.value,10)||0;
-          var fl=document.getElementById('csflash'); if(fl){fl.textContent='đang lưu…';fl.style.color='#007AFF';}
-          sb.from('competency_scores').upsert({email:email, competency_id:cid, score:v, updated_at:new Date().toISOString()},{onConflict:'email,competency_id'}).then(function(r){
-            if(fl){ fl.textContent=r.error?('lỗi: '+r.error.message):'✓ đã lưu'; fl.style.color=r.error?'#b00020':'#0a8a3a'; }
-            var idx=comps.findIndex(function(c){return c.id===cid;}); if(idx>=0){ chart2.data.datasets[0].data[idx]=v; chart2.update(); }
-          });
-        };
-      });
-    }
+    var clabels=_ds.map(function(x){return x.domain;}), cdata=_ds.map(function(x){return x.pct;});
+    new Chart(document.getElementById('radar2'),{type:'radar',data:{labels:clabels,datasets:[{label:'%',data:cdata,fill:true,backgroundColor:'rgba(0,122,255,.16)',borderColor:'#007AFF',pointBackgroundColor:'#16D865',borderWidth:2}]},
+      options:{responsive:true,scales:{r:{min:0,max:100,ticks:{stepSize:25,backdropColor:'transparent'},pointLabels:{font:{size:9}}}},plugins:{legend:{display:false}}}});
   }
 
   if(!window.SUPA || SUPA.URL.indexOf('YOUR-PROJECT')>=0){ notAllowed('Chưa cấu hình config.js'); }

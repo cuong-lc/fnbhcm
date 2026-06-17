@@ -14,8 +14,14 @@
     var s = r.data.session;
     if (!s) { gotoLogin(); return; }
     window.CLF_USER = s.user;
-    sb.from('profiles').select('role,level').eq('id', s.user.id).single().then(function(p){
-      window.CLF_PROFILE = (p && p.data) || {};
+    Promise.all([
+      sb.from('profiles').select('role,level').eq('id', s.user.id).single(),
+      sb.from('progress').select('item_key,done').eq('user_id', s.user.id)
+    ]).then(function(res){
+      window.CLF_PROFILE = (res[0] && res[0].data) || {};
+      var pg = window.CLF_PROGRESS || (window.CLF_PROGRESS = {});
+      (res[1] && res[1].data || []).forEach(function(row){ pg[row.item_key] = (row.done === true); });
+      window.CLF_READY = true;
       de.style.visibility = 'visible';
       injectBar();
       document.dispatchEvent(new Event('clf-ready'));
@@ -33,8 +39,7 @@
       '<span>👤 <b style="color:#fff">' + esc(window.CLF_USER.email) + '</b></span>' +
       '<span>Cấp: <b style="color:#16D865">' + esc(lvl) + '</b></span>' +
       '<span style="margin-left:auto"></span>' +
-      '<a href="index.html" style="color:#9ECCFF;text-decoration:none">Lộ trình</a>' +
-      '<a href="checklist.html" style="color:#9ECCFF;text-decoration:none">Checklist (lưu)</a>' +
+      '<a href="index.html" style="color:#9ECCFF;text-decoration:none">Trang chủ</a>' +
       (isM ? '<a href="dashboard.html" style="color:#9ECCFF;text-decoration:none">Dashboard</a>' : '') +
       (isM ? '<a href="admin.html" style="color:#9ECCFF;text-decoration:none">Admin</a>' : '') +
       '<a id="clf-logout" style="color:#ff9b9b;text-decoration:none;cursor:pointer">Đăng xuất</a>';

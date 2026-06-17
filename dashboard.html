@@ -83,15 +83,18 @@
       sb.from('revenues').select('email,period,amount'),
       sb.from('checklist_items').select('id,part').eq('level',lvl).order('sort'),
       sb.from('staff_stars').select('email,stars'),
-      sb.from('competencies').select('id,name,sort').order('sort'),
-      sb.from('competency_scores').select('email,competency_id,score')
+      sb.from('competencies').select('id,name,domain,sort').order('sort')
     ]).then(function(res){
       for(var i=0;i<res.length;i++){ if(res[i].error){ notAllowed('Lỗi tải dữ liệu: '+res[i].error.message); return; } }
       DATA.people=res[0].data||[]; DATA.progress=res[1].data||[]; DATA.revenues=res[2].data||[];
       DATA.items=res[3].data||[]; DATA.stars={};
       (res[4].data||[]).forEach(function(x){ DATA.stars[x.email.toLowerCase()]=x.stars; });
-      DATA.comps=res[5].data||[]; DATA.cscores={};
-      (res[6].data||[]).forEach(function(x){ var e=x.email.toLowerCase(); (DATA.cscores[e]=DATA.cscores[e]||{})[x.competency_id]=x.score; });
+      DATA.comps=res[5].data||[];
+      // map tiến độ tick theo email
+      DATA.progByEmail={};
+      DATA.progress.forEach(function(r){ if(!r.done)return; var e=(r.email||'').toLowerCase(); (DATA.progByEmail[e]=DATA.progByEmail[e]||{})[r.item_key]=true; });
+      DATA.ckTotal=(DATA.items||[]).length||71;
+      DATA.D1='Kiến thức kỹ năng chuyên môn';
       var mine=DATA.people.filter(function(p){return p.email.toLowerCase()===ME.email.toLowerCase();})[0]||{};
       MYLEVEL=mine.level||'c1'; MYDEPT=mine.dept||'';
       render();
@@ -112,6 +115,26 @@
   function deptMembers(dept){ return DATA.people.filter(function(p){return (p.dept||'')===dept;}); }
   function lineChart(canvas,labels,data,label,color){ charts.push(new Chart(canvas,{type:'line',data:{labels:labels,datasets:[{label:label,data:data,borderColor:color||'#007AFF',backgroundColor:'rgba(0,122,255,.12)',fill:true,tension:.3,pointRadius:4,pointBackgroundColor:color||'#007AFF'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:function(v){return short(v);}}}}}})); }
   function barChart(canvas,labels,data,label,colors){ charts.push(new Chart(canvas,{type:'bar',data:{labels:labels,datasets:[{label:label,data:data,backgroundColor:colors||'#007AFF',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:function(v){return short(v);}}}}}})); }
+
+  // ---- điểm năng lực 5 domain (mỗi cấp 25%) ----
+  var LEVELS4=['c1','c2','c3','c4'];
+  function doneOf(email){ return (DATA.progByEmail&&DATA.progByEmail[(email||'').toLowerCase()])||{}; }
+  function ckFracC1(email){ var d=doneOf(email),n=0; for(var k in d){ if(k.indexOf('clf_c1_ck_')===0) n++; } return DATA.ckTotal? Math.min(1,n/DATA.ckTotal):0; }
+  function domainScores(email){
+    var d=doneOf(email); var byDom={}, order=[];
+    (DATA.comps||[]).forEach(function(c){ if(order.indexOf(c.domain)<0)order.push(c.domain); (byDom[c.domain]=byDom[c.domain]||[]).push(c); });
+    return order.map(function(dom){
+      var comps=byDom[dom]; var sum=0;
+      LEVELS4.forEach(function(lv){
+        var frac;
+        if(dom===DATA.D1 && lv==='c1'){ frac=ckFracC1(email); }
+        else { var done=0; comps.forEach(function(c){ if(d['clf_'+lv+'_comp_'+c.id]) done++; }); frac=comps.length? done/comps.length:0; }
+        sum+=frac;
+      });
+      return { domain:dom, pct:Math.round(sum/4*100) };
+    });
+  }
+  function overallComp(email){ var ds=domainScores(email); if(!ds.length)return 0; return Math.round(ds.reduce(function(a,b){return a+b.pct;},0)/ds.length); }
 
   // ---------- render khung tab ----------
   function render(){
@@ -142,25 +165,23 @@
     var ms=months(); var rev=revOf(email); var rdata=ms.map(function(m){return rev[m]||0;});
     var totalRev=rdata.reduce(function(a,b){return a+b;},0);
     var growth = (rdata.length>=2 && rdata[rdata.length-2]>0)? Math.round((rdata[rdata.length-1]-rdata[rdata.length-2])/rdata[rdata.length-2]*100):null;
-    var pr=progOf(email); var pctAll=pr.total?Math.round(pr.all/pr.total*100):0;
+    var ckPct=Math.round(ckFracC1(email)*100); var ds=domainScores(email);
     el.innerHTML=''
       +'<div class="kpis">'
       +'<div class="kpi"><div class="lab">Doanh thu tháng gần nhất</div><div class="val">'+short(rdata[rdata.length-1]||0)+'</div><div class="sub">'+(growth!=null?(growth>=0?'▲ +':'▼ ')+growth+'% so tháng trước':'')+'</div></div>'
       +'<div class="kpi"><div class="lab">Tổng doanh thu '+ms.length+' tháng</div><div class="val">'+short(totalRev)+'</div></div>'
-      +'<div class="kpi"><div class="lab">Thành thạo (checklist)</div><div class="val">'+pctAll+'%</div><div class="sub">'+pr.all+'/'+pr.total+' mục</div></div>'
+      +'<div class="kpi"><div class="lab">Năng lực tổng quan</div><div class="val">'+overallComp(email)+'%</div><div class="sub">checklist '+ckPct+'%</div></div>'
       +'</div>'
       +'<div class="grid">'
       +'<div class="card"><h3>Tăng trưởng doanh thu theo tháng</h3><div style="height:240px"><canvas id="c1"></canvas></div></div>'
-      +'<div class="card"><h3>Hoàn thành năng lực theo mảng (kiến thức)</h3><div id="partbars"></div></div>'
+      +'<div class="card"><h3>Tổng quan năng lực (5 mảng)</h3><div class="muted" style="margin-bottom:6px">Mỗi cấp 25%. Tick chuẩn ở các trang cấp là tự cập nhật.</div><div style="height:300px"><canvas id="cradar"></canvas></div></div>'
       +'</div>'
-      +'<div class="card" style="margin-top:16px"><h3>Năng lực tổng quan</h3><div class="muted" style="margin-bottom:6px">Điểm 1–5 do quản lý đánh giá (xem/chỉnh ở hồ sơ từng người).</div><div style="height:320px"><canvas id="cradar"></canvas></div></div>';
+      +'<div class="card" style="margin-top:16px"><h3>Chi tiết theo mảng</h3>'
+      + ds.map(function(x){ return '<div style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><b>'+esc(x.domain)+'</b><span class="muted">'+x.pct+'%</span></div><div class="track"><div class="fill" style="width:'+x.pct+'%"></div></div></div>'; }).join('')
+      +'</div>';
     lineChart(document.getElementById('c1'), ms, rdata, 'Doanh thu','#007AFF');
-    var pb=document.getElementById('partbars'); var P=pr.parts;
-    pb.innerHTML = P.ps.map(function(p){ var pc=P.tot[p]?Math.round((pr.done[p]||0)/P.tot[p]*100):0; return '<div style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><b>'+esc(p)+'</b><span class="muted">'+pc+'%</span></div><div class="track"><div class="fill" style="width:'+pc+'%"></div></div></div>'; }).join('')
-      + '<div style="margin-top:14px"><a class="plink" href="checklist.html">Mở checklist thành thạo →</a></div>';
-    var cs=(DATA.cscores&&DATA.cscores[email.toLowerCase()])||{};
-    var clabels=(DATA.comps||[]).map(function(c){return c.name;}), cdata=(DATA.comps||[]).map(function(c){return cs[c.id]||0;});
-    charts.push(new Chart(document.getElementById('cradar'),{type:'radar',data:{labels:clabels,datasets:[{label:'Điểm',data:cdata,fill:true,backgroundColor:'rgba(255,174,6,.16)',borderColor:'#FFAE06',pointBackgroundColor:'#007AFF',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{min:0,max:5,ticks:{stepSize:1,backdropColor:'transparent'},pointLabels:{font:{size:10}}}},plugins:{legend:{display:false}}}}));
+    var clabels=ds.map(function(x){return x.domain;}), cdata=ds.map(function(x){return x.pct;});
+    charts.push(new Chart(document.getElementById('cradar'),{type:'radar',data:{labels:clabels,datasets:[{label:'%',data:cdata,fill:true,backgroundColor:'rgba(0,122,255,.16)',borderColor:'#007AFF',pointBackgroundColor:'#16D865',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{min:0,max:100,ticks:{stepSize:25,backdropColor:'transparent'},pointLabels:{font:{size:9}}}},plugins:{legend:{display:false}}}}));
   }
 
   // ---------- TAB PHÒNG ----------
@@ -198,7 +219,7 @@
       +'<div class="card" style="margin-top:16px"><h3>Nhân viên phòng</h3>'
       +'<table><tr><th>Tên</th><th>Sao</th><th class="r">Năng lực</th><th class="r">DT gần nhất</th></tr>'
       + mem.sort(function(a,b){return (DATA.stars[b.email.toLowerCase()]||0)-(DATA.stars[a.email.toLowerCase()]||0);}).map(function(m){
-          var st=DATA.stars[m.email.toLowerCase()]||0; var pr=progOf(m.email); var pc=pr.total?Math.round(pr.all/pr.total*100):0; var rv=revOf(m.email); var lm=ms[ms.length-1];
+          var st=DATA.stars[m.email.toLowerCase()]||0; var pc=overallComp(m.email); var rv=revOf(m.email); var lm=ms[ms.length-1];
           return '<tr><td><a class="plink" href="profile.html?email='+encodeURIComponent(m.email)+'">'+esc(m.full_name||m.email)+'</a> <span class="muted">'+(m.level==='c3'?'(TP)':'')+'</span></td>'
             +'<td><span class="stars">'+'★'.repeat(st)+'</span><span class="muted">'+(st?'':'—')+'</span></td>'
             +'<td class="r">'+pc+'%</td><td class="r">'+short(rv[lm]||0)+'</td></tr>';
