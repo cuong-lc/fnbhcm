@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checklist thành thạo · Sapo FNB</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--blue:#007AFF;--green:#16D865;--berkeley:#0F1437;--offblue:#F0F4F9;--gray:#5B6472;--line:#E2E9F2;--dark:#1F2533}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--offblue);color:var(--dark);line-height:1.5}
+  .wrap{max-width:920px;margin:0 auto;padding:0 16px 60px}
+  header.h{background:var(--berkeley);color:#fff;padding:20px 0}
+  header.h .wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .logo{font-weight:700;font-size:16px;display:flex;align-items:center;gap:9px}
+  .logo .dot{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,var(--blue),var(--green))}
+  .me{margin-left:auto;font-size:13px;color:#c7d2e8;text-align:right}
+  .me b{color:#fff}.me a{color:#9ECCFF;cursor:pointer}
+  .barwrap{position:sticky;top:0;z-index:20;background:rgba(240,244,249,.96);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);padding:12px 0;margin-bottom:8px}
+  .barwrap .wrap{display:flex;align-items:center;gap:14px}
+  .ptxt{font-weight:700;color:var(--berkeley);white-space:nowrap;font-size:14px}
+  .track{flex:1;height:12px;background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;min-width:120px}
+  .fill{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--green));transition:width .3s}
+  details.part{background:#fff;border:1px solid var(--line);border-radius:12px;margin:12px 0;overflow:hidden}
+  details.part>summary{list-style:none;cursor:pointer;padding:14px 18px;display:flex;align-items:center;gap:12px;background:var(--offblue);font-weight:700;color:var(--berkeley)}
+  details.part>summary::-webkit-details-marker{display:none}
+  details.part>summary::before{content:"▸";color:var(--blue);transition:transform .15s}
+  details.part[open]>summary::before{transform:rotate(90deg)}
+  .pcount{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--blue);background:#fff;border:1px solid var(--line);padding:2px 10px;border-radius:20px}
+  .cat{padding:4px 18px 10px}
+  .cath{font-size:12.5px;font-weight:700;color:#004FA4;text-transform:uppercase;letter-spacing:.3px;margin:12px 0 4px}
+  .item{display:flex;gap:11px;align-items:flex-start;padding:9px 10px;border-radius:8px}
+  .item:hover{background:var(--offblue)}
+  .item input{width:19px;height:19px;accent-color:var(--green);margin-top:2px;flex:none;cursor:pointer}
+  .item .n{font-size:14px;font-weight:500}
+  .item.done .n{color:var(--green);text-decoration:line-through;text-decoration-color:rgba(22,216,101,.5)}
+  .item .d{font-size:12.5px;color:var(--gray);margin-top:2px}
+  .tag{display:inline-block;background:#FFF3D6;color:#9a6a00;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:20px;margin-left:6px}
+  .center{max-width:420px;margin:60px auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:30px;text-align:center}
+  .center h2{margin:0 0 8px;color:var(--berkeley)}
+  .center p{color:var(--gray);font-size:14px;margin:0 0 18px}
+  input.email{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:15px;font-family:inherit;margin-bottom:12px}
+  .btn{display:inline-block;background:var(--blue);color:#fff;border:none;padding:12px 18px;border-radius:10px;font-weight:600;font-size:15px;cursor:pointer;font-family:inherit;width:100%}
+  .btn:disabled{opacity:.6;cursor:default}
+  .msg{font-size:13px;margin-top:12px}
+  .msg.ok{color:#0a8a3a}.msg.err{color:#b00020}
+  .saving{font-size:11px;color:var(--blue);margin-left:8px}
+  .note{font-size:12.5px;color:var(--gray);margin:10px 0}
+  .loading{padding:50px;text-align:center;color:var(--gray)}
+</style>
+</head>
+<body>
+<header class="h"><div class="wrap">
+  <div class="logo"><span class="dot"></span> Checklist thành thạo · Sapo FNB</div>
+  <div class="me" id="me"></div>
+</div></header>
+
+<div class="barwrap" id="barwrap" style="display:none"><div class="wrap">
+  <span class="ptxt">Tiến độ của bạn</span>
+  <div class="track"><div class="fill" id="fill"></div></div>
+  <span class="ptxt" id="pct">—</span>
+</div></div>
+
+<main class="wrap" id="root"><div class="loading">Đang tải…</div></main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="checklist-data.js"></script>
+<script>
+  var sb = supabase.createClient(window.SUPA.URL, window.SUPA.ANON_KEY);
+  var STATE = {}; var USER = null;
+  var KEY = function(id){ return window.LEVEL_ID + "_ck_" + id; };
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+
+  function showLogin(prefill, msg, cls){
+    document.getElementById('barwrap').style.display='none';
+    document.getElementById('me').innerHTML='';
+    document.getElementById('root').innerHTML =
+      '<div class="center"><h2>Đăng nhập</h2>'
+      + '<p>Nhập email công ty để nhận link đăng nhập. Tiến độ tick của bạn được lưu theo email này.</p>'
+      + '<input class="email" id="email" type="email" placeholder="ban@sapo.vn" value="'+esc(prefill||'')+'">'
+      + '<button class="btn" id="send">Gửi link đăng nhập</button>'
+      + (msg?'<div class="msg '+(cls||'')+'">'+esc(msg)+'</div>':'')
+      + '</div>';
+    document.getElementById('send').onclick = sendLink;
+    document.getElementById('email').addEventListener('keydown',function(e){ if(e.key==='Enter') sendLink(); });
+  }
+  function sendLink(){
+    var email=(document.getElementById('email').value||'').trim();
+    if(!email){ return; }
+    var btn=document.getElementById('send'); btn.disabled=true; btn.textContent='Đang gửi…';
+    sb.auth.signInWithOtp({ email: email, options: { emailRedirectTo: location.href.split('#')[0] } })
+      .then(function(r){
+        if(r.error) showLogin(email, 'Lỗi: '+r.error.message, 'err');
+        else showLogin(email, 'Đã gửi link tới '+email+'. Mở email và bấm vào link để đăng nhập.', 'ok');
+      });
+  }
+
+  function loadAndRender(){
+    document.getElementById('me').innerHTML = 'Đăng nhập: <b>'+esc(USER.email)+'</b> · <a id="logout">Đăng xuất</a>';
+    document.getElementById('logout').onclick=function(){ sb.auth.signOut().then(function(){ location.reload(); }); };
+    document.getElementById('root').innerHTML='<div class="loading">Đang tải tiến độ…</div>';
+    sb.from('progress').select('item_key,done').eq('user_id', USER.id).then(function(r){
+      STATE={};
+      if(r.data) r.data.forEach(function(row){ STATE[row.item_key]= row.done===true; });
+      render();
+    });
+  }
+
+  function render(){
+    var items = window.CHECKLIST_ITEMS || [];
+    if(!items.length){ document.getElementById('root').innerHTML='<div class="loading">Chưa có dữ liệu checklist (data.js).</div>'; return; }
+    document.getElementById('barwrap').style.display='block';
+    var parts=[], map={};
+    items.forEach(function(it){
+      if(!map[it.phan]){ map[it.phan]={name:it.phan,cats:{},order:[]}; parts.push(map[it.phan]); }
+      var p=map[it.phan];
+      if(!p.cats[it.danhmuc]){ p.cats[it.danhmuc]=[]; p.order.push(it.danhmuc); }
+      p.cats[it.danhmuc].push(it);
+    });
+    var html='<p class="note">Tick vào ô khi bạn đã thành thạo mục đó. Lưu tự động, quản lý xem được tiến độ.</p>';
+    parts.forEach(function(p,pi){
+      html+='<details class="part" open><summary><span>'+esc(p.name)+'</span><span class="pcount" id="pc-'+pi+'"></span></summary>';
+      p.order.forEach(function(cat){
+        html+='<div class="cat"><div class="cath">'+esc(cat)+'</div>';
+        p.cats[cat].forEach(function(it){
+          var on=!!STATE[KEY(it.id)];
+          html+='<label class="item '+(on?'done':'')+'" data-id="'+esc(it.id)+'">'
+            +'<input type="checkbox" '+(on?'checked':'')+' onchange="onTick(this,\''+esc(it.id)+'\')">'
+            +'<span><span class="n">'+esc(it.noidung)+(it.batbuoc?'':'<span class="tag">không bắt buộc</span>')+'</span>'
+            +(it.chitiet?'<span class="d">'+esc(it.chitiet)+'</span>':'')+'</span></label>';
+        });
+        html+='</div>';
+      });
+      html+='</details>';
+    });
+    document.getElementById('root').innerHTML=html;
+    updateProgress();
+  }
+
+  function onTick(input, id){
+    var label=input.closest('.item'); label.classList.toggle('done',input.checked);
+    STATE[KEY(id)]=input.checked; input.disabled=true;
+    var s=document.createElement('span'); s.className='saving'; s.textContent='đang lưu…'; label.appendChild(s);
+    updateProgress();
+    sb.from('progress').upsert({
+      user_id: USER.id, email: USER.email, item_key: KEY(id), done: input.checked, updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id,item_key' }).then(function(r){
+      input.disabled=false;
+      if(r.error){ s.textContent='lưu lỗi'; s.style.color='#b00020'; input.checked=!input.checked; label.classList.toggle('done',input.checked); STATE[KEY(id)]=input.checked; updateProgress(); }
+      else s.remove();
+    });
+  }
+
+  function updateProgress(){
+    var items=window.CHECKLIST_ITEMS||[]; var total=items.length, done=0;
+    var pt={}, pd={}, order=[];
+    items.forEach(function(it){ pt[it.phan]=(pt[it.phan]||0)+1; if(order.indexOf(it.phan)===-1)order.push(it.phan); if(STATE[KEY(it.id)]){done++; pd[it.phan]=(pd[it.phan]||0)+1;} });
+    var p=total?Math.round(done/total*100):0;
+    document.getElementById('fill').style.width=p+'%';
+    document.getElementById('pct').textContent=p+'% ('+done+'/'+total+')';
+    order.forEach(function(name,pi){ var el=document.getElementById('pc-'+pi); if(el) el.textContent=(pd[name]||0)+'/'+(pt[name]||0); });
+  }
+
+  // bootstrap
+  if(!window.SUPA || window.SUPA.URL.indexOf('YOUR-PROJECT')>=0){
+    document.getElementById('root').innerHTML='<div class="center"><h2>Chưa cấu hình</h2><p>Bạn dev hãy điền URL và ANON_KEY trong file config.js.</p></div>';
+  } else {
+    sb.auth.getSession().then(function(r){
+      var s=r.data.session;
+      if(s){ USER=s.user; loadAndRender(); } else { showLogin(); }
+    });
+    sb.auth.onAuthStateChange(function(_e, s){
+      if(s && s.user){ if(!USER){ USER=s.user; loadAndRender(); } }
+      else { USER=null; showLogin(); }
+    });
+  }
+</script>
+</body>
+</html>

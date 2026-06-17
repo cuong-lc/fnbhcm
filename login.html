@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Đăng nhập · Khung năng lực Sapo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;font-family:'Inter',system-ui,sans-serif;background:#0F1437;color:#1F2533;display:flex;min-height:100vh;align-items:center;justify-content:center}
+  .card{background:#fff;border-radius:16px;padding:32px;width:380px;max-width:92vw;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+  .card h2{margin:0 0 8px;color:#0F1437}
+  .card p{color:#5B6472;font-size:14px;margin:0 0 18px}
+  input{width:100%;padding:12px 14px;border:1px solid #E2E9F2;border-radius:10px;font-size:15px;font-family:inherit;margin-bottom:12px;box-sizing:border-box}
+  button{width:100%;background:#007AFF;color:#fff;border:none;padding:12px;border-radius:10px;font-weight:600;font-size:15px;cursor:pointer;font-family:inherit}
+  button:disabled{opacity:.6}
+  .m{font-size:13px;margin-top:12px}.m.ok{color:#0a8a3a}.m.e{color:#b00020}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:700;color:#0F1437;margin-bottom:18px}
+  .dot{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,#007AFF,#16D865)}
+  .loading{color:#5B6472;text-align:center;padding:10px}
+</style>
+</head>
+<body>
+<div class="card" id="card"><div class="loading">Đang kiểm tra đăng nhập…</div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+  var sb = supabase.createClient(SUPA.URL, SUPA.ANON_KEY);
+  function nextUrl(){ var p=new URLSearchParams(location.search); var n=p.get('next')||'index.html'; if(/^https?:|^\/\//i.test(n)) n='index.html'; return n; }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  sb.auth.getSession().then(function(r){ if(r.data.session){ location.replace(nextUrl()); } else { form(); } });
+  sb.auth.onAuthStateChange(function(e,s){ if(s&&s.user){ location.replace(nextUrl()); } });
+  function form(msg,cls){
+    document.getElementById('card').innerHTML =
+      '<div class="brand"><span class="dot"></span> Khung năng lực Kinh doanh · Sapo</div>'
+      +'<h2>Đăng nhập</h2><p>Nhập email công ty để nhận link đăng nhập. Hệ thống ghi nhận tiến độ theo email của bạn.</p>'
+      +'<input id="email" type="email" placeholder="ban@sapo.vn">'
+      +'<button id="send">Gửi link đăng nhập</button>'
+      +(msg?'<div class="m '+(cls||'')+'">'+esc(msg)+'</div>':'');
+    document.getElementById('send').onclick=send;
+    document.getElementById('email').addEventListener('keydown',function(e){ if(e.key==='Enter') send(); });
+  }
+  function send(){
+    var em=(document.getElementById('email').value||'').trim(); if(!em) return;
+    var b=document.getElementById('send'); b.disabled=true; b.textContent='Đang gửi…';
+    var redir=location.origin+location.pathname+'?next='+encodeURIComponent(nextUrl());
+    sb.auth.signInWithOtp({ email:em, options:{ emailRedirectTo:redir } }).then(function(r){
+      if(r.error) form('Lỗi: '+r.error.message,'e');
+      else form('Đã gửi link tới '+em+'. Mở email và bấm vào link để đăng nhập.','ok');
+    });
+  }
+</script>
+</body>
+</html>
