@@ -94,28 +94,38 @@
     var h=modeBar('rev')+'<h2>Nhập doanh thu theo tháng</h2>'
       +'<div class="toolbar"><label>Tháng:</label><input type="month" id="period" value="'+period+'" style="width:auto">'
       +'<span class="muted">'+people.length+' người</span></div>'
-      +'<table><thead><tr><th>Tên</th><th>Phòng</th><th style="width:200px">Doanh thu (VND)</th><th class="colact">Lưu</th></tr></thead><tbody id="rtb"></tbody></table>';
+      +'<table><thead><tr><th>Tên</th><th>Phòng</th><th style="width:110px">Sao</th><th style="width:190px">Doanh thu (VND)</th><th class="colact">Lưu</th></tr></thead><tbody id="rtb"></tbody></table>';
     document.getElementById('root').innerHTML=h; wireMode();
     document.getElementById('period').onchange=function(e){ loadRevMonth(people, e.target.value); };
     loadRevMonth(people, period);
   }
   function loadRevMonth(people, period){
-    sb.from('revenues').select('email,amount').eq('period',period).then(function(rv){
-      var map={}; (rv.data||[]).forEach(function(x){ map[x.email.toLowerCase()]=x.amount; });
+    Promise.all([
+      sb.from('revenues').select('email,amount').eq('period',period),
+      sb.from('staff_stars').select('email,stars')
+    ]).then(function(res){
+      var map={}; (res[0].data||[]).forEach(function(x){ map[x.email.toLowerCase()]=x.amount; });
+      var stars={}; (res[1].data||[]).forEach(function(x){ stars[x.email.toLowerCase()]=x.stars; });
       var tb=document.getElementById('rtb'); tb.innerHTML='';
       people.forEach(function(p){
         var tr=document.createElement('tr');
-        var cur=map[p.email.toLowerCase()];
+        var cur=map[p.email.toLowerCase()]; var st=stars[p.email.toLowerCase()]||0;
+        var opts=[0,1,2,3,4,5].map(function(v){return '<option value="'+v+'"'+(v===st?' selected':'')+'>'+(v===0?'—':v+' ★')+'</option>';}).join('');
         tr.innerHTML='<td>'+esc(p.full_name||p.email)+'<div class="muted" style="font-size:11px">'+esc(p.email)+'</div></td>'
           +'<td>'+esc(p.dept||'—')+'</td>'
+          +'<td><select class="f-star">'+opts+'</select></td>'
           +'<td><input class="f-rev" value="'+(cur!=null?vnd(cur):'')+'" inputmode="numeric" placeholder="0"></td>'
           +'<td class="colact"><button class="btn save">Lưu</button><span class="savedflash"></span></td>';
         var flash=tr.querySelector('.savedflash');
         tr.querySelector('.save').onclick=function(){
           var raw=(tr.querySelector('.f-rev').value||'').replace(/[^\d]/g,'');
           var amt=raw?parseInt(raw,10):0;
-          sb.from('revenues').upsert({email:p.email, period:document.getElementById('period').value, amount:amt, updated_at:new Date().toISOString()},{onConflict:'email,period'}).then(function(r){
-            if(r.error){ flash.textContent='Lỗi'; flash.style.color='#b00020'; }
+          var starv=parseInt(tr.querySelector('.f-star').value,10)||0;
+          Promise.all([
+            sb.from('revenues').upsert({email:p.email, period:document.getElementById('period').value, amount:amt, updated_at:new Date().toISOString()},{onConflict:'email,period'}),
+            sb.from('staff_stars').upsert({email:p.email, stars:starv, updated_at:new Date().toISOString()},{onConflict:'email'})
+          ]).then(function(r){
+            if(r[0].error||r[1].error){ flash.textContent='Lỗi'; flash.style.color='#b00020'; }
             else { flash.textContent='✓'; flash.style.color='#0a8a3a'; tr.querySelector('.f-rev').value=vnd(amt); setTimeout(function(){flash.textContent='';},2000); }
           });
         };
