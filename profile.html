@@ -70,11 +70,11 @@
 
   function loadProfile(email){
     document.getElementById('root').innerHTML='<div class="loading">Đang tải hồ sơ…</div>';
-    // hồ sơ (RLS chặn nếu không có quyền xem)
-    sb.from('profiles').select('email,full_name,role,level,dept').eq('email',email).maybeSingle().then(function(pr){
+    // danh tính lấy từ role_assignments (có sẵn cả người chưa đăng nhập); RLS chặn nếu không có quyền xem
+    sb.from('role_assignments').select('email,full_name,role,level,dept').eq('email',email).maybeSingle().then(function(pr){
       if(pr.error){ notAllowed('Lỗi: '+pr.error.message); return; }
       var prof = pr.data;
-      if(!prof){ notAllowed('Bạn không có quyền xem hồ sơ này, hoặc người này chưa đăng nhập lần nào.'); return; }
+      if(!prof){ notAllowed('Bạn không có quyền xem hồ sơ này, hoặc email không có trong danh sách.'); return; }
       var lvl = prof.level || 'c1';
       Promise.all([
         sb.from('checklist_items').select('id,part,sort').eq('level',lvl).order('sort'),

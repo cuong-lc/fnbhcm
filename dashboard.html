@@ -62,21 +62,23 @@
     });
   }
 
+  function vnd(n){ n=Number(n)||0; return n? n.toLocaleString('vi-VN'):'—'; }
   function load(){
     document.getElementById('root').innerHTML='<div class="loading">Đang tải tiến độ cả đội…</div>';
     var lvl = window.LEVEL_ID || 'c1';
-    sb.from('checklist_items').select('id,part,category,content,detail,required,sort').eq('level', lvl).order('sort').then(function(ir){
-      if(ir.data && ir.data.length){
-        window.CHECKLIST_ITEMS = ir.data.map(function(x){ return {id:x.id,phan:x.part,danhmuc:x.category,noidung:x.content,chitiet:x.detail,batbuoc:x.required}; });
-      }
-      sb.from('progress').select('email,item_key,done').then(function(r){
-        if(r.error){ notAllowed('Lỗi tải dữ liệu: '+r.error.message); return; }
-        render(r.data||[]);
-      });
+    Promise.all([
+      sb.from('checklist_items').select('id,part').eq('level', lvl).order('sort'),
+      sb.from('role_assignments').select('email,full_name,level,dept'),
+      sb.from('progress').select('email,item_key,done'),
+      sb.from('revenues').select('email,period,amount')
+    ]).then(function(res){
+      if(res[0].error){ notAllowed('Lỗi: '+res[0].error.message); return; }
+      window.CHECKLIST_ITEMS = (res[0].data||[]).map(function(x){ return {id:x.id,phan:x.part}; });
+      render(res[2].data||[], res[1].data||[], res[3].data||[]);
     });
   }
 
-  function render(rows){
+  function render(rows, people, revs){
     var items=window.CHECKLIST_ITEMS||[];
     var total=items.length;
     var idPart={}, parts=[], totalPart={};
@@ -86,23 +88,33 @@
     var byEmail={};
     rows.forEach(function(row){
       if(!row.done) return; if(!validKeys[row.item_key]) return;
-      var e=row.email||'(không rõ)';
+      var e=(row.email||'').toLowerCase();
       if(!byEmail[e]){ byEmail[e]={done:0, part:{}}; parts.forEach(function(p){byEmail[e].part[p]=0;}); }
       byEmail[e].done++;
       var p=idPart[validKeys[row.item_key]]; if(p) byEmail[e].part[p]++;
     });
+    // doanh thu tháng gần nhất + tổng theo người
+    var revLatest={}, revPeriod={};
+    (revs||[]).forEach(function(r){
+      var e=(r.email||'').toLowerCase();
+      if(!revPeriod[e] || r.period>revPeriod[e]){ revPeriod[e]=r.period; revLatest[e]=r.amount; }
+    });
 
-    var emails=Object.keys(byEmail).sort(function(a,b){ return byEmail[b].done-byEmail[a].done; });
-    var html='<div style="display:flex;align-items:center;gap:14px;margin-top:18px"><h2 style="margin:0">Tiến độ đội ('+emails.length+' người)</h2><button class="btn" id="refresh">Làm mới</button></div>';
-    html+='<p class="muted">Tổng '+total+' mục/người. Sắp theo số mục đạt giảm dần.</p>';
-    html+='<table><tr><th>Email</th><th>Tổng %</th>'+parts.map(function(p){return '<th>'+esc(p)+'</th>';}).join('')+'<th>Số mục</th></tr>';
-    if(!emails.length){ html+='<tr><td colspan="'+(parts.length+3)+'" class="muted">Chưa có ai tick.</td></tr>'; }
-    emails.forEach(function(e){
-      var d=byEmail[e]; var pc=total?Math.round(d.done/total*100):0;
-      html+='<tr><td class="email"><a href="profile.html?email='+encodeURIComponent(e)+'" style="color:#0F1437;text-decoration:none;border-bottom:1px dotted #9bb">'+esc(e)+'</a></td>'
+    if(!people.length){ people = Object.keys(byEmail).map(function(e){return {email:e};}); }
+    people.sort(function(a,b){ return (a.dept||'').localeCompare(b.dept||'')||(a.full_name||a.email).localeCompare(b.full_name||b.email); });
+
+    var html='<div style="display:flex;align-items:center;gap:14px;margin-top:18px"><h2 style="margin:0">Đội ngũ ('+people.length+' người)</h2><button class="btn" id="refresh">Làm mới</button></div>';
+    html+='<p class="muted">Tổng '+total+' mục thành thạo/người · Doanh thu = tháng gần nhất. Bấm tên để xem hồ sơ.</p>';
+    html+='<table><tr><th>Tên</th><th>Phòng</th><th>Tổng %</th>'+parts.map(function(p){return '<th>'+esc(p)+'</th>';}).join('')+'<th>DT gần nhất</th></tr>';
+    people.forEach(function(pp){
+      var e=(pp.email||'').toLowerCase();
+      var d=byEmail[e]||{done:0,part:{}};
+      var pc=total?Math.round(d.done/total*100):0;
+      html+='<tr><td class="email"><a href="profile.html?email='+encodeURIComponent(e)+'" style="color:#0F1437;text-decoration:none;border-bottom:1px dotted #9bb">'+esc(pp.full_name||e)+'</a></td>'
+        +'<td class="muted">'+esc(pp.dept||'—')+'</td>'
         +'<td><div class="barc"><div class="mini"><div class="minif" style="width:'+pc+'%"></div></div><span>'+pc+'%</span></div></td>'
-        + parts.map(function(p){ var pt=totalPart[p]||0; var pp=pt?Math.round((d.part[p]||0)/pt*100):0; return '<td>'+pp+'%</td>'; }).join('')
-        +'<td>'+d.done+'/'+total+'</td></tr>';
+        + parts.map(function(p){ var pt=totalPart[p]||0; var pp2=pt?Math.round(((d.part&&d.part[p])||0)/pt*100):0; return '<td>'+pp2+'%</td>'; }).join('')
+        +'<td style="text-align:right;font-weight:600">'+vnd(revLatest[e])+'</td></tr>';
     });
     html+='</table>';
     document.getElementById('root').innerHTML=html;
