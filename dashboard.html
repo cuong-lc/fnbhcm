@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard quản lý · Checklist Sapo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--blue:#007AFF;--green:#16D865;--berkeley:#0F1437;--offblue:#F0F4F9;--gray:#5B6472;--line:#E2E9F2;--dark:#1F2533}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--offblue);color:var(--dark)}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 16px 60px}
+  header.h{background:var(--berkeley);color:#fff;padding:20px 0}
+  header.h .wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .logo{font-weight:700;font-size:16px;display:flex;align-items:center;gap:9px}
+  .logo .dot{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,var(--blue),var(--green))}
+  .me{margin-left:auto;font-size:13px;color:#c7d2e8}.me a{color:#9ECCFF;cursor:pointer}
+  h2{color:var(--berkeley)}
+  .btn{background:var(--blue);color:#fff;border:none;padding:9px 16px;border-radius:9px;font-weight:600;cursor:pointer;font-family:inherit;font-size:14px}
+  table{border-collapse:collapse;width:100%;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:13.5px;margin-top:14px}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line)}
+  th{background:var(--berkeley);color:#fff;font-weight:600;white-space:nowrap}
+  td.email{font-weight:600;color:var(--berkeley)}
+  .barc{display:flex;align-items:center;gap:8px;min-width:140px}
+  .mini{flex:1;height:9px;background:var(--offblue);border-radius:6px;overflow:hidden}
+  .minif{height:100%;background:linear-gradient(90deg,var(--blue),var(--green))}
+  tr:nth-child(even) td{background:#fafcff}
+  .center{max-width:440px;margin:60px auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:30px;text-align:center}
+  .loading{padding:50px;text-align:center;color:var(--gray)}
+  .muted{color:var(--gray);font-size:13px}
+</style>
+</head>
+<body>
+<header class="h"><div class="wrap">
+  <div class="logo"><span class="dot"></span> Dashboard quản lý · Checklist</div>
+  <div class="me" id="me"></div>
+</div></header>
+<main class="wrap" id="root"><div class="loading">Đang tải…</div></main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="data.js"></script>
+<script>
+  var sb=supabase.createClient(window.SUPA.URL, window.SUPA.ANON_KEY);
+  var USER=null;
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+  var KEY=function(id){ return window.LEVEL_ID+"_ck_"+id; };
+
+  function notAllowed(msg){ document.getElementById('root').innerHTML='<div class="center"><h2>Không truy cập được</h2><p class="muted">'+esc(msg)+'</p></div>'; }
+
+  function start(){
+    sb.auth.getSession().then(function(r){
+      var s=r.data.session;
+      if(!s){ notAllowed('Bạn chưa đăng nhập. Hãy mở trang checklist để đăng nhập trước, rồi quay lại đây.'); return; }
+      USER=s.user;
+      document.getElementById('me').innerHTML='<b style="color:#fff">'+esc(USER.email)+'</b> · <a id="logout">Đăng xuất</a>';
+      document.getElementById('logout').onclick=function(){ sb.auth.signOut().then(function(){ location.reload(); }); };
+      sb.from('profiles').select('role').eq('id',USER.id).single().then(function(p){
+        if(p.error || !p.data || p.data.role!=='manager'){ notAllowed('Tài khoản này không có quyền quản lý. Liên hệ admin để cấp quyền (role=manager).'); return; }
+        load();
+      });
+    });
+  }
+
+  function load(){
+    document.getElementById('root').innerHTML='<div class="loading">Đang tải tiến độ cả đội…</div>';
+    sb.from('progress').select('email,item_key,done').then(function(r){
+      if(r.error){ notAllowed('Lỗi tải dữ liệu: '+r.error.message); return; }
+      render(r.data||[]);
+    });
+  }
+
+  function render(rows){
+    var items=window.CHECKLIST_ITEMS||[];
+    var total=items.length;
+    var idPart={}, parts=[], totalPart={};
+    items.forEach(function(it){ idPart[it.id]=it.phan; if(parts.indexOf(it.phan)===-1){parts.push(it.phan); totalPart[it.phan]=0;} totalPart[it.phan]++; });
+    var validKeys={}; items.forEach(function(it){ validKeys[KEY(it.id)]=it.id; });
+
+    var byEmail={};
+    rows.forEach(function(row){
+      if(!row.done) return; if(!validKeys[row.item_key]) return;
+      var e=row.email||'(không rõ)';
+      if(!byEmail[e]){ byEmail[e]={done:0, part:{}}; parts.forEach(function(p){byEmail[e].part[p]=0;}); }
+      byEmail[e].done++;
+      var p=idPart[validKeys[row.item_key]]; if(p) byEmail[e].part[p]++;
+    });
+
+    var emails=Object.keys(byEmail).sort(function(a,b){ return byEmail[b].done-byEmail[a].done; });
+    var html='<div style="display:flex;align-items:center;gap:14px;margin-top:18px"><h2 style="margin:0">Tiến độ đội ('+emails.length+' người)</h2><button class="btn" id="refresh">Làm mới</button></div>';
+    html+='<p class="muted">Tổng '+total+' mục/người. Sắp theo số mục đạt giảm dần.</p>';
+    html+='<table><tr><th>Email</th><th>Tổng %</th>'+parts.map(function(p){return '<th>'+esc(p)+'</th>';}).join('')+'<th>Số mục</th></tr>';
+    if(!emails.length){ html+='<tr><td colspan="'+(parts.length+3)+'" class="muted">Chưa có ai tick.</td></tr>'; }
+    emails.forEach(function(e){
+      var d=byEmail[e]; var pc=total?Math.round(d.done/total*100):0;
+      html+='<tr><td class="email">'+esc(e)+'</td>'
+        +'<td><div class="barc"><div class="mini"><div class="minif" style="width:'+pc+'%"></div></div><span>'+pc+'%</span></div></td>'
+        + parts.map(function(p){ var pt=totalPart[p]||0; var pp=pt?Math.round((d.part[p]||0)/pt*100):0; return '<td>'+pp+'%</td>'; }).join('')
+        +'<td>'+d.done+'/'+total+'</td></tr>';
+    });
+    html+='</table>';
+    document.getElementById('root').innerHTML=html;
+    document.getElementById('refresh').onclick=load;
+  }
+
+  if(!window.SUPA || window.SUPA.URL.indexOf('YOUR-PROJECT')>=0){
+    document.getElementById('root').innerHTML='<div class="center"><h2>Chưa cấu hình</h2><p class="muted">Điền URL và ANON_KEY trong config.js.</p></div>';
+  } else { start(); }
+</script>
+</body>
+</html>
