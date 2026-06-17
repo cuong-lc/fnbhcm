@@ -6,6 +6,11 @@
   const groupById = (id) => GROUPS.find((g) => g.id === id);
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
+  // ---- phân quyền: chỉ Giám đốc Trung tâm (c4) mới xem trang cấp GĐTT ----
+  const RESTRICTED = "c4";
+  const isGD = () => (window.CLF_PROFILE && window.CLF_PROFILE.level) === "c4";
+  const canSeeLevel = (l) => l.id !== RESTRICTED || isGD();
+
   // ---- storage: đồng bộ Supabase (hydrate qua auth.js -> window.CLF_PROGRESS) ----
   const PROG = window.CLF_PROGRESS || (window.CLF_PROGRESS = {});
   const store = {
@@ -28,7 +33,7 @@
     const nav = byId("nav");
     if (!nav) return;
     const items = [["index.html", "Trang chủ"]].concat(
-      LEVELS.map((l) => [l.file, l.short])
+      LEVELS.filter(canSeeLevel).map((l) => [l.file, l.short])
     ).concat([["rubric.html", "Rubric"]]);
     nav.innerHTML = items.map(([f, t]) =>
       `<a href="${f}" class="${f === activeFile ? "active" : ""}">${t}</a>`).join("");
@@ -43,7 +48,7 @@
     // level cards
     const grid = byId("levels");
     if (grid) {
-      grid.innerHTML = LEVELS.map((l) => `
+      grid.innerHTML = LEVELS.filter(canSeeLevel).map((l) => `
         <a class="lvl-card" href="${l.file}">
           <div class="bar" style="background:${l.color}"></div>
           <div class="body">
@@ -58,7 +63,7 @@
     // ladder
     const lad = byId("ladder");
     if (lad) {
-      lad.innerHTML = LEVELS.map((l, i) => `
+      lad.innerHTML = LEVELS.filter(canSeeLevel).map((l, i) => `
         <a class="rung" href="${l.file}" style="background:${l.color};height:${70 + i * 34}px;text-decoration:none">
           <div style="font-size:12px;opacity:.85">Cấp ${l.order}</div>
           <div style="font-weight:700;font-size:15px">${esc(l.short)}</div>
@@ -95,6 +100,14 @@
   function renderLevel(levelId) {
     const lv = levelById(levelId);
     if (!lv) return;
+    if (levelId === RESTRICTED && !isGD()) {
+      const head = byId("pagehead");
+      if (head) { head.style.background = "#0F1437"; head.innerHTML = `<div class="wrap"><h1>Không truy cập được</h1></div>`; }
+      const main = byId("main");
+      if (main) main.innerHTML = `<div class="progress-wrap" style="display:block;text-align:center;padding:30px"><p>Trang cấp <b>Giám đốc Trung tâm</b> chỉ dành cho Giám đốc Trung tâm.</p><p><a href="index.html">← Về trang chủ</a></p></div>`;
+      document.title = "Không truy cập được · Sapo";
+      return;
+    }
     document.title = lv.title + " · Khung năng lực Kinh doanh Sapo";
 
     // header
@@ -483,7 +496,8 @@
     const file = location.pathname.split("/").pop() || "index.html";
     buildNav(file);
     buildFoot();
-    if (window.CLF_READY || !window.SB) startRender();
-    else document.addEventListener("clf-ready", startRender, { once: true });
+    const go = () => { buildNav(file); startRender(); };
+    if (window.CLF_READY || !window.SB) go();
+    else document.addEventListener("clf-ready", go, { once: true });
   });
 })();

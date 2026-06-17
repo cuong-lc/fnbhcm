@@ -166,11 +166,13 @@
     var totalRev=rdata.reduce(function(a,b){return a+b;},0);
     var growth = (rdata.length>=2 && rdata[rdata.length-2]>0)? Math.round((rdata[rdata.length-1]-rdata[rdata.length-2])/rdata[rdata.length-2]*100):null;
     var ckPct=Math.round(ckFracC1(email)*100); var ds=domainScores(email);
+    var myStars=DATA.stars[(email||'').toLowerCase()]||0;
     el.innerHTML=''
       +'<div class="kpis">'
       +'<div class="kpi"><div class="lab">Doanh thu tháng gần nhất</div><div class="val">'+short(rdata[rdata.length-1]||0)+'</div><div class="sub">'+(growth!=null?(growth>=0?'▲ +':'▼ ')+growth+'% so tháng trước':'')+'</div></div>'
       +'<div class="kpi"><div class="lab">Tổng doanh thu '+ms.length+' tháng</div><div class="val">'+short(totalRev)+'</div></div>'
       +'<div class="kpi"><div class="lab">Năng lực tổng quan</div><div class="val">'+overallComp(email)+'%</div><div class="sub">checklist '+ckPct+'%</div></div>'
+      +'<div class="kpi"><div class="lab">Cấp sao</div><div class="val"><span class="stars">'+(myStars?'★'.repeat(myStars):'')+'</span>'+(myStars?'':'<span class="muted">chưa có</span>')+'</div><div class="sub">'+myStars+'/5 sao</div></div>'
       +'</div>'
       +'<div class="grid">'
       +'<div class="card"><h3>Tăng trưởng doanh thu theo tháng</h3><div style="height:240px"><canvas id="c1"></canvas></div></div>'
