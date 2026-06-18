@@ -83,7 +83,7 @@
     Promise.all([
       sb.from('role_assignments').select('email,full_name,level,dept'),
       sb.from('progress').select('email,item_key,done'),
-      sb.from('revenues').select('email,period,amount,soft,merchants,dept,renew'),
+      sb.from('revenues').select('email,period,amount,soft,hard,other,merchants,dept,renew'),
       sb.from('checklist_items').select('id,part').eq('level',lvl).order('sort'),
       sb.from('staff_stars').select('email,stars'),
       sb.from('competencies').select('id,name,domain,sort').order('sort'),
@@ -114,9 +114,13 @@
       // tổng hợp đóng góp phòng (bỏ qua RLS, chỉ trả tổng + thứ hạng) cho tháng gần nhất của chính mình
       var myps={}; DATA.revenues.forEach(function(r){ if(r.email.toLowerCase()===ME.email.toLowerCase()) myps[r.period]=1; });
       var mylp=Object.keys(myps).sort().pop();
-      DATA.myContrib=null;
+      DATA.myContrib=null; DATA.myRank=null; DATA.myContribPeriod=mylp;
       if(mylp){
-        sb.rpc('my_dept_contrib',{p_period:mylp}).then(function(rc){ DATA.myContrib=(rc.data&&rc.data[0])||null; DATA.myContribPeriod=mylp; render(); }, function(){ render(); });
+        Promise.all([ sb.rpc('my_dept_contrib',{p_period:mylp}), sb.rpc('my_center_rank',{p_period:mylp}) ]).then(function(rcs){
+          DATA.myContrib=(rcs[0].data&&rcs[0].data[0])||null;
+          DATA.myRank=(rcs[1].data&&rcs[1].data[0])||null;
+          render();
+        }, function(){ render(); });
       } else { render(); }
     });
   }
@@ -159,7 +163,7 @@
   // ---------- helpers + dashboard cho sale tự soi ----------
   function revRows(email){ return DATA.revByEmail[(email||'').toLowerCase()]||[]; }
   function deptOf(email){ var p=DATA.people.filter(function(x){return x.email.toLowerCase()===(email||'').toLowerCase();})[0]; return p?(p.dept||''):''; }
-  function cumOf(email){ var s={total:0,soft:0,merch:0,renew:0}; revRows(email).forEach(function(r){ s.total+=Number(r.amount)||0; s.soft+=Number(r.soft)||0; s.merch+=Number(r.merchants)||0; s.renew+=Number(r.renew)||0; }); return s; }
+  function cumOf(email){ var s={total:0,soft:0,hard:0,other:0,merch:0,renew:0}; revRows(email).forEach(function(r){ s.total+=Number(r.amount)||0; s.soft+=Number(r.soft)||0; s.hard+=Number(r.hard)||0; s.other+=Number(r.other)||0; s.merch+=Number(r.merchants)||0; s.renew+=Number(r.renew)||0; }); return s; }
   function mentorsOf(email){ return DATA.mentorByEmail[(email||'').toLowerCase()]||[]; }
   function bar(pct,color){ pct=Math.max(0,Math.min(100,Math.round(pct))); return '<div class="track" style="height:12px"><div class="fill" style="width:'+pct+'%'+(color?(';background:'+color):'')+'"></div></div>'; }
   function tr1(n){ return (Math.round((Number(n)||0)/1e6*10)/10).toFixed(1)+'tr'; }
@@ -181,6 +185,27 @@
   function saleExtras(email){
     var ms=months(), lp=ms[ms.length-1], n=ms.length, cum=cumOf(email);
     var H='';
+    // ---- Bóc tách doanh thu mềm/cứng/khác (luỹ kế) ----
+    var bt=cum.soft, bc=cum.hard, bk=cum.other, btot=(bt+bc+bk)||1;
+    function pc(x){ return Math.round(x/btot*100); }
+    H+='<div class="card" style="margin-top:16px"><h3>Doanh thu bóc tách (luỹ kế '+n+' tháng)</h3>'
+      +'<div style="display:flex;height:16px;border-radius:6px;overflow:hidden;margin-bottom:12px">'
+      +'<div style="width:'+pc(bt)+'%;background:#1D9E75"></div><div style="width:'+pc(bc)+'%;background:#378ADD"></div><div style="width:'+pc(bk)+'%;background:#EF9F27"></div></div>'
+      +'<div class="kpis">'
+      +'<div class="kpi"><div class="lab"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#1D9E75;margin-right:5px"></span>Mềm</div><div class="val">'+short(bt)+'</div><div class="sub">'+pc(bt)+'%</div></div>'
+      +'<div class="kpi"><div class="lab"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#378ADD;margin-right:5px"></span>Cứng</div><div class="val">'+short(bc)+'</div><div class="sub">'+pc(bc)+'%</div></div>'
+      +'<div class="kpi"><div class="lab"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#EF9F27;margin-right:5px"></span>Khác</div><div class="val">'+short(bk)+'</div><div class="sub">'+pc(bk)+'%</div></div>'
+      +'</div></div>';
+    // ---- Thứ hạng doanh thu toàn trung tâm ----
+    var rk=(email.toLowerCase()===ME.email.toLowerCase())?DATA.myRank:null;
+    if(rk && rk.n){
+      var gap=Number(rk.above_gap)||0;
+      H+='<div class="card" style="margin-top:16px"><h3>Thứ hạng doanh thu · toàn Trung tâm</h3>'
+        +'<div class="muted" style="font-size:12px;margin-bottom:6px">Tháng '+esc(DATA.myContribPeriod||lp)+' · '+rk.n+' sale</div>'
+        +'<div style="display:flex;align-items:baseline;gap:10px"><span style="font-size:30px;font-weight:700;color:#007AFF">#'+rk.rnk+'</span><span class="muted">/ '+rk.n+'</span></div>'
+        +(rk.rnk>1? '<div style="font-size:13px;margin-top:6px">Còn <b>'+short(gap)+'</b> nữa là vượt lên hạng <b>#'+(rk.rnk-1)+'</b>.</div>' : '<div style="font-size:13px;margin-top:6px;color:#0a8a3a">🏆 Đang dẫn đầu trung tâm!</div>')
+        +'</div>';
+    }
     // ---- Dashboard 6: mạnh / yếu + việc nên làm ----
     var ds=domainScores(email), na=nextActions(email,ds);
     H+='<div class="card" style="margin-top:16px"><h3>Điểm mạnh · điểm cần cải thiện</h3><div class="grid" style="margin-top:0">'

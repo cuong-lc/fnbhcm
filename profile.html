@@ -82,7 +82,7 @@
       Promise.all([
         sb.from('checklist_items').select('id,part,sort').eq('level',lvl).order('sort'),
         sb.from('progress').select('item_key,done').eq('email',email),
-        sb.from('revenues').select('period,amount,soft,merchants,dept,renew').eq('email',email).order('period',{ascending:false}),
+        sb.from('revenues').select('period,amount,soft,hard,other,merchants,dept,renew').eq('email',email).order('period',{ascending:false}),
         sb.from('competencies').select('id,domain,name,sort').order('sort'),
         sb.from('competency_scores').select('competency_id,score').eq('email',email),
         sb.from('role_assignments').select('level,dept').eq('email',ME.email.toLowerCase()).maybeSingle(),
@@ -150,7 +150,13 @@
     // ===== 4 dashboard tự soi (quản lý xem) =====
     function pbar(p,c){ p=Math.max(0,Math.min(100,Math.round(p))); return '<div style="height:11px;background:#F0F4F9;border-radius:7px;overflow:hidden"><div style="height:100%;width:'+p+'%;background:'+(c||'linear-gradient(90deg,#007AFF,#16D865)')+'"></div></div>'; }
     var msP={}; revs.forEach(function(r){ msP[r.period]=1; }); var msArr=Object.keys(msP).sort(); var nM=msArr.length, lpr=msArr[msArr.length-1];
-    var cum={total:0,soft:0,merch:0,renew:0}; revs.forEach(function(r){ cum.total+=Number(r.amount)||0; cum.soft+=Number(r.soft)||0; cum.merch+=Number(r.merchants)||0; cum.renew+=Number(r.renew)||0; });
+    var cum={total:0,soft:0,hard:0,other:0,merch:0,renew:0}; revs.forEach(function(r){ cum.total+=Number(r.amount)||0; cum.soft+=Number(r.soft)||0; cum.hard+=Number(r.hard)||0; cum.other+=Number(r.other)||0; cum.merch+=Number(r.merchants)||0; cum.renew+=Number(r.renew)||0; });
+    var _btot=(cum.soft+cum.hard+cum.other)||1, _pc=function(x){return Math.round(x/_btot*100);};
+    html+='<div class="card" style="margin-top:16px"><h3>Doanh thu bóc tách (luỹ kế '+nM+' tháng)</h3>'
+      +'<div style="display:flex;height:16px;border-radius:6px;overflow:hidden;margin-bottom:12px"><div style="width:'+_pc(cum.soft)+'%;background:#1D9E75"></div><div style="width:'+_pc(cum.hard)+'%;background:#378ADD"></div><div style="width:'+_pc(cum.other)+'%;background:#EF9F27"></div></div>'
+      +'<div class="grid" style="margin-top:0"><div style="background:#F0F4F9;border-radius:10px;padding:10px"><div class="muted"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#1D9E75;margin-right:5px"></span>Mềm</div><div style="font-weight:700">'+short(cum.soft)+' · '+_pc(cum.soft)+'%</div></div>'
+      +'<div style="background:#F0F4F9;border-radius:10px;padding:10px"><div class="muted"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#378ADD;margin-right:5px"></span>Cứng</div><div style="font-weight:700">'+short(cum.hard)+' · '+_pc(cum.hard)+'%</div></div>'
+      +'<div style="background:#F0F4F9;border-radius:10px;padding:10px"><div class="muted"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#EF9F27;margin-right:5px"></span>Khác</div><div style="font-weight:700">'+short(cum.other)+' · '+_pc(cum.other)+'%</div></div></div></div>';
     // mạnh/yếu + việc nên làm
     var _sorted=_ds.slice().sort(function(a,b){return a.pct-b.pct;}), weak=_sorted[0], strong=_sorted[_sorted.length-1], acts=[];
     if(weak){ if(weak.domain===_D1){ var CK=(window.CLF&&CLF.CHECKLISTS&&CLF.CHECKLISTS.c1)||null; if(CK){ for(var pi=0;pi<CK.length&&acts.length<3;pi++){ var pp=CK[pi]; for(var ci=0;ci<pp.categories.length&&acts.length<3;ci++){ var cat=pp.categories[ci]; for(var ii=0;ii<cat.items.length&&acts.length<3;ii++){ if(!_done['clf_c1_ck_'+pi+'_'+ci+'_'+ii]) acts.push(cat.items[ii].n); } } } } } else { var cmps=(comps||[]).filter(function(c){return c.domain===weak.domain;}); for(var i=0;i<cmps.length&&acts.length<3;i++){ if(!_done['clf_c1_comp_'+cmps[i].id]) acts.push(cmps[i].name); } } }
