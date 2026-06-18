@@ -42,6 +42,7 @@
 <main class="wrap" id="root"><div class="loading">Đang tải…</div></main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="config.js"></script>
 <script>
   var sb = supabase.createClient(SUPA.URL, SUPA.ANON_KEY);
@@ -73,14 +74,18 @@
     return '<div class="toolbar"><button class="btn '+(active==='ck'?'':'ghost')+'" id="m-ck">Checklist</button>'
       +'<button class="btn '+(active==='rev'?'':'ghost')+'" id="m-rev">Doanh thu &amp; Sao</button>'
       +'<button class="btn '+(active==='comp'?'':'ghost')+'" id="m-comp">Năng lực</button>'
-      +'<button class="btn '+(active==='ment'?'':'ghost')+'" id="m-ment">Mentor</button></div>';
+      +'<button class="btn '+(active==='ment'?'':'ghost')+'" id="m-ment">Mentor</button>'
+      +'<button class="btn '+(active==='imp'?'':'ghost')+'" id="m-imp">Import file</button>'
+      +'<button class="btn '+(active==='staff'?'':'ghost')+'" id="m-staff">Nhân sự</button></div>';
   }
   function wireMode(){
-    var a=document.getElementById('m-ck'), b=document.getElementById('m-rev'), c=document.getElementById('m-comp'), d=document.getElementById('m-ment');
+    var a=document.getElementById('m-ck'), b=document.getElementById('m-rev'), c=document.getElementById('m-comp'), d=document.getElementById('m-ment'), e=document.getElementById('m-imp'), f=document.getElementById('m-staff');
     if(a) a.onclick=function(){ load(); };
     if(b) b.onclick=renderRevenue;
     if(c) c.onclick=renderComp;
     if(d) d.onclick=renderMentor;
+    if(e) e.onclick=renderImport;
+    if(f) f.onclick=renderStaff;
   }
   function renderMentor(){
     document.getElementById('root').innerHTML=modeBar('ment')+'<div class="loading">Đang tải…</div>'; wireMode();
@@ -288,6 +293,105 @@
   function addRow(){
     var it={id:nextId(),level:LEVEL,part:'',category:'',content:'',detail:'',required:true,sort:ITEMS.length};
     document.getElementById('tb').appendChild(rowEl(it,true));
+  }
+
+  // ============ Mục 1: Import doanh thu từ file tháng ============
+  var IMPROWS=null, IMPPERIOD=null;
+  function renderImport(){
+    var now=new Date(); var period=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+    document.getElementById('root').innerHTML=modeBar('imp')
+      +'<h2>Import doanh thu từ file tháng</h2>'
+      +'<p class="muted">Tải file Excel báo cáo KPI tháng (có các cột TÊN PHÒNG BAN · NHÂN VIÊN · Merchant · Tổng · Mềm · Cứng · Khác · Chia sẻ từ gia hạn). Hệ thống tự đọc và gán phòng theo file. Khi nhập sẽ <b>thay toàn bộ</b> dữ liệu của tháng được chọn.</p>'
+      +'<div class="toolbar"><label>Tháng:</label><input type="month" id="impPeriod" value="'+period+'" style="width:auto">'
+      +'<input type="file" id="impFile" accept=".xlsx,.xls" style="width:auto">'
+      +'<button class="btn ghost" id="impParse">Phân tích &amp; xem trước</button></div><div id="impOut"></div>';
+    wireMode();
+    document.getElementById('impParse').onclick=parseImport;
+  }
+  function parseImport(){
+    var fInput=document.getElementById('impFile'), out=document.getElementById('impOut');
+    if(!fInput.files||!fInput.files[0]){ out.innerHTML='<p class="muted">Chưa chọn file.</p>'; return; }
+    IMPPERIOD=document.getElementById('impPeriod').value;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      try{
+        var wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});
+        var rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true});
+        var center=null, phong=null, map={};
+        rows.forEach(function(r){
+          var a=(r[0]!=null?String(r[0]).trim():''), b=(r[1]!=null?String(r[1]).trim():'');
+          if(a.indexOf('Trung tâm')===0){ center=a; phong=null; return; }
+          if(a.indexOf('Phòng')===0){ phong=a; return; }
+          var m=/\(([^)]+@[^)]+)\)/.exec(b); if(!m||center!=='Trung tâm FNB 1 HCM') return;
+          var e=m[1].trim().toLowerCase();
+          function num(i){ var v=parseFloat(r[i]); return isNaN(v)?0:v; }
+          var rec=map[e]||(map[e]={email:e,dept:phong||'',amount:0,soft:0,hard:0,other:0,merchants:0,renew:0});
+          rec.amount+=num(4); rec.soft+=num(5); rec.hard+=num(6); rec.other+=num(7); rec.renew+=num(11);
+          rec.merchants=Math.max(rec.merchants,num(3));
+          if(!rec.dept&&phong) rec.dept=phong;
+        });
+        var arr=Object.keys(map).map(function(k){return map[k];});
+        IMPROWS=arr;
+        var tot=arr.reduce(function(s,x){return s+x.amount;},0);
+        out.innerHTML='<div class="toolbar"><span class="muted">Đọc được '+arr.length+' người · tổng '+vnd(Math.round(tot))+' đ</span>'
+          +'<button class="btn green" id="impSave" style="margin-left:auto">Nhập vào hệ thống (thay dữ liệu tháng '+IMPPERIOD+')</button></div>'
+          +'<table><thead><tr><th>Email</th><th>Phòng</th><th class="colreq">KH</th><th>Tổng</th><th>Mềm</th><th>Gia hạn</th></tr></thead><tbody>'
+          + arr.map(function(x){return '<tr><td>'+esc(x.email)+'</td><td>'+esc(x.dept||'—')+'</td><td class="colreq">'+x.merchants+'</td><td>'+vnd(Math.round(x.amount))+'</td><td>'+vnd(Math.round(x.soft))+'</td><td>'+vnd(Math.round(x.renew))+'</td></tr>';}).join('')
+          +'</tbody></table>';
+        document.getElementById('impSave').onclick=saveImport;
+      }catch(err){ out.innerHTML='<p class="muted">Lỗi đọc file: '+esc(String(err))+'</p>'; }
+    };
+    reader.readAsArrayBuffer(fInput.files[0]);
+  }
+  function saveImport(){
+    if(!IMPROWS||!IMPPERIOD) return;
+    var btn=document.getElementById('impSave'); btn.disabled=true; btn.textContent='Đang nhập…';
+    sb.rpc('import_month',{p_period:IMPPERIOD,p_rows:IMPROWS}).then(function(r){
+      if(r.error){ btn.disabled=false; btn.textContent='Thử lại'; alert('Lỗi: '+r.error.message); }
+      else { btn.textContent='✓ Đã nhập '+r.data+' dòng cho tháng '+IMPPERIOD; }
+    });
+  }
+
+  // ============ Mục 3: Quản lý nhân sự ============
+  var DEPTS=['Phòng FNB 1 HCM','Phòng FNB 2 HCM','Phòng FNB 3 HCM','Phòng FNB 4 HCM','Phòng FNB 5 HCM','Trung tâm FNB 1 HCM'];
+  function renderStaff(){
+    document.getElementById('root').innerHTML=modeBar('staff')+'<div class="loading">Đang tải…</div>'; wireMode();
+    sb.from('role_assignments').select('*').then(function(r){
+      if(r.error){ document.getElementById('root').innerHTML=modeBar('staff')+'<p class="muted">Lỗi: '+esc(r.error.message)+'</p>'; wireMode(); return; }
+      var people=(r.data||[]).sort(function(a,b){return (a.dept||'').localeCompare(b.dept||'')||(a.full_name||'').localeCompare(b.full_name||'');});
+      var h=modeBar('staff')+'<h2>Quản lý nhân sự</h2>'
+        +'<p class="muted">Thêm/sửa người được phép đăng nhập. Cấp: c1 Nhân viên · c2 Chuyên gia · c3 Trưởng phòng · c4 Giám đốc TT. Xoá = ẩn khỏi hệ thống.</p>'
+        +'<div class="toolbar"><span class="muted">'+people.length+' người</span><button class="btn green" id="adds" style="margin-left:auto">+ Thêm người</button></div>'
+        +'<table><thead><tr><th>Email</th><th>Họ tên</th><th style="width:150px">Cấp</th><th style="width:200px">Phòng</th><th class="colact">Thao tác</th></tr></thead><tbody id="stb"></tbody></table>';
+      document.getElementById('root').innerHTML=h; wireMode();
+      document.getElementById('adds').onclick=function(){ staffRow({email:'',full_name:'',level:'c1',dept:''},true); };
+      people.forEach(function(p){ staffRow(p,false); });
+    });
+  }
+  function staffRow(it,isNew){
+    var tb=document.getElementById('stb'); var tr=document.createElement('tr'); if(isNew)tr.className='row-new';
+    var lopt=[['c1','c1 · Nhân viên'],['c2','c2 · Chuyên gia'],['c3','c3 · Trưởng phòng'],['c4','c4 · Giám đốc TT']].map(function(o){return '<option value="'+o[0]+'"'+(o[0]===(it.level||'c1')?' selected':'')+'>'+o[1]+'</option>';}).join('');
+    var dopt='<option value="">—</option>'+DEPTS.map(function(d){return '<option'+(d===it.dept?' selected':'')+'>'+esc(d)+'</option>';}).join('');
+    tr.innerHTML='<td><input class="f-em" value="'+esc(it.email)+'" '+(isNew?'':'readonly')+'></td>'
+      +'<td><input class="f-nm" value="'+esc(it.full_name||'')+'"></td>'
+      +'<td><select class="f-lv">'+lopt+'</select></td>'
+      +'<td><select class="f-dp">'+dopt+'</select></td>'
+      +'<td class="colact"><button class="btn save">Lưu</button> <button class="btn del">Xoá</button><span class="savedflash"></span></td>';
+    var flash=tr.querySelector('.savedflash');
+    tr.querySelector('.save').onclick=function(){
+      var rec={email:tr.querySelector('.f-em').value.trim().toLowerCase(),full_name:tr.querySelector('.f-nm').value.trim(),level:tr.querySelector('.f-lv').value,dept:tr.querySelector('.f-dp').value};
+      if(!rec.email){ flash.textContent='Thiếu email'; flash.style.color='#b00020'; return; }
+      sb.from('role_assignments').upsert(rec,{onConflict:'email'}).then(function(r){
+        if(r.error){ flash.textContent='Lỗi: '+r.error.message; flash.style.color='#b00020'; }
+        else { flash.textContent='✓ Đã lưu'; flash.style.color='#0a8a3a'; it.email=rec.email; tr.classList.remove('row-new'); tr.querySelector('.f-em').setAttribute('readonly',''); setTimeout(function(){flash.textContent='';},2000); }
+      });
+    };
+    tr.querySelector('.del').onclick=function(){
+      if(!confirm('Xoá '+(it.email||'')+' khỏi hệ thống? Người này sẽ không đăng nhập được nữa.')) return;
+      if(isNew){ tr.remove(); return; }
+      sb.from('role_assignments').delete().eq('email',it.email).then(function(r){ if(r.error){flash.textContent='Lỗi: '+r.error.message;flash.style.color='#b00020';} else tr.remove(); });
+    };
+    tb.appendChild(tr);
   }
 
   if(!window.SUPA || SUPA.URL.indexOf('YOUR-PROJECT')>=0){ notAllowed('Chưa cấu hình config.js'); }

@@ -50,11 +50,14 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="config.js"></script>
+<script src="framework-data.js"></script>
 <script>
   var sb = supabase.createClient(SUPA.URL, SUPA.ANON_KEY);
   var ME=null;
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function vnd(n){ n=Number(n)||0; return n.toLocaleString('vi-VN')+' đ'; }
+  function short(n){ n=Number(n)||0; if(n>=1e9) return (n/1e9).toFixed(2).replace(/\.?0+$/,'')+' tỷ'; if(n>=1e6) return Math.round(n/1e6)+'tr'; return n.toLocaleString('vi-VN'); }
+  function tr1(n){ return (Math.round((Number(n)||0)/1e6*10)/10).toFixed(1)+'tr'; }
   function notAllowed(m){ document.getElementById('root').innerHTML='<div class="center"><h2>Không xem được</h2><p class="muted">'+esc(m)+'</p></div>'; }
   function param(k){ return new URLSearchParams(location.search).get(k); }
 
@@ -79,21 +82,25 @@
       Promise.all([
         sb.from('checklist_items').select('id,part,sort').eq('level',lvl).order('sort'),
         sb.from('progress').select('item_key,done').eq('email',email),
-        sb.from('revenues').select('period,amount').eq('email',email).order('period',{ascending:false}),
+        sb.from('revenues').select('period,amount,soft,merchants,dept,renew').eq('email',email).order('period',{ascending:false}),
         sb.from('competencies').select('id,domain,name,sort').order('sort'),
         sb.from('competency_scores').select('competency_id,score').eq('email',email),
-        sb.from('role_assignments').select('level,dept').eq('email',ME.email.toLowerCase()).maybeSingle()
+        sb.from('role_assignments').select('level,dept').eq('email',ME.email.toLowerCase()).maybeSingle(),
+        sb.from('mentorships').select('mentee_name,status').eq('mentor_email',email),
+        prof.dept ? sb.from('revenues').select('email,period,amount').eq('dept',prof.dept) : Promise.resolve({data:[]})
       ]).then(function(res){
         var items=(res[0].data||[]), prog=(res[1].data||[]), revs=(res[2].data||[]);
         var comps=(res[3].data||[]), scoreRows=(res[4].data||[]), my=(res[5]&&res[5].data)||{};
+        var mentors=(res[6]&&res[6].data)||[], peers=(res[7]&&res[7].data)||[];
         var scores={}; scoreRows.forEach(function(x){ scores[x.competency_id]=x.score; });
         var canEdit = (my.level==='c4') || (my.level==='c3' && my.dept && my.dept===prof.dept);
-        render(prof, lvl, items, prog, revs, comps, scores, canEdit, email);
+        render(prof, lvl, items, prog, revs, comps, scores, canEdit, email, mentors, peers);
       });
     });
   }
 
-  function render(prof, lvl, items, prog, revs, comps, scores, canEdit, email){
+  function render(prof, lvl, items, prog, revs, comps, scores, canEdit, email, mentors, peers){
+    mentors=mentors||[]; peers=peers||[];
     var LV={c1:'Nhân viên',c2:'Chuyên gia',c3:'Trưởng phòng',c4:'Giám đốc Trung tâm'};
     var doneSet={}; prog.forEach(function(p){ if(p.done) doneSet[p.item_key]=1; });
     var KEY=function(id){ return lvl+'_ck_'+id; };
@@ -139,6 +146,52 @@
       +'<div class="grid"><div><canvas id="radar2" height="300"></canvas></div><div>'
       + _ds.map(function(x){ return '<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><b>'+esc(x.domain)+'</b><span class="muted">'+x.pct+'%</span></div><div style="height:10px;background:#F0F4F9;border-radius:6px;overflow:hidden;margin-top:4px"><div style="height:100%;background:linear-gradient(90deg,#007AFF,#16D865);width:'+x.pct+'%"></div></div></div>'; }).join('')
       +'</div></div></div>';
+
+    // ===== 4 dashboard tự soi (quản lý xem) =====
+    function pbar(p,c){ p=Math.max(0,Math.min(100,Math.round(p))); return '<div style="height:11px;background:#F0F4F9;border-radius:7px;overflow:hidden"><div style="height:100%;width:'+p+'%;background:'+(c||'linear-gradient(90deg,#007AFF,#16D865)')+'"></div></div>'; }
+    var msP={}; revs.forEach(function(r){ msP[r.period]=1; }); var msArr=Object.keys(msP).sort(); var nM=msArr.length, lpr=msArr[msArr.length-1];
+    var cum={total:0,soft:0,merch:0,renew:0}; revs.forEach(function(r){ cum.total+=Number(r.amount)||0; cum.soft+=Number(r.soft)||0; cum.merch+=Number(r.merchants)||0; cum.renew+=Number(r.renew)||0; });
+    // mạnh/yếu + việc nên làm
+    var _sorted=_ds.slice().sort(function(a,b){return a.pct-b.pct;}), weak=_sorted[0], strong=_sorted[_sorted.length-1], acts=[];
+    if(weak){ if(weak.domain===_D1){ var CK=(window.CLF&&CLF.CHECKLISTS&&CLF.CHECKLISTS.c1)||null; if(CK){ for(var pi=0;pi<CK.length&&acts.length<3;pi++){ var pp=CK[pi]; for(var ci=0;ci<pp.categories.length&&acts.length<3;ci++){ var cat=pp.categories[ci]; for(var ii=0;ii<cat.items.length&&acts.length<3;ii++){ if(!_done['clf_c1_ck_'+pi+'_'+ci+'_'+ii]) acts.push(cat.items[ii].n); } } } } } else { var cmps=(comps||[]).filter(function(c){return c.domain===weak.domain;}); for(var i=0;i<cmps.length&&acts.length<3;i++){ if(!_done['clf_c1_comp_'+cmps[i].id]) acts.push(cmps[i].name); } } }
+    html+='<div class="card" style="margin-top:16px"><h3>Điểm mạnh · điểm cần cải thiện</h3>'
+      +'<div class="grid" style="margin-top:0"><div style="background:#EAF7EE;border-radius:10px;padding:12px"><div class="muted">Mạnh nhất</div><div style="font-weight:700;color:#0a8a3a">'+(strong?esc(strong.domain)+' · '+strong.pct+'%':'—')+'</div></div>'
+      +'<div style="background:#FFF3E6;border-radius:10px;padding:12px"><div class="muted">Cần cải thiện</div><div style="font-weight:700;color:#9a6a00">'+(weak?esc(weak.domain)+' · '+weak.pct+'%':'—')+'</div></div></div>'
+      +'<div style="margin-top:12px;font-weight:600;font-size:13px">3 việc nên làm tiếp'+(weak?' ('+esc(weak.domain)+')':'')+'</div>'
+      +(acts.length? '<ul style="margin:6px 0 0;padding-left:18px">'+acts.map(function(a){return '<li style="margin:3px 0">'+esc(a)+'</li>';}).join('')+'</ul>' : '<div class="muted">Đã hoàn thành mảng này 🎉</div>')
+      +'</div>';
+    // tiến độ lên cấp
+    var dtmStd=50000000*nM, dtmPct=dtmStd?cum.soft/dtmStd*100:0;
+    var lpNum=parseInt((lpr||'').split('-')[1],10)||0, half=lpNum<=6?1:2, expStd=500000000*half, expCum=0;
+    revs.forEach(function(r){ var mn=parseInt((r.period||'').split('-')[1],10)||0; if(half===1?mn<=6:true) expCum+=Number(r.amount)||0; });
+    var expPct=expStd?expCum/expStd*100:0, official=mentors.filter(function(m){return (m.status||'').toLowerCase().indexOf('chính thức')>=0;}).length;
+    html+='<div class="card" style="margin-top:16px"><h3>Tiến độ lên cấp</h3>'
+      +'<div style="font-weight:600;font-size:13px;margin-bottom:3px">Mốc 1 · Doanh thu mềm luỹ kế</div>'
+      +'<div class="muted" style="font-size:12px;margin-bottom:5px">Chuẩn 50tr mềm/tháng × '+nM+' tháng = '+short(dtmStd)+'</div>'+pbar(dtmPct, dtmPct>=100?'#16D865':null)
+      +'<div class="muted" style="margin:4px 0 14px">'+short(cum.soft)+' / '+short(dtmStd)+' = <b>'+Math.round(dtmPct)+'%</b></div>'
+      +'<div style="font-weight:600;font-size:13px;margin-bottom:3px">Mốc 2 · Chuyên gia (xét theo nửa năm)</div>'
+      +'<div class="muted" style="font-size:12px;margin-bottom:5px">'+(half===1?'Nửa 1 (T1–6): chuẩn 500tr':'Cả năm: chuẩn 1 tỷ')+'</div>'+pbar(expPct, expPct>=100?'#16D865':null)
+      +'<div class="muted" style="margin:4px 0 12px">'+short(expCum)+' / '+short(expStd)+' = <b>'+Math.round(expPct)+'%</b></div>'
+      +'<div style="font-size:13px;margin-bottom:4px">Kèm cặp lên chính thức: <b>'+official+'/3</b></div>'
+      +(mentors.length? mentors.map(function(m){ var ok=(m.status||'').toLowerCase().indexOf('chính thức')>=0; return '<div style="font-size:13px;margin:2px 0">'+(ok?'✓ ':'· ')+esc(m.mentee_name)+' <span class="muted">'+esc(m.status||'')+'</span></div>'; }).join('') : '<div class="muted">Chưa kèm cặp ai.</div>')
+      +'</div>';
+    // chất lượng đơn
+    var netT=cum.total-cum.renew, netS=cum.soft-cum.renew, avgKH=cum.merch?netT/cum.merch:0, softKH=cum.merch?netS/cum.merch:0, lastMerch=0;
+    revs.forEach(function(r){ if(r.period===lpr) lastMerch=Number(r.merchants)||0; });
+    html+='<div class="card" style="margin-top:16px"><h3>Chất lượng đơn &amp; khách hàng</h3>'
+      +'<div class="muted" style="font-size:12px;margin-bottom:8px">Doanh thu/khách đã trừ doanh thu gia hạn.</div>'
+      +'<div class="grid" style="margin-top:0"><div style="background:#F0F4F9;border-radius:10px;padding:12px"><div class="muted">Số KH đã chinh phục</div><div class="big" style="font-size:24px">'+Math.round(cum.merch)+'</div></div>'
+      +'<div style="background:#F0F4F9;border-radius:10px;padding:12px"><div class="muted">DT / khách · DT mềm / khách</div><div style="font-weight:700;font-size:18px;color:#007AFF">'+tr1(avgKH)+' · '+tr1(softKH)+'</div></div></div></div>';
+    // đóng góp phòng
+    if(prof.dept && /^Phòng/.test(prof.dept)){
+      var pr=peers.filter(function(r){return r.period===lpr;}), phongTot=0, myAmt=0;
+      pr.forEach(function(r){ phongTot+=Number(r.amount)||0; }); revs.forEach(function(r){ if(r.period===lpr) myAmt=Number(r.amount)||0; });
+      var pct7=phongTot?myAmt/phongTot*100:0, rk=1; pr.forEach(function(r){ if((Number(r.amount)||0)>myAmt) rk++; });
+      html+='<div class="card" style="margin-top:16px"><h3>Đóng góp vào phòng · tháng '+esc(lpr||'')+'</h3>'
+        +'<div class="muted" style="font-size:12px;margin-bottom:5px">'+esc(prof.dept)+' · '+pr.length+' người</div>'+pbar(pct7,'#007AFF')
+        +'<div class="muted" style="margin:4px 0 8px">'+short(myAmt)+' / '+short(phongTot)+' = <b>'+Math.round(pct7)+'%</b> doanh thu phòng</div>'
+        +'<div style="font-size:13px">Xếp thứ <b>'+rk+'</b> / '+pr.length+' trong phòng</div></div>';
+    }
 
     document.getElementById('root').innerHTML=html;
 
