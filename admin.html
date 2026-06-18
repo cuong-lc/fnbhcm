@@ -72,13 +72,61 @@
   function modeBar(active){
     return '<div class="toolbar"><button class="btn '+(active==='ck'?'':'ghost')+'" id="m-ck">Checklist</button>'
       +'<button class="btn '+(active==='rev'?'':'ghost')+'" id="m-rev">Doanh thu &amp; Sao</button>'
-      +'<button class="btn '+(active==='comp'?'':'ghost')+'" id="m-comp">Năng lực</button></div>';
+      +'<button class="btn '+(active==='comp'?'':'ghost')+'" id="m-comp">Năng lực</button>'
+      +'<button class="btn '+(active==='ment'?'':'ghost')+'" id="m-ment">Mentor</button></div>';
   }
   function wireMode(){
-    var a=document.getElementById('m-ck'), b=document.getElementById('m-rev'), c=document.getElementById('m-comp');
+    var a=document.getElementById('m-ck'), b=document.getElementById('m-rev'), c=document.getElementById('m-comp'), d=document.getElementById('m-ment');
     if(a) a.onclick=function(){ load(); };
     if(b) b.onclick=renderRevenue;
     if(c) c.onclick=renderComp;
+    if(d) d.onclick=renderMentor;
+  }
+  function renderMentor(){
+    document.getElementById('root').innerHTML=modeBar('ment')+'<div class="loading">Đang tải…</div>'; wireMode();
+    Promise.all([
+      sb.from('role_assignments').select('email,full_name,dept'),
+      sb.from('mentorships').select('*').order('updated_at',{ascending:false})
+    ]).then(function(res){
+      if(res[0].error||res[1].error){ document.getElementById('root').innerHTML=modeBar('ment')+'<p class="muted">Lỗi tải dữ liệu.</p>'; wireMode(); return; }
+      window._MPEOPLE=(res[0].data||[]).sort(function(a,b){return (a.dept||'').localeCompare(b.dept||'')||(a.full_name||'').localeCompare(b.full_name||'');});
+      var rows=res[1].data||[];
+      var h=modeBar('ment')+'<h2>Mentor — kèm cặp lên chính thức</h2>'
+        +'<p class="muted">Ghi lại ai kèm ai và đã lên chính thức chưa. Dữ liệu này hiện ở mục "Tiến độ lên cấp" của người kèm.</p>'
+        +'<div class="toolbar"><span class="muted">'+rows.length+' bản ghi</span><button class="btn green" id="addm" style="margin-left:auto">+ Thêm</button></div>'
+        +'<table><thead><tr><th style="width:250px">Người kèm (mentor)</th><th>Người được kèm</th><th style="width:180px">Trạng thái</th><th class="colact">Thao tác</th></tr></thead><tbody id="mtb"></tbody></table>';
+      document.getElementById('root').innerHTML=h; wireMode();
+      document.getElementById('addm').onclick=function(){ mentRow({mentor_email:'',mentee_name:'',status:'Đang kèm'},true); };
+      rows.forEach(function(it){ mentRow(it,false); });
+    });
+  }
+  function mentRow(it,isNew){
+    var tb=document.getElementById('mtb'); var tr=document.createElement('tr'); if(isNew)tr.className='row-new';
+    var people=window._MPEOPLE||[];
+    var opts='<option value="">— chọn —</option>'+people.map(function(p){return '<option value="'+esc(p.email)+'"'+(p.email===it.mentor_email?' selected':'')+'>'+esc(p.full_name||p.email)+' ('+esc(p.dept||'')+')</option>';}).join('');
+    var sopt=['Đang kèm','Đã lên chính thức'].map(function(s){return '<option'+(s===(it.status||'Đang kèm')?' selected':'')+'>'+s+'</option>';}).join('');
+    tr.innerHTML='<td><select class="f-mentor">'+opts+'</select></td>'
+      +'<td><input class="f-mentee" value="'+esc(it.mentee_name||'')+'" placeholder="Tên người được kèm"></td>'
+      +'<td><select class="f-status">'+sopt+'</select></td>'
+      +'<td class="colact"><button class="btn save">Lưu</button> <button class="btn del">Xoá</button><span class="savedflash"></span></td>';
+    var flash=tr.querySelector('.savedflash');
+    tr.querySelector('.save').onclick=function(){
+      var rec={mentor_email:tr.querySelector('.f-mentor').value.trim(), mentee_name:tr.querySelector('.f-mentee').value.trim(), status:tr.querySelector('.f-status').value, updated_at:new Date().toISOString()};
+      if(!rec.mentor_email||!rec.mentee_name){ flash.textContent='Thiếu thông tin'; flash.style.color='#b00020'; return; }
+      if(it.id) rec.id=it.id;
+      sb.from('mentorships').upsert(rec).then(function(r){
+        if(r.error){ flash.textContent='Lỗi: '+r.error.message; flash.style.color='#b00020'; }
+        else { flash.textContent='✓ Đã lưu'; flash.style.color='#0a8a3a'; tr.classList.remove('row-new');
+          if(!it.id){ sb.from('mentorships').select('id').eq('mentor_email',rec.mentor_email).eq('mentee_name',rec.mentee_name).order('updated_at',{ascending:false}).limit(1).then(function(rr){ if(rr.data&&rr.data[0]) it.id=rr.data[0].id; }); }
+          setTimeout(function(){flash.textContent='';},2000); }
+      });
+    };
+    tr.querySelector('.del').onclick=function(){
+      if(!confirm('Xoá bản ghi mentor này?')) return;
+      if(!it.id){ tr.remove(); return; }
+      sb.from('mentorships').delete().eq('id',it.id).then(function(r){ if(r.error){flash.textContent='Lỗi';flash.style.color='#b00020';} else tr.remove(); });
+    };
+    tb.appendChild(tr);
   }
 
   function renderComp(){
