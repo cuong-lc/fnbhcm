@@ -27,8 +27,8 @@
   .secbars{flex:1;min-width:240px}
   .sbrow{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:13px}
   .sbrow .nm{width:140px;color:#eaf0ff}
-  .sbrow .tk{flex:1;height:9px;background:rgba(255,255,255,.16);border-radius:6px;overflow:hidden}
-  .sbrow .tf{height:100%;background:linear-gradient(90deg,#4DA3FF,#16D865)}
+  .sbrow .tk{flex:1;height:9px;background:rgba(255,255,255,.16);border-radius:6px;overflow:hidden;display:block}
+  .sbrow .tf{display:block;height:100%;background:linear-gradient(90deg,#4DA3FF,#16D865);border-radius:6px}
   .sbrow .vv{width:54px;text-align:right;color:#c7d2e8}
   .passpill{display:inline-flex;align-items:center;gap:7px;margin-top:14px;padding:8px 16px;border-radius:30px;font-weight:700;font-size:14px}
   .pass-no{background:rgba(255,255,255,.12);color:#ffd9a8}
@@ -37,8 +37,9 @@
   .badge{display:flex;flex-direction:column;align-items:center;gap:5px;width:92px;text-align:center}
   .badge .ic{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;background:var(--offblue);filter:grayscale(1);opacity:.4;border:2px solid var(--line)}
   .badge.on .ic{filter:none;opacity:1;background:#FFF7E6;border-color:var(--amber);box-shadow:0 3px 10px rgba(255,174,6,.25)}
-  .badge .bl{font-size:11px;color:var(--gray);line-height:1.25}
-  .badge.on .bl{color:var(--berkeley);font-weight:600}
+  .badge .bl{font-size:11px;color:#9fb0d0;line-height:1.25}
+  .badge.on .bl{color:#fff;font-weight:600}
+  .subh{font-weight:600;font-size:13px;color:var(--berkeley);margin:14px 0 2px;padding-top:10px;border-top:1px dashed var(--line)}
   h3{margin:0 0 4px;font-size:17px;color:var(--berkeley);display:flex;align-items:center;gap:8px}
   .sec-pct{margin-left:auto;font-size:13px;color:var(--gray);font-weight:600}
   .sub2{color:var(--gray);font-size:12.5px;margin:0 0 12px}
@@ -126,7 +127,7 @@
     {ic:'🎬',l:'Lành nghề',on:function(){return secDone('skill');}},
     {ic:'📞',l:'Bền bỉ 6 tuần',on:function(){return countFull('weeks');}},
     {ic:'📥',l:'Đủ Lead',on:function(){return countFull('leads');}},
-    {ic:'📡',l:'Tạo kênh',on:function(){return PROG['obd_chan_result'];}},
+    {ic:'📡',l:'Tạo kênh',on:function(){return secStat('chan').done;}},
     {ic:'🤝',l:'First Win',on:function(){return PROG['obd_result_hd1'];}},
     {ic:'💰',l:'20 triệu',on:function(){return countFull('sales20');}},
     {ic:'🫂',l:'Hòa nhập',on:function(){return secDone('connect');}},
@@ -148,11 +149,25 @@
     });
     SECTIONS = order.map(function(id){ return {id:id,name:meta[id].name,icon:meta[id].icon,items:bySec[id]||[]}; });
   }
-  function reqUnits(it){ if(it.opt) return 0; return it.type==='count'? it.n : 1; }
-  function doneUnits(it){ if(it.opt) return 0; if(it.type==='count'){ return Math.min(cnt(it.k), it.n); } return PROG['obd_'+it.k]?1:0; }
-  function secStat(id){ var s=SECTIONS.filter(function(x){return x.id===id;})[0]; var t=0,d=0; s.items.forEach(function(it){ t+=reqUnits(it); d+=doneUnits(it); }); return {t:t,d:d,pct:t?Math.round(d/t*100):100}; }
-  function secDone(id){ var s=secStat(id); return s.d>=s.t; }
-  function overall(){ var t=0,d=0; SECTIONS.forEach(function(s){ s.items.forEach(function(it){ t+=reqUnits(it); d+=doneUnits(it); }); }); return {t:t,d:d,pct:t?Math.round(d/t*100):0}; }
+  function reqUnits(it){ return it.type==='count'? it.n : 1; }
+  function doneUnits(it){ if(it.type==='count'){ return Math.min(cnt(it.k), it.n); } return PROG['obd_'+it.k]?1:0; }
+  function isCtv(k){ return (k||'').indexOf('chan_ctv')===0; }
+  function isTiktok(k){ return k==='chan_tiktok0'||k==='tiktok'; }
+  function secStat(id){
+    var s=SECTIONS.filter(function(x){return x.id===id;})[0]; if(!s) return {t:0,d:0,pct:100,done:true};
+    if(id==='chan'){
+      var ctv={t:0,d:0},tk={t:0,d:0},sh={t:0,d:0};
+      s.items.forEach(function(it){ var g=isCtv(it.k)?ctv:(isTiktok(it.k)?tk:sh); g.t+=reqUnits(it); g.d+=doneUnits(it); });
+      var af=ctv.t?ctv.d/ctv.t:0, bf=tk.t?tk.d/tk.t:0, active=bf>af?tk:ctv;
+      var pathFull=(ctv.t>0&&ctv.d>=ctv.t)||(tk.t>0&&tk.d>=tk.t);
+      var t=active.t+sh.t, d=active.d+sh.d;
+      return {t:t,d:d,pct:t?Math.round(d/t*100):100, done: pathFull && !!PROG['obd_chan_result']};
+    }
+    var t=0,d=0; s.items.forEach(function(it){ t+=reqUnits(it); d+=doneUnits(it); });
+    return {t:t,d:d,pct:t?Math.round(d/t*100):100, done:d>=t};
+  }
+  function secDone(id){ return secStat(id).done; }
+  function overall(){ var t=0,d=0; SECTIONS.forEach(function(s){ var st=secStat(s.id); t+=st.t; d+=st.d; }); return {t:t,d:d,pct:t?Math.round(d/t*100):0}; }
   function passed(){ return SECTIONS.every(function(s){ return secDone(s.id); }); }
 
   sb.auth.getSession().then(function(r){
@@ -179,6 +194,17 @@
     render();
   }
 
+  function itemHTML(it){
+    if(it.type==='count'){
+      var c=cnt(it.k), total=it.n*(it.each||1);
+      var label = it.money? (c*(it.each||1))+'/'+total+' triệu' : (it.week? c+'/'+it.n+' tuần' : (c*(it.each||1))+'/'+total+(it.suffix||''));
+      var bx='';
+      for(var i=1;i<=it.n;i++){ var on=PROG['obd_'+it.k+'_'+i]; var cap= it.week? ('T'+(i+1)) : (it.money? i : ((it.each||1)>1? (i*(it.each||1)) : i)); bx+='<div class="bx'+(it.n>20?' big':'')+(on?' on':'')+'" data-k="'+it.k+'" data-n="'+it.n+'" data-i="'+i+'">'+cap+'</div>'; }
+      return '<div class="count"><div class="ctop"><b>'+esc(it.t)+'</b><span style="color:#007AFF;font-weight:700">'+label+'</span></div><div class="boxes">'+bx+'</div></div>';
+    }
+    var on=PROG['obd_'+it.k];
+    return '<div class="item'+(on?' done':'')+'"><div class="cb'+(on?' on':'')+'" data-key="obd_'+it.k+'">'+(on?'✓':'')+'</div><div class="tx">'+esc(it.t)+(it.opt?'<span class="opt">không bắt buộc</span>':'')+'</div></div>';
+  }
   function render(){
     var ov=overall(), pass=passed();
     var h='';
@@ -197,18 +223,17 @@
     SECTIONS.forEach(function(s){
       var st=secStat(s.id);
       h+='<div class="card"><h3>'+s.icon+' '+esc(s.name)+'<span class="sec-pct">'+st.pct+'%</span></h3>';
-      s.items.forEach(function(it){
-        if(it.type==='count'){
-          var c=cnt(it.k), total=it.n*(it.each||1);
-          var label = it.money? (c*(it.each||1))+'/'+total+' triệu' : (it.week? c+'/'+it.n+' tuần' : (c*(it.each||1))+'/'+total+(it.suffix||''));
-          h+='<div class="count"><div class="ctop"><b>'+esc(it.t)+'</b><span style="color:#007AFF;font-weight:700">'+label+'</span></div><div class="boxes">';
-          for(var i=1;i<=it.n;i++){ var on=PROG['obd_'+it.k+'_'+i]; var cap= it.week? ('T'+(i+1)) : (it.money? (i):(it.each>1? (i*it.each): i)); h+='<div class="bx'+(it.n>20?' big':'')+(on?' on':'')+'" data-k="'+it.k+'" data-n="'+it.n+'" data-i="'+i+'">'+cap+'</div>'; }
-          h+='</div></div>';
-        } else {
-          var on=PROG['obd_'+it.k];
-          h+='<div class="item'+(on?' done':'')+'"><div class="cb'+(on?' on':'')+'" data-key="obd_'+it.k+'">'+(on?'✓':'')+'</div><div class="tx">'+esc(it.t)+(it.opt?'<span class="opt">không bắt buộc</span>':'')+'</div></div>';
-        }
-      });
+      if(s.id==='chan'){
+        var ctv=s.items.filter(function(it){return isCtv(it.k);});
+        var tk=s.items.filter(function(it){return isTiktok(it.k);});
+        var sh=s.items.filter(function(it){return !isCtv(it.k)&&!isTiktok(it.k);});
+        h+='<div style="background:#FFF7E6;border:1px solid #FFE3A3;border-radius:8px;padding:8px 11px;color:#8a6d1a;font-size:13px;margin-bottom:4px">Chọn & hoàn thành <b>1 trong 2</b> kênh dưới đây là đạt.</div>';
+        if(ctv.length){ h+='<div class="subh">🅰 Kênh CTV</div>'+ctv.map(itemHTML).join(''); }
+        if(tk.length){ h+='<div class="subh">🅱 Kênh TikTok / MXH</div>'+tk.map(itemHTML).join(''); }
+        if(sh.length){ h+='<div class="subh">Xác nhận chung</div>'+sh.map(itemHTML).join(''); }
+      } else {
+        h+=s.items.map(itemHTML).join('');
+      }
       h+='</div>';
     });
     document.getElementById('root').innerHTML=h;
