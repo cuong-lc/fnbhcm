@@ -57,6 +57,12 @@
   .bx{width:30px;height:26px;border-radius:6px;border:1.5px solid #cdd5e0;background:#fff;cursor:pointer;font-size:10px;color:var(--gray);display:flex;align-items:center;justify-content:center;transition:.1s}
   .bx.on{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
   .bx.big{flex:1;min-width:30px}
+  .callgrid{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+  .callw{display:flex;flex-direction:column;align-items:center;gap:3px}
+  .cwk{font-size:11px;font-weight:600;color:#5B6472;background:#F0F4F9;border-radius:6px;padding:2px 9px}
+  .cwk.ok{background:#16D865;color:#fff}
+  .cin{width:62px;text-align:center;border:1.5px solid #cdd5e0;border-radius:6px;padding:5px;font-family:inherit;font-size:13px}
+  .ctg{font-size:11px;color:#5B6472}
   .loading{padding:60px;text-align:center;color:var(--gray)}
   .center{max-width:440px;margin:60px auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:30px;text-align:center}
 </style>
@@ -72,7 +78,7 @@
 <script src="config.js"></script>
 <script>
   var sb = supabase.createClient(SUPA.URL, SUPA.ANON_KEY);
-  var USER=null, PROG={};
+  var USER=null, PROG={}, MET={};
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function notAllowed(m){ document.getElementById('root').innerHTML='<div class="center"><h2>Không truy cập được</h2><p style="color:#5B6472">'+esc(m)+'</p></div>'; }
 
@@ -125,7 +131,7 @@
   var BADGES=[
     {ic:'🎓',l:'Chứng nhận SP',on:function(){return secDone('prod');}},
     {ic:'🎬',l:'Lành nghề',on:function(){return secDone('skill');}},
-    {ic:'📞',l:'Bền bỉ 6 tuần',on:function(){return countFull('weeks');}},
+    {ic:'📞',l:'Đủ định mức gọi',on:function(){return callsDone();}},
     {ic:'📥',l:'Đủ Lead',on:function(){return countFull('leads');}},
     {ic:'📡',l:'Tạo kênh',on:function(){return secStat('chan').done;}},
     {ic:'🤝',l:'First Win',on:function(){return PROG['obd_result_hd1'];}},
@@ -137,20 +143,22 @@
   function cnt(k){ var n=0; for(var j=1;j<=60;j++){ if(PROG['obd_'+k+'_'+j]) n++; } return n; }
   function findItem(k){ for(var i=0;i<SECTIONS.length;i++){ var it=SECTIONS[i].items.filter(function(x){return x.k===k;})[0]; if(it) return it; } return null; }
   function countFull(k){ var it=findItem(k); return !!(it && it.type==='count' && cnt(k)>=it.n); }
+  function callsTotals(it){ var tg=(it.suffix||'').split(',').map(function(x){return parseInt(x,10)||0;}); var sum=0; for(var i=0;i<tg.length;i++){ sum+=Number(MET[it.k+'_w'+(i+2)]||0); } return {sum:sum, target:tg.reduce(function(a,b){return a+b;},0), weeks:tg}; }
+  function callsDone(){ for(var i=0;i<SECTIONS.length;i++){ var it=SECTIONS[i].items.filter(function(x){return x.type==='calls';})[0]; if(it){ var ct=callsTotals(it); return ct.target>0 && ct.sum>=ct.target; } } return false; }
   function buildSections(rows){
     if(!rows||!rows.length) return; // không có data -> giữ mặc định trong code
     var meta={},order=[]; SECTIONS.forEach(function(s){ meta[s.id]={name:s.name,icon:s.icon}; order.push(s.id); });
     var bySec={};
     rows.slice().sort(function(a,b){return (a.sort||0)-(b.sort||0);}).forEach(function(r){
-      var it = r.type==='count'
-        ? {type:'count',k:r.ck_key,t:r.label,n:r.n||1,each:r.each_val||1,suffix:r.unit||'',money:!!r.money,week:!!r.week,opt:!!r.optional}
+      var it = (r.type==='count'||r.type==='calls')
+        ? {type:r.type,k:r.ck_key,t:r.label,n:r.n||1,each:r.each_val||1,suffix:r.unit||'',money:!!r.money,week:!!r.week,opt:!!r.optional}
         : {k:r.ck_key,t:r.label,opt:!!r.optional};
       (bySec[r.section]=bySec[r.section]||[]).push(it);
     });
     SECTIONS = order.map(function(id){ return {id:id,name:meta[id].name,icon:meta[id].icon,items:bySec[id]||[]}; });
   }
   function reqUnits(it){ return it.type==='count'? it.n : 1; }
-  function doneUnits(it){ if(it.type==='count'){ return Math.min(cnt(it.k), it.n); } return PROG['obd_'+it.k]?1:0; }
+  function doneUnits(it){ if(it.type==='count'){ return Math.min(cnt(it.k), it.n); } if(it.type==='calls'){ var ct=callsTotals(it); return (ct.target>0 && ct.sum>=ct.target)?1:0; } return PROG['obd_'+it.k]?1:0; }
   function isCtv(k){ return (k||'').indexOf('chan_ctv')===0; }
   function isTiktok(k){ return k==='chan_tiktok0'||k==='tiktok'; }
   function secStat(id){
@@ -178,9 +186,11 @@
     document.getElementById('lo').onclick=function(){ sb.auth.signOut().then(function(){ location.replace('login.html'); }); };
     Promise.all([
       sb.from('progress').select('item_key,done').eq('user_id',USER.id),
-      sb.from('obd_items').select('*')
+      sb.from('obd_items').select('*'),
+      sb.from('obd_metrics').select('mkey,value').eq('user_id',USER.id)
     ]).then(function(r){
       ((r[0]&&r[0].data)||[]).forEach(function(row){ if(row.done) PROG[row.item_key]=true; });
+      ((r[2]&&r[2].data)||[]).forEach(function(row){ MET[row.mkey]=Number(row.value)||0; });
       buildSections((r[1]&&r[1].data)||[]);
       render();
     });
@@ -195,6 +205,16 @@
   }
 
   function itemHTML(it){
+    if(it.type==='calls'){
+      var ct=callsTotals(it), rows='';
+      for(var w=0;w<ct.weeks.length;w++){ var wk=w+2, val=Number(MET[it.k+'_w'+wk]||0), tgt=ct.weeks[w], ok=val>=tgt && val>0;
+        rows+='<div class="callw"><span class="cwk'+(ok?' ok':'')+'">T'+wk+'</span><input class="cin" type="number" min="0" value="'+(val||'')+'" placeholder="0" data-mk="'+it.k+'_w'+wk+'"><span class="ctg">/ '+tgt+'</span></div>'; }
+      var pct=ct.target?Math.min(100,Math.round(ct.sum/ct.target*100)):0;
+      return '<div class="count"><div class="ctop"><b>'+esc(it.t)+'</b><span style="color:#007AFF;font-weight:700">'+ct.sum+'/'+ct.target+' cuộc</span></div>'
+        +'<div class="callgrid">'+rows+'</div>'
+        +'<div style="margin-top:10px"><div style="height:11px;background:#F0F4F9;border-radius:7px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#007AFF,#16D865)"></div></div>'
+        +'<div class="muted" style="font-size:12px;margin-top:3px">Tổng đã gọi <b>'+ct.sum+'</b> / mục tiêu <b>'+ct.target+'</b> cuộc — có thể bù tuần thiếu</div></div></div>';
+    }
     if(it.type==='count'){
       var c=cnt(it.k), total=it.n*(it.each||1);
       var label = it.money? (c*(it.each||1))+'/'+total+' triệu' : (it.week? c+'/'+it.n+' tuần' : (c*(it.each||1))+'/'+total+(it.suffix||''));
@@ -239,6 +259,7 @@
     document.getElementById('root').innerHTML=h;
     document.querySelectorAll('.cb').forEach(function(el){ el.onclick=function(){ toggle(el.getAttribute('data-key').replace(/^obd_/,'')); }; });
     document.querySelectorAll('.bx').forEach(function(el){ el.onclick=function(){ var k=el.getAttribute('data-k'), n=+el.getAttribute('data-n'), i=+el.getAttribute('data-i'); var cur=cnt(k); setCount(k,n, (i===cur? i-1 : i)); }; });
+    document.querySelectorAll('.cin').forEach(function(el){ el.onchange=function(){ var mk=el.getAttribute('data-mk'), v=parseInt(el.value,10)||0; MET[mk]=v; sb.from('obd_metrics').upsert({user_id:USER.id,email:USER.email,mkey:mk,value:v,updated_at:new Date().toISOString()},{onConflict:'user_id,mkey'}).then(function(){},function(){}); render(); }; });
   }
   // toggle dùng key đã bỏ tiền tố obd_ -> thêm lại
   function toggle(k){ var key='obd_'+k; setKey(key,!PROG[key]); render(); }
