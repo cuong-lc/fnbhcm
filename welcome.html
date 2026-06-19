@@ -124,16 +124,30 @@
   var BADGES=[
     {ic:'🎓',l:'Chứng nhận SP',on:function(){return secDone('prod');}},
     {ic:'🎬',l:'Lành nghề',on:function(){return secDone('skill');}},
-    {ic:'📞',l:'Bền bỉ 6 tuần',on:function(){return cnt('weeks')>=6;}},
-    {ic:'📥',l:'300 Lead',on:function(){return cnt('leads')>=30;}},
+    {ic:'📞',l:'Bền bỉ 6 tuần',on:function(){return countFull('weeks');}},
+    {ic:'📥',l:'Đủ Lead',on:function(){return countFull('leads');}},
     {ic:'📡',l:'Tạo kênh',on:function(){return PROG['obd_chan_result'];}},
     {ic:'🤝',l:'First Win',on:function(){return PROG['obd_result_hd1'];}},
-    {ic:'💰',l:'20 triệu',on:function(){return cnt('sales20')>=20;}},
+    {ic:'💰',l:'20 triệu',on:function(){return countFull('sales20');}},
     {ic:'🫂',l:'Hòa nhập',on:function(){return secDone('connect');}},
     {ic:'🏆',l:'Tốt nghiệp',on:function(){return passed();}}
   ];
 
-  function cnt(k){ var n=0; for(var j=1;j<=30;j++){ if(PROG['obd_'+k+'_'+j]) n++; } return n; }
+  function cnt(k){ var n=0; for(var j=1;j<=60;j++){ if(PROG['obd_'+k+'_'+j]) n++; } return n; }
+  function findItem(k){ for(var i=0;i<SECTIONS.length;i++){ var it=SECTIONS[i].items.filter(function(x){return x.k===k;})[0]; if(it) return it; } return null; }
+  function countFull(k){ var it=findItem(k); return !!(it && it.type==='count' && cnt(k)>=it.n); }
+  function buildSections(rows){
+    if(!rows||!rows.length) return; // không có data -> giữ mặc định trong code
+    var meta={},order=[]; SECTIONS.forEach(function(s){ meta[s.id]={name:s.name,icon:s.icon}; order.push(s.id); });
+    var bySec={};
+    rows.slice().sort(function(a,b){return (a.sort||0)-(b.sort||0);}).forEach(function(r){
+      var it = r.type==='count'
+        ? {type:'count',k:r.ck_key,t:r.label,n:r.n||1,each:r.each_val||1,suffix:r.unit||'',money:!!r.money,week:!!r.week,opt:!!r.optional}
+        : {k:r.ck_key,t:r.label,opt:!!r.optional};
+      (bySec[r.section]=bySec[r.section]||[]).push(it);
+    });
+    SECTIONS = order.map(function(id){ return {id:id,name:meta[id].name,icon:meta[id].icon,items:bySec[id]||[]}; });
+  }
   function reqUnits(it){ if(it.opt) return 0; return it.type==='count'? it.n : 1; }
   function doneUnits(it){ if(it.opt) return 0; if(it.type==='count'){ return Math.min(cnt(it.k), it.n); } return PROG['obd_'+it.k]?1:0; }
   function secStat(id){ var s=SECTIONS.filter(function(x){return x.id===id;})[0]; var t=0,d=0; s.items.forEach(function(it){ t+=reqUnits(it); d+=doneUnits(it); }); return {t:t,d:d,pct:t?Math.round(d/t*100):100}; }
@@ -147,8 +161,12 @@
     USER=s.user;
     document.getElementById('me').innerHTML='<a href="index.html">← Trang chủ</a> · <b style="color:#fff">'+esc(USER.email)+'</b> · <a id="lo">Đăng xuất</a>';
     document.getElementById('lo').onclick=function(){ sb.auth.signOut().then(function(){ location.replace('login.html'); }); };
-    sb.from('progress').select('item_key,done').eq('user_id',USER.id).then(function(res){
-      (res.data||[]).forEach(function(row){ if(row.done) PROG[row.item_key]=true; });
+    Promise.all([
+      sb.from('progress').select('item_key,done').eq('user_id',USER.id),
+      sb.from('obd_items').select('*')
+    ]).then(function(r){
+      ((r[0]&&r[0].data)||[]).forEach(function(row){ if(row.done) PROG[row.item_key]=true; });
+      buildSections((r[1]&&r[1].data)||[]);
       render();
     });
   });

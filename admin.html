@@ -76,16 +76,18 @@
       +'<button class="btn '+(active==='comp'?'':'ghost')+'" id="m-comp">Năng lực</button>'
       +'<button class="btn '+(active==='ment'?'':'ghost')+'" id="m-ment">Mentor</button>'
       +'<button class="btn '+(active==='imp'?'':'ghost')+'" id="m-imp">Import file</button>'
-      +'<button class="btn '+(active==='staff'?'':'ghost')+'" id="m-staff">Nhân sự</button></div>';
+      +'<button class="btn '+(active==='staff'?'':'ghost')+'" id="m-staff">Nhân sự</button>'
+      +'<button class="btn '+(active==='obd'?'':'ghost')+'" id="m-obd">Onboard</button></div>';
   }
   function wireMode(){
-    var a=document.getElementById('m-ck'), b=document.getElementById('m-rev'), c=document.getElementById('m-comp'), d=document.getElementById('m-ment'), e=document.getElementById('m-imp'), f=document.getElementById('m-staff');
+    var a=document.getElementById('m-ck'), b=document.getElementById('m-rev'), c=document.getElementById('m-comp'), d=document.getElementById('m-ment'), e=document.getElementById('m-imp'), f=document.getElementById('m-staff'), g=document.getElementById('m-obd');
     if(a) a.onclick=function(){ load(); };
     if(b) b.onclick=renderRevenue;
     if(c) c.onclick=renderComp;
     if(d) d.onclick=renderMentor;
     if(e) e.onclick=renderImport;
     if(f) f.onclick=renderStaff;
+    if(g) g.onclick=renderOnboard;
   }
   function renderMentor(){
     document.getElementById('root').innerHTML=modeBar('ment')+'<div class="loading">Đang tải…</div>'; wireMode();
@@ -390,6 +392,55 @@
       if(!confirm('Xoá '+(it.email||'')+' khỏi hệ thống? Người này sẽ không đăng nhập được nữa.')) return;
       if(isNew){ tr.remove(); return; }
       sb.from('role_assignments').delete().eq('email',it.email).then(function(r){ if(r.error){flash.textContent='Lỗi: '+r.error.message;flash.style.color='#b00020';} else tr.remove(); });
+    };
+    tb.appendChild(tr);
+  }
+
+  // ============ Onboard (Welcome Onboard) ============
+  var OBD_SEC=[['prod','Sản phẩm'],['skill','Kỹ năng'],['perf','Hiệu suất'],['chan','Tạo kênh bán'],['result','Kết quả'],['connect','Thử thách kết nối']];
+  function renderOnboard(){
+    document.getElementById('root').innerHTML=modeBar('obd')+'<div class="loading">Đang tải…</div>'; wireMode();
+    sb.from('obd_items').select('*').then(function(r){
+      if(r.error){ document.getElementById('root').innerHTML=modeBar('obd')+'<p class="muted">Lỗi: '+esc(r.error.message)+'</p>'; wireMode(); return; }
+      var items=(r.data||[]).sort(function(a,b){ var ia=OBD_SEC.map(function(o){return o[0];}).indexOf(a.section), ib=OBD_SEC.map(function(o){return o[0];}).indexOf(b.section); return ia-ib || (a.sort||0)-(b.sort||0); });
+      var h=modeBar('obd')+'<h2>Quản lý mục Welcome Onboard</h2>'
+        +'<p class="muted">Các mục hiện ở trang Hội nhập của nhân viên thử việc (c0). Kiểu <b>count</b> = thanh nhiều ô (điền Số mốc & /ô; vd 300 lead = 30 mốc × 10). Sửa tên KHÔNG mất tick; chỉ khi xoá mục thì tick mục đó mới bỏ.</p>'
+        +'<div class="toolbar"><span class="muted">'+items.length+' mục</span><button class="btn green" id="addo" style="margin-left:auto">+ Thêm mục</button></div>'
+        +'<table><thead><tr><th style="width:115px">Nhóm</th><th>Nội dung</th><th style="width:84px">Kiểu</th><th style="width:64px">Số mốc</th><th style="width:52px">/ô</th><th style="width:84px">Đơn vị</th><th style="width:96px">Cờ</th><th style="width:46px">KBB</th><th class="colact" style="width:160px">Thao tác</th></tr></thead><tbody id="otb"></tbody></table>';
+      document.getElementById('root').innerHTML=h; wireMode();
+      document.getElementById('addo').onclick=function(){ obdRow({section:'prod',label:'',type:'check',ck_key:'x'+Date.now(),n:1,each_val:1,unit:'',money:false,week:false,optional:false,sort:99},true); };
+      items.forEach(function(it){ obdRow(it,false); });
+    });
+  }
+  function obdRow(it,isNew){
+    var tb=document.getElementById('otb'); var tr=document.createElement('tr'); if(isNew)tr.className='row-new';
+    var sopt=OBD_SEC.map(function(o){return '<option value="'+o[0]+'"'+(o[0]===it.section?' selected':'')+'>'+o[1]+'</option>';}).join('');
+    var topt=['check','count'].map(function(o){return '<option value="'+o+'"'+(o===(it.type||'check')?' selected':'')+'>'+o+'</option>';}).join('');
+    tr.innerHTML='<td><select class="f-sec">'+sopt+'</select></td>'
+      +'<td><textarea class="f-lb">'+esc(it.label||'')+'</textarea></td>'
+      +'<td><select class="f-ty">'+topt+'</select></td>'
+      +'<td><input class="f-n" type="number" value="'+(it.n||1)+'"></td>'
+      +'<td><input class="f-ea" type="number" value="'+(it.each_val||1)+'"></td>'
+      +'<td><input class="f-un" value="'+esc(it.unit||'')+'"></td>'
+      +'<td style="font-size:12px;white-space:nowrap"><label><input type="checkbox" class="f-mo" '+(it.money?'checked':'')+'>₫</label> <label><input type="checkbox" class="f-wk" '+(it.week?'checked':'')+'>tuần</label></td>'
+      +'<td style="text-align:center"><input type="checkbox" class="f-op" '+(it.optional?'checked':'')+' title="không bắt buộc"></td>'
+      +'<td class="colact"><input type="number" class="f-so" value="'+(it.sort||0)+'" style="width:46px" title="thứ tự"> <button class="btn save">Lưu</button> <button class="btn del">Xoá</button><span class="savedflash"></span></td>';
+    var flash=tr.querySelector('.savedflash');
+    tr.querySelector('.save').onclick=function(){
+      var rec={section:tr.querySelector('.f-sec').value, label:tr.querySelector('.f-lb').value.trim(), type:tr.querySelector('.f-ty').value, ck_key:it.ck_key, n:parseInt(tr.querySelector('.f-n').value,10)||1, each_val:parseInt(tr.querySelector('.f-ea').value,10)||1, unit:tr.querySelector('.f-un').value, money:tr.querySelector('.f-mo').checked, week:tr.querySelector('.f-wk').checked, optional:tr.querySelector('.f-op').checked, sort:parseInt(tr.querySelector('.f-so').value,10)||0, updated_at:new Date().toISOString()};
+      if(!rec.label){ flash.textContent='Thiếu nội dung'; flash.style.color='#b00020'; return; }
+      if(it.id) rec.id=it.id;
+      sb.from('obd_items').upsert(rec).then(function(r){
+        if(r.error){ flash.textContent='Lỗi: '+r.error.message; flash.style.color='#b00020'; }
+        else { flash.textContent='✓ Đã lưu'; flash.style.color='#0a8a3a'; tr.classList.remove('row-new');
+          if(!it.id){ sb.from('obd_items').select('id').eq('ck_key',rec.ck_key).limit(1).then(function(rr){ if(rr.data&&rr.data[0]) it.id=rr.data[0].id; }); }
+          setTimeout(function(){flash.textContent='';},2000); }
+      });
+    };
+    tr.querySelector('.del').onclick=function(){
+      if(!confirm('Xoá mục này khỏi Welcome Onboard?')) return;
+      if(!it.id){ tr.remove(); return; }
+      sb.from('obd_items').delete().eq('id',it.id).then(function(r){ if(r.error){flash.textContent='Lỗi';flash.style.color='#b00020';} else tr.remove(); });
     };
     tb.appendChild(tr);
   }
