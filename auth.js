@@ -40,7 +40,7 @@
       '<span>Cấp: <b style="color:#16D865">' + esc(lvl) + '</b></span>' +
       '<span style="margin-left:auto"></span>' +
       '<a href="index.html" style="color:#9ECCFF;text-decoration:none">Trang chủ</a>' +
-      ((p.level === 'c0' || isM) ? '<a href="welcome.html" style="color:#9ECCFF;text-decoration:none">Hội nhập</a>' : '') +
+      (p.level === 'c0' ? '<a href="welcome.html" style="color:#9ECCFF;text-decoration:none">Hội nhập</a>' : '') +
       (isM ? '<a href="dashboard.html" style="color:#9ECCFF;text-decoration:none">Dashboard</a>' : '') +
       (isM ? '<a href="admin.html" style="color:#9ECCFF;text-decoration:none">Admin</a>' : '') +
       '<a id="clf-logout" style="color:#ff9b9b;text-decoration:none;cursor:pointer">Đăng xuất</a>';
