@@ -184,11 +184,11 @@
   }
   function saleExtras(email){
     var ms=months(), lp=ms[ms.length-1], n=ms.length, cum=cumOf(email);
-    var H='';
+    var S={};
     // ---- Bóc tách doanh thu mềm/cứng/khác (luỹ kế) ----
     var bt=cum.soft, bc=cum.hard, bk=cum.other, btot=(bt+bc+bk)||1;
     function pc(x){ return Math.round(x/btot*100); }
-    H+='<div class="card" style="margin-top:16px"><h3>Doanh thu bóc tách (luỹ kế '+n+' tháng)</h3>'
+    S.bocTach='<div class="card" style="margin-top:16px"><h3>Doanh thu bóc tách (luỹ kế '+n+' tháng)</h3>'
       +'<div style="display:flex;height:16px;border-radius:6px;overflow:hidden;margin-bottom:12px">'
       +'<div style="width:'+pc(bt)+'%;background:#1D9E75"></div><div style="width:'+pc(bc)+'%;background:#378ADD"></div><div style="width:'+pc(bk)+'%;background:#EF9F27"></div></div>'
       +'<div class="kpis">'
@@ -200,7 +200,7 @@
     var rk=(email.toLowerCase()===ME.email.toLowerCase())?DATA.myRank:null;
     if(rk && rk.n){
       var gap=Number(rk.above_gap)||0;
-      H+='<div class="card" style="margin-top:16px"><h3>Thứ hạng doanh thu · toàn Trung tâm</h3>'
+      S.rank='<div class="card" style="margin-top:16px"><h3>Thứ hạng doanh thu · toàn Trung tâm</h3>'
         +'<div class="muted" style="font-size:12px;margin-bottom:6px">Tháng '+esc(DATA.myContribPeriod||lp)+' · '+rk.n+' sale</div>'
         +'<div style="display:flex;align-items:baseline;gap:10px"><span style="font-size:30px;font-weight:700;color:#007AFF">#'+rk.rnk+'</span><span class="muted">/ '+rk.n+'</span></div>'
         +(rk.rnk>1? '<div style="font-size:13px;margin-top:6px">Còn <b>'+short(gap)+'</b> nữa là vượt lên hạng <b>#'+(rk.rnk-1)+'</b>.</div>' : '<div style="font-size:13px;margin-top:6px;color:#0a8a3a">🏆 Đang dẫn đầu trung tâm!</div>')
@@ -208,7 +208,7 @@
     }
     // ---- Dashboard 6: mạnh / yếu + việc nên làm ----
     var ds=domainScores(email), na=nextActions(email,ds);
-    H+='<div class="card" style="margin-top:16px"><h3>Điểm mạnh · điểm cần cải thiện</h3><div class="grid" style="margin-top:0">'
+    S.manhYeu='<div class="card" style="margin-top:16px"><h3>Điểm mạnh · điểm cần cải thiện</h3><div class="grid" style="margin-top:0">'
       +'<div class="kpi" style="background:#EAF7EE"><div class="lab">Mạnh nhất</div><div class="val" style="font-size:16px;color:#0a8a3a">'+(na.strong?esc(na.strong.domain):'—')+'</div><div class="sub">'+(na.strong?na.strong.pct+'%':'')+'</div></div>'
       +'<div class="kpi" style="background:#FFF3E6"><div class="lab">Cần cải thiện</div><div class="val" style="font-size:16px;color:#9a6a00">'+(na.weak?esc(na.weak.domain):'—')+'</div><div class="sub">'+(na.weak?na.weak.pct+'%':'')+'</div></div>'
       +'</div>'
@@ -222,7 +222,7 @@
     revRows(email).forEach(function(r){ var mn=parseInt((r.period||'').split('-')[1],10)||0; if(half===1? mn<=6 : true) expCum+=Number(r.amount)||0; });
     var expPct=expStd?expCum/expStd*100:0;
     var ments=mentorsOf(email), official=ments.filter(function(m){return (m.status||'').toLowerCase().indexOf('chính thức')>=0;}).length;
-    H+='<div class="card" style="margin-top:16px"><h3>Tiến độ lên cấp</h3>'
+    S.tienDo='<div class="card" style="margin-top:16px"><h3>Tiến độ lên cấp</h3>'
       +'<div style="font-size:13px;font-weight:600;margin-bottom:4px">Mốc 1 · Doanh thu mềm luỹ kế</div>'
       +'<div class="muted" style="font-size:12px;margin-bottom:5px">Chuẩn 50tr mềm/tháng × '+n+' tháng = '+short(dtmStd)+'</div>'
       +bar(dtmPct, dtmPct>=100?'#16D865':null)
@@ -239,7 +239,7 @@
     var lastMerch=Number(lastRow.merchants)||0;
     var netTotal=cum.total-cum.renew, netSoft=cum.soft-cum.renew;
     var avgKH=cum.merch?netTotal/cum.merch:0, softKH=cum.merch?netSoft/cum.merch:0;
-    H+='<div class="card" style="margin-top:16px"><h3>Chất lượng đơn &amp; khách hàng</h3>'
+    S.chatLuong='<div class="card" style="margin-top:16px"><h3>Chất lượng đơn &amp; khách hàng</h3>'
       +'<div class="muted" style="font-size:12px;margin-bottom:8px">Doanh thu/khách đã trừ doanh thu gia hạn.</div><div class="kpis">'
       +'<div class="kpi"><div class="lab">Số KH đã chinh phục</div><div class="val">'+Math.round(cum.merch)+'</div><div class="sub">tháng gần nhất +'+Math.round(lastMerch)+'</div></div>'
       +'<div class="kpi"><div class="lab">Doanh thu / khách</div><div class="val">'+tr1(avgKH)+'</div></div>'
@@ -250,7 +250,7 @@
     var c=isMe?DATA.myContrib:null, dept=deptOf(email);
     if(c && c.dept){
       var cper=DATA.myContribPeriod||lp, pct=Number(c.total)?Number(c.mine)/Number(c.total)*100:0;
-      H+='<div class="card" style="margin-top:16px"><h3>Đóng góp vào phòng · tháng '+esc(cper)+'</h3>'
+      S.dongGop='<div class="card" style="margin-top:16px"><h3>Đóng góp vào phòng · tháng '+esc(cper)+'</h3>'
         +'<div class="muted" style="font-size:12px;margin-bottom:5px">'+esc(c.dept)+' · '+c.n+' người</div>'
         +bar(pct,'#007AFF')
         +'<div class="muted" style="margin:4px 0 8px">'+short(Number(c.mine))+' / '+short(Number(c.total))+' = <b>'+Math.round(pct)+'%</b> doanh thu phòng</div>'
@@ -261,15 +261,16 @@
       var pct2=phongTot?myAmt/phongTot*100:0;
       var peers=DATA.revenues.filter(function(r){return r.dept===dept&&r.period===lp;}).map(function(r){return Number(r.amount)||0;}).sort(function(a,b){return b-a;});
       var rank=1; peers.forEach(function(v){ if(v>myAmt) rank++; });
-      H+='<div class="card" style="margin-top:16px"><h3>Đóng góp vào phòng · tháng '+esc(lp)+'</h3>'
+      S.dongGop='<div class="card" style="margin-top:16px"><h3>Đóng góp vào phòng · tháng '+esc(lp)+'</h3>'
         +'<div class="muted" style="font-size:12px;margin-bottom:5px">'+esc(dept)+' · '+peers.length+' người</div>'
         +bar(pct2,'#007AFF')
         +'<div class="muted" style="margin:4px 0 8px">'+short(myAmt)+' / '+short(phongTot)+' = <b>'+Math.round(pct2)+'%</b> doanh thu phòng</div>'
         +'<div style="font-size:13px">Xếp thứ <b>'+rank+'</b> / '+peers.length+' trong phòng</div>'
         +'</div>';
     }
-    return H;
+    return S;
   }
+  function secH(t){ return '<div style="margin:30px 0 6px;display:flex;align-items:center;gap:12px"><span style="font-size:18px;font-weight:700;color:var(--berkeley)">'+t+'</span><div style="flex:1;height:2px;background:linear-gradient(90deg,#007AFF,#16D865);opacity:.45;border-radius:2px"></div></div>'; }
 
   // ---------- render khung tab ----------
   function render(){
@@ -302,6 +303,7 @@
     var growth = (rdata.length>=2 && rdata[rdata.length-2]>0)? Math.round((rdata[rdata.length-1]-rdata[rdata.length-2])/rdata[rdata.length-2]*100):null;
     var ckPct=Math.round(ckFracC1(email)*100); var ds=domainScores(email);
     var myStars=DATA.stars[(email||'').toLowerCase()]||0;
+    var S=saleExtras(email);
     el.innerHTML=''
       +'<div class="kpis">'
       +'<div class="kpi"><div class="lab">Doanh thu tháng gần nhất</div><div class="val">'+short(rdata[rdata.length-1]||0)+'</div><div class="sub">'+(growth!=null?(growth>=0?'▲ +':'▼ ')+growth+'% so tháng trước':'')+'</div></div>'
@@ -309,14 +311,17 @@
       +'<div class="kpi"><div class="lab">Năng lực tổng quan</div><div class="val">'+overallComp(email)+'%</div><div class="sub">checklist '+ckPct+'%</div></div>'
       +'<div class="kpi"><div class="lab">Cấp sao</div><div class="val"><span class="stars">'+(myStars?'★'.repeat(myStars):'')+'</span>'+(myStars?'':'<span class="muted">chưa có</span>')+'</div><div class="sub">'+myStars+'/5 sao</div></div>'
       +'</div>'
-      +'<div class="grid">'
+      + secH('Kinh doanh')
       +'<div class="card"><h3>Tăng trưởng doanh thu theo tháng</h3><div style="height:240px"><canvas id="c1"></canvas></div></div>'
-      +'<div class="card"><h3>Tổng quan năng lực (5 mảng)</h3><div class="muted" style="margin-bottom:6px">Mỗi cấp 25%. Tick chuẩn ở các trang cấp là tự cập nhật.</div><div style="height:300px"><canvas id="cradar"></canvas></div></div>'
-      +'</div>'
+      + (S.bocTach||'') + (S.chatLuong||'') + (S.dongGop||'') + (S.rank||'')
+      + secH('Năng lực')
+      +'<div class="card" style="margin-top:16px"><h3>Tổng quan năng lực (5 mảng)</h3><div class="muted" style="margin-bottom:6px">Mỗi cấp 25%. Tick chuẩn ở các trang cấp là tự cập nhật.</div><div style="height:300px"><canvas id="cradar"></canvas></div></div>'
       +'<div class="card" style="margin-top:16px"><h3>Chi tiết theo mảng</h3>'
       + ds.map(function(x){ return '<div style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><b>'+esc(x.domain)+'</b><span class="muted">'+x.pct+'%</span></div><div class="track"><div class="fill" style="width:'+x.pct+'%"></div></div></div>'; }).join('')
       +'</div>'
-      + saleExtras(email);
+      + (S.manhYeu||'')
+      + secH('Lộ trình thăng tiến')
+      + (S.tienDo||'');
     lineChart(document.getElementById('c1'), ms, rdata, 'Doanh thu','#007AFF');
     var clabels=ds.map(function(x){return x.domain;}), cdata=ds.map(function(x){return x.pct;});
     charts.push(new Chart(document.getElementById('cradar'),{type:'radar',data:{labels:clabels,datasets:[{label:'%',data:cdata,fill:true,backgroundColor:'rgba(0,122,255,.16)',borderColor:'#007AFF',pointBackgroundColor:'#16D865',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{min:0,max:100,ticks:{stepSize:25,backdropColor:'transparent'},pointLabels:{font:{size:9}}}},plugins:{legend:{display:false}}}}));
