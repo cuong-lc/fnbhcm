@@ -364,13 +364,13 @@
         +'<div class="toolbar"><span class="muted">'+people.length+' người</span><button class="btn green" id="adds" style="margin-left:auto">+ Thêm người</button></div>'
         +'<table><thead><tr><th>Email</th><th>Họ tên</th><th style="width:150px">Cấp</th><th style="width:200px">Phòng</th><th class="colact">Thao tác</th></tr></thead><tbody id="stb"></tbody></table>';
       document.getElementById('root').innerHTML=h; wireMode();
-      document.getElementById('adds').onclick=function(){ staffRow({email:'',full_name:'',level:'c1',dept:''},true); };
+      document.getElementById('adds').onclick=function(){ staffRow({email:'',full_name:'',level:'c0',dept:''},true); };
       people.forEach(function(p){ staffRow(p,false); });
     });
   }
   function staffRow(it,isNew){
     var tb=document.getElementById('stb'); var tr=document.createElement('tr'); if(isNew)tr.className='row-new';
-    var lopt=[['c1','c1 · Nhân viên'],['c2','c2 · Chuyên gia'],['c3','c3 · Trưởng phòng'],['c4','c4 · Giám đốc TT']].map(function(o){return '<option value="'+o[0]+'"'+(o[0]===(it.level||'c1')?' selected':'')+'>'+o[1]+'</option>';}).join('');
+    var lopt=[['c0','c0 · Thử việc'],['c1','c1 · Nhân viên'],['c2','c2 · Chuyên gia'],['c3','c3 · Trưởng phòng'],['c4','c4 · Giám đốc TT']].map(function(o){return '<option value="'+o[0]+'"'+(o[0]===(it.level||'c1')?' selected':'')+'>'+o[1]+'</option>';}).join('');
     var dopt='<option value="">—</option>'+DEPTS.map(function(d){return '<option'+(d===it.dept?' selected':'')+'>'+esc(d)+'</option>';}).join('');
     tr.innerHTML='<td><input class="f-em" value="'+esc(it.email)+'" '+(isNew?'':'readonly')+'></td>'
       +'<td><input class="f-nm" value="'+esc(it.full_name||'')+'"></td>'

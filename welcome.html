@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Welcome Onboard · Sapo FNB</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--blue:#007AFF;--green:#16D865;--berkeley:#0F1437;--offblue:#F0F4F9;--gray:#5B6472;--line:#E2E9F2;--amber:#FFAE06}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Inter',system-ui,sans-serif;background:var(--offblue);color:#1F2533}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 16px 70px}
+  header.h{background:var(--berkeley);color:#fff;padding:16px 0}
+  header.h .wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .logo{font-weight:800;display:flex;align-items:center;gap:9px}
+  .dot{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,var(--blue),var(--green))}
+  .me{margin-left:auto;font-size:13px;color:#c7d2e8}.me a{color:#9ECCFF;cursor:pointer;text-decoration:none}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:16px}
+  .hero{background:linear-gradient(135deg,#0F1437,#143a8a);color:#fff;border:none}
+  .hero h1{margin:0 0 2px;font-size:22px}
+  .hero .sub{color:#c7d2e8;font-size:13px}
+  .ring-row{display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-top:14px}
+  .ring{width:128px;height:128px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:conic-gradient(var(--green) calc(var(--p)*1%), rgba(255,255,255,.18) 0)}
+  .ring .inner{width:104px;height:104px;border-radius:50%;background:#0F1437;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ring .pct{font-size:30px;font-weight:800;line-height:1}
+  .ring .lab{font-size:11px;color:#c7d2e8;margin-top:3px}
+  .secbars{flex:1;min-width:240px}
+  .sbrow{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:13px}
+  .sbrow .nm{width:140px;color:#eaf0ff}
+  .sbrow .tk{flex:1;height:9px;background:rgba(255,255,255,.16);border-radius:6px;overflow:hidden}
+  .sbrow .tf{height:100%;background:linear-gradient(90deg,#4DA3FF,#16D865)}
+  .sbrow .vv{width:54px;text-align:right;color:#c7d2e8}
+  .passpill{display:inline-flex;align-items:center;gap:7px;margin-top:14px;padding:8px 16px;border-radius:30px;font-weight:700;font-size:14px}
+  .pass-no{background:rgba(255,255,255,.12);color:#ffd9a8}
+  .pass-yes{background:var(--green);color:#06351a}
+  .badges{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+  .badge{display:flex;flex-direction:column;align-items:center;gap:5px;width:92px;text-align:center}
+  .badge .ic{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;background:var(--offblue);filter:grayscale(1);opacity:.4;border:2px solid var(--line)}
+  .badge.on .ic{filter:none;opacity:1;background:#FFF7E6;border-color:var(--amber);box-shadow:0 3px 10px rgba(255,174,6,.25)}
+  .badge .bl{font-size:11px;color:var(--gray);line-height:1.25}
+  .badge.on .bl{color:var(--berkeley);font-weight:600}
+  h3{margin:0 0 4px;font-size:17px;color:var(--berkeley);display:flex;align-items:center;gap:8px}
+  .sec-pct{margin-left:auto;font-size:13px;color:var(--gray);font-weight:600}
+  .sub2{color:var(--gray);font-size:12.5px;margin:0 0 12px}
+  .item{display:flex;align-items:flex-start;gap:11px;padding:9px 0;border-top:1px solid var(--line)}
+  .item:first-of-type{border-top:none}
+  .cb{width:22px;height:22px;border-radius:7px;border:2px solid #cdd5e0;flex:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;transition:.12s;margin-top:1px}
+  .cb.on{background:var(--green);border-color:var(--green)}
+  .item .tx{font-size:14.5px;line-height:1.4}
+  .item.done .tx{color:var(--gray);text-decoration:line-through}
+  .opt{font-size:11px;background:var(--offblue);color:var(--gray);padding:1px 7px;border-radius:10px;margin-left:6px}
+  .count{padding:8px 0 4px}
+  .count .ctop{display:flex;justify-content:space-between;font-size:14px;margin-bottom:8px}
+  .count .ctop b{font-weight:600}
+  .boxes{display:flex;flex-wrap:wrap;gap:6px}
+  .bx{width:30px;height:26px;border-radius:6px;border:1.5px solid #cdd5e0;background:#fff;cursor:pointer;font-size:10px;color:var(--gray);display:flex;align-items:center;justify-content:center;transition:.1s}
+  .bx.on{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+  .bx.big{flex:1;min-width:30px}
+  .loading{padding:60px;text-align:center;color:var(--gray)}
+  .center{max-width:440px;margin:60px auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:30px;text-align:center}
+</style>
+</head>
+<body>
+<header class="h"><div class="wrap">
+  <div class="logo"><span class="dot"></span> Welcome Onboard</div>
+  <div class="me" id="me"></div>
+</div></header>
+<main class="wrap" id="root"><div class="loading">Đang tải…</div></main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+  var sb = supabase.createClient(SUPA.URL, SUPA.ANON_KEY);
+  var USER=null, PROG={};
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function notAllowed(m){ document.getElementById('root').innerHTML='<div class="center"><h2>Không truy cập được</h2><p style="color:#5B6472">'+esc(m)+'</p></div>'; }
+
+  var SECTIONS=[
+    {id:'prod',name:'Sản phẩm',icon:'📘',items:[
+      {k:'prod_test',t:'Pass bài test sản phẩm của phòng đào tạo (≥80%)'},
+      {k:'prod_teach',t:'Teach-back: giảng lại 1 tính năng cho người khác'},
+      {k:'prod_cert',t:'Được chứng nhận sản phẩm trước khi gặp khách thật'}
+    ]},
+    {id:'skill',name:'Kỹ năng',icon:'🎯',items:[
+      {k:'skill_clip',t:'Quay 1 clip tư vấn mẫu — được chấm đạt'},
+      {k:'skill_roleplay',t:'Vượt ≥3 bài giả lập tình huống (từ chối / đối thủ / chốt)'},
+      {k:'skill_crm',t:'Dùng CRM hiệu quả (nhập đúng–đủ–đúng hạn, được duyệt)'},
+      {k:'skill_demo',t:'Tự demo khách thật — có người kèm chấm đạt'},
+      {k:'skill_shadow',t:'Shadowing ≥5 cuộc của sale giỏi trước khi solo'},
+      {type:'count',k:'deploy',t:'Tự triển khai/cài đặt khách',n:10,each:1,suffix:' lần'}
+    ]},
+    {id:'perf',name:'Hiệu suất',icon:'📈',items:[
+      {type:'count',k:'leads',t:'Nhập 300 lead đầu tiên',n:30,each:10,suffix:' lead'},
+      {type:'count',k:'weeks',t:'Duy trì định mức cuộc gọi 6 tuần liên tiếp',n:6,each:1,week:true}
+    ]},
+    {id:'chan',name:'Tạo kênh bán',icon:'📡',items:[
+      {k:'chan_tiktok0',t:'TikTok: lập kênh + định vị nội dung'},
+      {type:'count',k:'tiktok',t:'TikTok: đăng video',n:12,each:1,suffix:' video'},
+      {k:'chan_ctv1',t:'CTV: lập danh sách 10 CTV tiềm năng'},
+      {k:'chan_ctv2',t:'CTV: chốt ≥3 CTV'},
+      {k:'chan_ctv3',t:'CTV: đào tạo CTV'},
+      {k:'chan_ctv4',t:'CTV: CTV ra ≥1 lead/đơn'},
+      {k:'chan_ref',t:'Kênh giới thiệu: xin giới thiệu sau mỗi đơn',opt:true},
+      {k:'chan_partner',t:'Kênh đối tác (hội nhóm ngành, lắp đặt, kế toán dịch vụ)',opt:true},
+      {k:'chan_result',t:'✅ Có ≥1 kênh đã ra kết quả thật (≥1 đơn/lead)'}
+    ]},
+    {id:'result',name:'Kết quả',icon:'🏆',items:[
+      {k:'result_hd1',t:'Hợp đồng đầu tiên (first win)'},
+      {type:'count',k:'sales20',t:'Doanh số 20 triệu',n:20,each:1,money:true},
+      {k:'result_hd23',t:'Đơn thứ 2 & 3 (chứng minh lặp lại được)',opt:true}
+    ]},
+    {id:'connect',name:'Thử thách kết nối',icon:'🫂',items:[
+      {k:'c_eat',t:'Đi ăn cùng phòng'},
+      {k:'c_leader',t:'Làm quen leader'},
+      {k:'c_top',t:'Làm quen top sale (xin 1 bí kíp)'},
+      {k:'c_2star',t:'Tìm & làm quen ≥1 người 2 sao trở lên trong trung tâm'},
+      {k:'c_all',t:'Quen tất cả mọi người trong trung tâm'},
+      {k:'c_reverse',t:'Phỏng vấn ngược: hỏi 3 người về 1 lần vấp ngã & bài học'},
+      {k:'c_share',t:'Chia sẻ "first win" hoặc 1 bài học trước cả phòng'},
+      {k:'c_commit',t:'Viết "cam kết 60 ngày" + dán bàn làm việc'},
+      {k:'c_nhau',t:'Rủ leader đi nhậu 🍺',opt:true}
+    ]}
+  ];
+  var BADGES=[
+    {ic:'🎓',l:'Chứng nhận SP',on:function(){return secDone('prod');}},
+    {ic:'🎬',l:'Lành nghề',on:function(){return secDone('skill');}},
+    {ic:'📞',l:'Bền bỉ 6 tuần',on:function(){return cnt('weeks')>=6;}},
+    {ic:'📥',l:'300 Lead',on:function(){return cnt('leads')>=30;}},
+    {ic:'📡',l:'Tạo kênh',on:function(){return PROG['obd_chan_result'];}},
+    {ic:'🤝',l:'First Win',on:function(){return PROG['obd_result_hd1'];}},
+    {ic:'💰',l:'20 triệu',on:function(){return cnt('sales20')>=20;}},
+    {ic:'🫂',l:'Hòa nhập',on:function(){return secDone('connect');}},
+    {ic:'🏆',l:'Tốt nghiệp',on:function(){return passed();}}
+  ];
+
+  function cnt(k){ var n=0; for(var j=1;j<=30;j++){ if(PROG['obd_'+k+'_'+j]) n++; } return n; }
+  function reqUnits(it){ if(it.opt) return 0; return it.type==='count'? it.n : 1; }
+  function doneUnits(it){ if(it.opt) return 0; if(it.type==='count'){ return Math.min(cnt(it.k), it.n); } return PROG['obd_'+it.k]?1:0; }
+  function secStat(id){ var s=SECTIONS.filter(function(x){return x.id===id;})[0]; var t=0,d=0; s.items.forEach(function(it){ t+=reqUnits(it); d+=doneUnits(it); }); return {t:t,d:d,pct:t?Math.round(d/t*100):100}; }
+  function secDone(id){ var s=secStat(id); return s.d>=s.t; }
+  function overall(){ var t=0,d=0; SECTIONS.forEach(function(s){ s.items.forEach(function(it){ t+=reqUnits(it); d+=doneUnits(it); }); }); return {t:t,d:d,pct:t?Math.round(d/t*100):0}; }
+  function passed(){ return SECTIONS.every(function(s){ return secDone(s.id); }); }
+
+  sb.auth.getSession().then(function(r){
+    var s=r.data.session;
+    if(!s){ var f=location.pathname.split('/').pop()||'welcome.html'; location.replace('login.html?next='+encodeURIComponent(f)); return; }
+    USER=s.user;
+    document.getElementById('me').innerHTML='<a href="index.html">← Trang chủ</a> · <b style="color:#fff">'+esc(USER.email)+'</b> · <a id="lo">Đăng xuất</a>';
+    document.getElementById('lo').onclick=function(){ sb.auth.signOut().then(function(){ location.replace('login.html'); }); };
+    sb.from('progress').select('item_key,done').eq('user_id',USER.id).then(function(res){
+      (res.data||[]).forEach(function(row){ if(row.done) PROG[row.item_key]=true; });
+      render();
+    });
+  });
+
+  function setKey(key,on){ if(on) PROG[key]=true; else delete PROG[key];
+    sb.from('progress').upsert({user_id:USER.id,email:USER.email,item_key:key,done:!!on,updated_at:new Date().toISOString()},{onConflict:'user_id,item_key'}).then(function(){},function(){});
+  }
+  function setCount(k,n,i){ // tô đầy 1..i, tắt i+1..n
+    for(var j=1;j<=n;j++){ var key='obd_'+k+'_'+j, want=j<=i; if(!!PROG[key]!==want) setKey(key,want); }
+    render();
+  }
+
+  function render(){
+    var ov=overall(), pass=passed();
+    var h='';
+    // ---- Dashboard tổng hợp ----
+    h+='<div class="card hero"><h1>Lộ trình hội nhập của bạn</h1><div class="sub">Hoàn thành tất cả mục bắt buộc để đủ điều kiện lên Nhân viên chính thức.</div>'
+      +'<div class="ring-row">'
+      +'<div class="ring" style="--p:'+ov.pct+'"><div class="inner"><div class="pct">'+ov.pct+'%</div><div class="lab">'+ov.d+'/'+ov.t+' mục</div></div></div>'
+      +'<div class="secbars">'
+      + SECTIONS.map(function(s){ var st=secStat(s.id); return '<div class="sbrow"><span class="nm">'+s.icon+' '+esc(s.name)+'</span><span class="tk"><span class="tf" style="width:'+st.pct+'%"></span></span><span class="vv">'+st.d+'/'+st.t+'</span></div>'; }).join('')
+      +'</div></div>'
+      +'<div class="passpill '+(pass?'pass-yes':'pass-no')+'">'+(pass?'✓ Đủ điều kiện chính thức!':'⏳ Đang hội nhập — còn '+(ov.t-ov.d)+' mục nữa')+'</div>'
+      +'<div class="badges">'
+      + BADGES.map(function(b){ var on=b.on(); return '<div class="badge'+(on?' on':'')+'"><div class="ic">'+b.ic+'</div><div class="bl">'+esc(b.l)+'</div></div>'; }).join('')
+      +'</div></div>';
+    // ---- Từng nhóm ----
+    SECTIONS.forEach(function(s){
+      var st=secStat(s.id);
+      h+='<div class="card"><h3>'+s.icon+' '+esc(s.name)+'<span class="sec-pct">'+st.pct+'%</span></h3>';
+      s.items.forEach(function(it){
+        if(it.type==='count'){
+          var c=cnt(it.k), total=it.n*(it.each||1);
+          var label = it.money? (c*(it.each||1))+'/'+total+' triệu' : (it.week? c+'/'+it.n+' tuần' : (c*(it.each||1))+'/'+total+(it.suffix||''));
+          h+='<div class="count"><div class="ctop"><b>'+esc(it.t)+'</b><span style="color:#007AFF;font-weight:700">'+label+'</span></div><div class="boxes">';
+          for(var i=1;i<=it.n;i++){ var on=PROG['obd_'+it.k+'_'+i]; var cap= it.week? ('T'+(i+1)) : (it.money? (i):(it.each>1? (i*it.each): i)); h+='<div class="bx'+(it.n>20?' big':'')+(on?' on':'')+'" data-k="'+it.k+'" data-n="'+it.n+'" data-i="'+i+'">'+cap+'</div>'; }
+          h+='</div></div>';
+        } else {
+          var on=PROG['obd_'+it.k];
+          h+='<div class="item'+(on?' done':'')+'"><div class="cb'+(on?' on':'')+'" data-key="obd_'+it.k+'">'+(on?'✓':'')+'</div><div class="tx">'+esc(it.t)+(it.opt?'<span class="opt">không bắt buộc</span>':'')+'</div></div>';
+        }
+      });
+      h+='</div>';
+    });
+    document.getElementById('root').innerHTML=h;
+    document.querySelectorAll('.cb').forEach(function(el){ el.onclick=function(){ toggle(el.getAttribute('data-key').replace(/^obd_/,'')); }; });
+    document.querySelectorAll('.bx').forEach(function(el){ el.onclick=function(){ var k=el.getAttribute('data-k'), n=+el.getAttribute('data-n'), i=+el.getAttribute('data-i'); var cur=cnt(k); setCount(k,n, (i===cur? i-1 : i)); }; });
+  }
+  // toggle dùng key đã bỏ tiền tố obd_ -> thêm lại
+  function toggle(k){ var key='obd_'+k; setKey(key,!PROG[key]); render(); }
+
+  if(!window.SUPA || SUPA.URL.indexOf('YOUR-PROJECT')>=0){ notAllowed('Chưa cấu hình config.js'); }
+</script>
+</body>
+</html>

@@ -59,7 +59,7 @@
   if(new URLSearchParams(location.search).get('embed')){ var _st=document.createElement('style'); _st.textContent='header.h{display:none}.wrap{padding-top:4px!important}'; document.head.appendChild(_st); }
   var PHONG_TARGET = 500000000;            // chuẩn doanh thu cả phòng / tháng
   var STD = { tpMin:3, key3:2, star2:5 };  // chuẩn nhân sự: TP>=3 sao, >=2 người >=3 sao, >=5 người >=2 sao
-  var LV={c1:'Nhân viên',c2:'Chuyên gia',c3:'Trưởng phòng',c4:'Giám đốc Trung tâm'};
+  var LV={c0:'Thử việc',c1:'Nhân viên',c2:'Chuyên gia',c3:'Trưởng phòng',c4:'Giám đốc Trung tâm'};
   var DATA={}, ME=null, MYLEVEL='c1', MYDEPT='', charts=[];
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function vnd(n){ n=Number(n)||0; return n.toLocaleString('vi-VN'); }

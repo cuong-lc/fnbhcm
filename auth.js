@@ -6,7 +6,7 @@
   window.SB = sb;
   var de = document.documentElement;
   de.style.visibility = 'hidden';
-  var LV = { c1: 'Nhân viên', c2: 'Chuyên gia', c3: 'Trưởng phòng', c4: 'Giám đốc Trung tâm' };
+  var LV = { c0: 'Thử việc (Hội nhập)', c1: 'Nhân viên', c2: 'Chuyên gia', c3: 'Trưởng phòng', c4: 'Giám đốc Trung tâm' };
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function gotoLogin(){ var f=location.pathname.split('/').pop()||'index.html'; location.replace('login.html?next='+encodeURIComponent(f+location.search+location.hash)); }
 
@@ -40,6 +40,7 @@
       '<span>Cấp: <b style="color:#16D865">' + esc(lvl) + '</b></span>' +
       '<span style="margin-left:auto"></span>' +
       '<a href="index.html" style="color:#9ECCFF;text-decoration:none">Trang chủ</a>' +
+      ((p.level === 'c0' || isM) ? '<a href="welcome.html" style="color:#9ECCFF;text-decoration:none">Hội nhập</a>' : '') +
       (isM ? '<a href="dashboard.html" style="color:#9ECCFF;text-decoration:none">Dashboard</a>' : '') +
       (isM ? '<a href="admin.html" style="color:#9ECCFF;text-decoration:none">Admin</a>' : '') +
       '<a id="clf-logout" style="color:#ff9b9b;text-decoration:none;cursor:pointer">Đăng xuất</a>';
