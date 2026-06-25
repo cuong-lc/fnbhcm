@@ -10,13 +10,15 @@
   .card{background:#fff;border-radius:16px;padding:32px;width:380px;max-width:92vw;box-shadow:0 12px 40px rgba(0,0,0,.3)}
   .card h2{margin:0 0 8px;color:#0F1437}
   .card p{color:#5B6472;font-size:14px;margin:0 0 18px}
-  input{width:100%;padding:12px 14px;border:1px solid #E2E9F2;border-radius:10px;font-size:15px;font-family:inherit;margin-bottom:12px;box-sizing:border-box}
-  button{width:100%;background:#007AFF;color:#fff;border:none;padding:12px;border-radius:10px;font-weight:600;font-size:15px;cursor:pointer;font-family:inherit}
-  button:disabled{opacity:.6}
-  .m{font-size:13px;margin-top:12px}.m.ok{color:#0a8a3a}.m.e{color:#b00020}
+  .gbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#1F2533;border:1px solid #DADCE0;padding:12px;border-radius:10px;font-weight:600;font-size:15px;cursor:pointer;font-family:inherit}
+  .gbtn:hover{background:#f7f9fc}
+  .gbtn:disabled{opacity:.6;cursor:default}
+  .gbtn svg{width:20px;height:20px;flex:none}
+  .m{font-size:13px;margin-top:14px}.m.ok{color:#0a8a3a}.m.e{color:#b00020}
   .brand{display:flex;align-items:center;gap:9px;font-weight:700;color:#0F1437;margin-bottom:18px}
   .dot{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,#007AFF,#16D865)}
   .loading{color:#5B6472;text-align:center;padding:10px}
+  .hint{color:#9aa3b2;font-size:12px;margin-top:14px;text-align:center}
 </style>
 </head>
 <body>
@@ -27,27 +29,25 @@
   var sb = supabase.createClient(SUPA.URL, SUPA.ANON_KEY);
   function nextUrl(){ var p=new URLSearchParams(location.search); var n=p.get('next')||'index.html'; if(/^https?:|^\/\//i.test(n)) n='index.html'; return n; }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
-  sb.auth.getSession().then(function(r){ if(r.data.session){ location.replace(nextUrl()); } else { form(); } });
-  sb.auth.onAuthStateChange(function(e,s){ if(s&&s.user){ location.replace(nextUrl()); } });
+  var GICON='<svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
   function form(msg,cls){
     document.getElementById('card').innerHTML =
       '<div class="brand"><span class="dot"></span> Khung năng lực Kinh doanh · Sapo</div>'
-      +'<h2>Đăng nhập</h2><p>Nhập email công ty để nhận link đăng nhập. Hệ thống ghi nhận tiến độ theo email của bạn.</p>'
-      +'<input id="email" type="email" placeholder="ban@sapo.vn">'
-      +'<button id="send">Gửi link đăng nhập</button>'
-      +(msg?'<div class="m '+(cls||'')+'">'+esc(msg)+'</div>':'');
-    document.getElementById('send').onclick=send;
-    document.getElementById('email').addEventListener('keydown',function(e){ if(e.key==='Enter') send(); });
+      +'<h2>Đăng nhập</h2><p>Dùng tài khoản Google công ty (@sapo.vn) của bạn. Hệ thống ghi nhận theo email đăng nhập.</p>'
+      +'<button class="gbtn" id="gg">'+GICON+'<span>Đăng nhập bằng Google</span></button>'
+      +(msg?'<div class="m '+(cls||'')+'">'+esc(msg)+'</div>':'')
+      +'<div class="hint">Nếu không vào được, liên hệ quản trị để được thêm quyền.</div>';
+    document.getElementById('gg').onclick=signin;
   }
-  function send(){
-    var em=(document.getElementById('email').value||'').trim(); if(!em) return;
-    var b=document.getElementById('send'); b.disabled=true; b.textContent='Đang gửi…';
+  function signin(){
+    var b=document.getElementById('gg'); b.disabled=true; b.querySelector('span').textContent='Đang chuyển tới Google…';
     var redir=location.origin+location.pathname+'?next='+encodeURIComponent(nextUrl());
-    sb.auth.signInWithOtp({ email:em, options:{ emailRedirectTo:redir } }).then(function(r){
+    sb.auth.signInWithOAuth({ provider:'google', options:{ redirectTo:redir, queryParams:{ hd:'sapo.vn', prompt:'select_account' } } }).then(function(r){
       if(r.error) form('Lỗi: '+r.error.message,'e');
-      else form('Đã gửi link tới '+em+'. Mở email và bấm vào link để đăng nhập.','ok');
     });
   }
+  sb.auth.getSession().then(function(r){ if(r.data.session){ location.replace(nextUrl()); } else { form(); } });
+  sb.auth.onAuthStateChange(function(e,s){ if(s&&s.user){ location.replace(nextUrl()); } });
 </script>
 </body>
 </html>
