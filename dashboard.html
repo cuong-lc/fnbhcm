@@ -41,6 +41,16 @@
   .b.ok{background:var(--green)} .b.no{background:#cdd5e0;color:#fff}
   .stars{color:var(--amber);letter-spacing:1px}
   a.plink{color:#0F1437;text-decoration:none;border-bottom:1px dotted #9bb}
+  .chalcard{margin-top:14px}
+  .chalhd{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+  .chalic{font-size:26px;flex:none;line-height:1}
+  .chalname{font-weight:700;color:var(--berkeley)}
+  .chalbadge{margin-left:auto;background:linear-gradient(120deg,#FFB800,#FF7A00);color:#fff;font-weight:800;font-size:13px;padding:6px 12px;border-radius:20px;white-space:nowrap}
+  .chalbadge.off{background:#eef1f6;color:#9aa3b2}
+  .chalrow{display:flex;gap:7px;flex-wrap:wrap}
+  .chalbox{min-width:40px;height:36px;padding:0 8px;border:2px solid #dbe3ef;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#6b7686;cursor:pointer;background:#fff;user-select:none;transition:.1s}
+  .chalbox.on{background:linear-gradient(120deg,#FFB800,#FF7A00);border-color:#FF9500;color:#fff}
+  .chalbox.ro{cursor:default}
 </style>
 </head>
 <body>
@@ -296,6 +306,42 @@
       + list.map(function(d){return '<option value="'+esc(d)+'"'+(d===cur?' selected':'')+'>'+esc(d)+'</option>';}).join('')+'</select></div>';
   }
 
+  // ---------- Thách thức giới hạn (huy hiệu) ----------
+  var CHAL=[
+    {code:'deal', icon:'🔥', name:'Thợ Săn Deal Khủng', unit:'M', desc:'1 lần đạt deal khủng', tiers:[10,20,30,40,50,60,70,80,90,100]},
+    {code:'longterm', icon:'⏳', name:'Bậc Thầy Dài Hạn', unit:' năm', desc:'Ký gói dịch vụ dài hạn', tiers:[3,4,5,6,7,8]},
+    {code:'rev', icon:'👑', name:'Vua Doanh Thu', unit:'M', desc:'Doanh thu đỉnh trong 1 tháng', tiers:[50,75,100,125,150,175,200,250,300]}
+  ];
+  function chalKey(code,i){ return 'chal_'+code+'_'+i; }
+  function chalHas(email,key){ return !!(DATA.progByEmail[(email||'').toLowerCase()]||{})[key]; }
+  function chalLevel(email,code,n){ var lv=0; for(var i=1;i<=n;i++){ if(chalHas(email,chalKey(code,i))) lv=i; } return lv; }
+  function setChal(key,on){
+    var e=ME.email.toLowerCase(); DATA.progByEmail[e]=DATA.progByEmail[e]||{};
+    if(on) DATA.progByEmail[e][key]=true; else delete DATA.progByEmail[e][key];
+    sb.from('progress').upsert({user_id:ME.id,email:ME.email,item_key:key,done:!!on,updated_at:new Date().toISOString()},{onConflict:'user_id,item_key'}).then(function(){},function(){});
+  }
+  function setChalTier(code,n,target){ for(var i=1;i<=n;i++){ var key=chalKey(code,i), want=i<=target; if(chalHas(ME.email,key)!==want) setChal(key,want); } }
+  function chalSection(email){
+    var isMe=(email.toLowerCase()===ME.email.toLowerCase());
+    var cards=CHAL.map(function(c){
+      var lv=chalLevel(email,c.code,c.tiers.length);
+      var badge= lv>0 ? '<span class="chalbadge">'+c.icon+' '+c.tiers[lv-1]+c.unit+'</span>' : '<span class="chalbadge off">chưa đạt</span>';
+      var boxes=c.tiers.map(function(v,idx){ var i=idx+1; var on=i<=lv; return '<div class="chalbox'+(on?' on':'')+(isMe?'':' ro')+'" data-code="'+c.code+'" data-n="'+c.tiers.length+'" data-i="'+i+'" title="'+v+c.unit+'">'+v+'</div>'; }).join('');
+      return '<div class="card chalcard"><div class="chalhd"><span class="chalic">'+c.icon+'</span><div><div class="chalname">'+esc(c.name)+'</div><div class="muted" style="font-size:12px">'+esc(c.desc)+'</div></div>'+badge+'</div><div class="chalrow">'+boxes+'</div></div>';
+    }).join('');
+    return secH('Thách thức giới hạn 🏆')
+      +'<div class="muted" style="margin:-4px 0 4px">'+(isMe?'Bấm vào mốc bạn đã đạt để nhận huy hiệu — huy hiệu sẽ hiện ở Trang chủ (bảng vinh danh trung tâm). Bấm lại mốc cao nhất để hạ xuống.':'Huy hiệu thách thức của thành viên.')+'</div>'
+      +cards;
+  }
+  function attachChal(email){
+    if(email.toLowerCase()!==ME.email.toLowerCase()) return;
+    document.querySelectorAll('.chalbox').forEach(function(el){ el.onclick=function(){
+      var code=el.getAttribute('data-code'), n=parseInt(el.getAttribute('data-n'),10), i=parseInt(el.getAttribute('data-i'),10);
+      var cur=chalLevel(ME.email,code,n); var target=(cur===i)?(i-1):i;
+      setChalTier(code,n,target); show('ca');
+    }; });
+  }
+
   // ---------- TAB CÁ NHÂN ----------
   function renderCaNhan(el, email){
     var ms=months(); var rev=revOf(email); var rdata=ms.map(function(m){return rev[m]||0;});
@@ -321,10 +367,12 @@
       +'</div>'
       + (S.manhYeu||'')
       + secH('Lộ trình thăng tiến')
-      + (S.tienDo||'');
+      + (S.tienDo||'')
+      + chalSection(email);
     lineChart(document.getElementById('c1'), ms, rdata, 'Doanh thu','#007AFF');
     var clabels=ds.map(function(x){return x.domain;}), cdata=ds.map(function(x){return x.pct;});
     charts.push(new Chart(document.getElementById('cradar'),{type:'radar',data:{labels:clabels,datasets:[{label:'%',data:cdata,fill:true,backgroundColor:'rgba(0,122,255,.16)',borderColor:'#007AFF',pointBackgroundColor:'#16D865',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{min:0,max:100,ticks:{stepSize:25,backdropColor:'transparent'},pointLabels:{font:{size:9}}}},plugins:{legend:{display:false}}}}));
+    attachChal(email);
   }
 
   // ---------- TAB PHÒNG ----------

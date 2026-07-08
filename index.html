@@ -37,6 +37,39 @@
   </section>
 
   <section class="section" style="padding-top:0">
+    <h2>Vinh danh · Huy hiệu Thách thức 🏆</h2>
+    <div class="accent"></div>
+    <p class="sub">Những thành viên toàn trung tâm đã chinh phục các cột mốc thách thức giới hạn. Chinh phục mốc mới ở Dashboard → Cá nhân để có tên tại đây.</p>
+    <style>
+      #badgeboard .bch{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-top:1px solid #eef1f6;font-size:13px}
+      #badgeboard .bnm{color:#1F2533} #badgeboard .bval{font-weight:800;color:#FF7A00;white-space:nowrap}
+    </style>
+    <div id="badgeboard" class="kpis"><div class="kpi"><div class="val" style="font-size:14px;color:#5B6472">Đang tải…</div></div></div>
+  </section>
+  <script>
+  (function(){
+    var CHAL=[
+      {code:'deal',icon:'🔥',name:'Thợ Săn Deal Khủng',unit:'M',tiers:[10,20,30,40,50,60,70,80,90,100]},
+      {code:'longterm',icon:'⏳',name:'Bậc Thầy Dài Hạn',unit:' năm',tiers:[3,4,5,6,7,8]},
+      {code:'rev',icon:'👑',name:'Vua Doanh Thu',unit:'M',tiers:[50,75,100,125,150,175,200,250,300]}
+    ];
+    function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+    function render(rows){
+      var byCode={}; CHAL.forEach(function(c){byCode[c.code]={};});
+      (rows||[]).forEach(function(r){ var p=String(r.item_key||'').split('_'); if(p[0]!=='chal'||!byCode[p[1]])return; var code=p[1], idx=parseInt(p[2],10)||0, nm=r.full_name||'?'; if(!byCode[code][nm]||idx>byCode[code][nm]) byCode[code][nm]=idx; });
+      var html=CHAL.map(function(c){
+        var arr=Object.keys(byCode[c.code]).map(function(nm){return {nm:nm,idx:byCode[c.code][nm]};}).sort(function(a,b){return b.idx-a.idx;});
+        var list=arr.length? arr.map(function(x){ return '<div class="bch"><span class="bnm">'+esc(x.nm)+'</span><span class="bval">'+c.icon+' '+c.tiers[x.idx-1]+c.unit+'</span></div>'; }).join('') : '<div style="color:#9aa3b2;font-size:13px;padding:6px 0">Chưa ai đạt — hãy là người đầu tiên!</div>';
+        return '<div class="kpi" style="min-width:240px"><div class="lab" style="font-size:15px;font-weight:700;color:#0F1437">'+c.icon+' '+esc(c.name)+'</div><div style="font-size:12px;color:#5B6472;margin:2px 0 10px">'+arr.length+' người đạt</div>'+list+'</div>';
+      }).join('');
+      document.getElementById('badgeboard').innerHTML=html;
+    }
+    function load(){ if(!window.SB) return; SB.rpc('center_badges').then(function(r){ if(r.error){ document.getElementById('badgeboard').innerHTML='<div class="kpi"><div class="val" style="font-size:13px;color:#b00020">Không tải được bảng vinh danh</div></div>'; return; } render(r.data); }); }
+    if(window.CLF_READY) load(); else document.addEventListener('clf-ready', load);
+  })();
+  </script>
+
+  <section class="section" style="padding-top:0">
     <h2>Bốn cấp trong lộ trình</h2>
     <div class="accent"></div>
     <p class="sub">Lộ trình thăng tiến từ Nhân viên đến Giám đốc Trung tâm, mỗi cấp gắn với một bậc trưởng thành (mô hình Dreyfus).</p>
