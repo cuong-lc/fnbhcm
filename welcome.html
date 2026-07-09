@@ -191,7 +191,7 @@
       sb.from('profiles').select('role,level').eq('id',USER.id).single()
     ]).then(function(r){
       var prof=(r[3]&&r[3].data)||{};
-      if(prof.level!=='c0' && prof.level!=='c1' && prof.role!=='manager'){ notAllowed('Trang Hội nhập dành cho nhân viên đang hội nhập & Nhân viên Kinh doanh.'); return; }
+      // Trang Hội nhập mở cho tất cả các cấp đã đăng nhập
       ((r[0]&&r[0].data)||[]).forEach(function(row){ if(row.done) PROG[row.item_key]=true; });
       ((r[2]&&r[2].data)||[]).forEach(function(row){ MET[row.mkey]=Number(row.value)||0; });
       buildSections((r[1]&&r[1].data)||[]);
