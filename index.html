@@ -70,6 +70,7 @@
   (function(){
     var D1='Kiến thức kỹ năng chuyên môn';
     var LV4=['c1','c2','c3','c4'];
+    var WLV={c1:0.80,c2:0.10,c3:0.05,c4:0.05};
     var CENTER_DEPT='Trung tâm FNB 1 HCM';
     function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
     function hcol(p){ var r,g,b,t; if(p<0.5){ t=p/0.5; r=229+(255-229)*t; g=72+(174-72)*t; b=77+(6-77)*t; } else { t=(p-0.5)/0.5; r=255+(22-255)*t; g=174+(216-174)*t; b=6+(101-6)*t; } return 'rgba('+Math.round(r)+','+Math.round(g)+','+Math.round(b)+',.85)'; }
@@ -92,7 +93,7 @@
         var domOrder=[],byDom={};
         comps.forEach(function(c){ if(domOrder.indexOf(c.domain)<0)domOrder.push(c.domain); (byDom[c.domain]=byDom[c.domain]||[]).push(c); });
         function ckFrac(e){ var d=doneBy[e]||{},n=0; for(var k in d){ if(k.indexOf('clf_c1_ck_')===0)n++; } return ckTotal?Math.min(1,n/ckTotal):0; }
-        function compScore(e,c){ var d=doneBy[e]||{},sum=0; LV4.forEach(function(lv){ var f; if(c.domain===D1&&lv==='c1')f=ckFrac(e); else f=d['clf_'+lv+'_comp_'+c.id]?1:0; sum+=f; }); return sum/4; }
+        function compScore(e,c){ var d=doneBy[e]||{},sum=0; LV4.forEach(function(lv){ var f; if(c.domain===D1&&lv==='c1')f=ckFrac(e); else f=d['clf_'+lv+'_comp_'+c.id]?1:0; sum+=WLV[lv]*f; }); return sum; }
         function domScore(e,dom){ var cs=byDom[dom],s=0; cs.forEach(function(c){s+=compScore(e,c);}); return cs.length?s/cs.length:0; }
         function overall(e){ var s=0; domOrder.forEach(function(dom){s+=domScore(e,dom);}); return domOrder.length?s/domOrder.length:0; }
 
@@ -126,7 +127,7 @@
         }
         function blkDist(){
           var bands=[0,0,0,0]; sales.forEach(function(p){ var b=Math.min(3,Math.floor(p._ov/0.25)); bands[b]++; });
-          var labs=['0–25% · mới bắt đầu','25–50% · đang xây nền','50–75% · vững','75–100% · gần/đạt chuẩn'];
+          var labs=['0–25% · mới bắt đầu','25–50% · đang xây nền','50–75% · sắp đạt chuẩn NV','75–100% · đạt/vượt chuẩn NV'];
           var cols=['#E5484D','#FFAE06','#4DA3FF','#16D865'];
           var mx=Math.max.apply(null,bands)||1;
           var h='<div class="card"><h3>Phân bố mức năng lực</h3><p class="cd">Số nhân sự theo mức hoàn thành khung năng lực tổng.</p>';

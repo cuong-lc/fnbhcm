@@ -150,8 +150,9 @@
   function lineChart(canvas,labels,data,label,color){ charts.push(new Chart(canvas,{type:'line',data:{labels:labels,datasets:[{label:label,data:data,borderColor:color||'#007AFF',backgroundColor:'rgba(0,122,255,.12)',fill:true,tension:.3,pointRadius:4,pointBackgroundColor:color||'#007AFF'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:function(v){return short(v);}}}}}})); }
   function barChart(canvas,labels,data,label,colors){ charts.push(new Chart(canvas,{type:'bar',data:{labels:labels,datasets:[{label:label,data:data,backgroundColor:colors||'#007AFF',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:function(v){return short(v);}}}}}})); }
 
-  // ---- điểm năng lực 5 domain (mỗi cấp 25%) ----
+  // ---- điểm năng lực 5 domain (trọng số: NV 80% · CG +10 · TP +5 · GĐ +5) ----
   var LEVELS4=['c1','c2','c3','c4'];
+  var WLV={c1:0.80,c2:0.10,c3:0.05,c4:0.05};
   function doneOf(email){ return (DATA.progByEmail&&DATA.progByEmail[(email||'').toLowerCase()])||{}; }
   function ckFracC1(email){ var d=doneOf(email),n=0; for(var k in d){ if(k.indexOf('clf_c1_ck_')===0) n++; } return DATA.ckTotal? Math.min(1,n/DATA.ckTotal):0; }
   function domainScores(email){
@@ -163,9 +164,9 @@
         var frac;
         if(dom===DATA.D1 && lv==='c1'){ frac=ckFracC1(email); }
         else { var done=0; comps.forEach(function(c){ if(d['clf_'+lv+'_comp_'+c.id]) done++; }); frac=comps.length? done/comps.length:0; }
-        sum+=frac;
+        sum+=WLV[lv]*frac;
       });
-      return { domain:dom, pct:Math.round(sum/4*100) };
+      return { domain:dom, pct:Math.round(sum*100) };
     });
   }
   function overallComp(email){ var ds=domainScores(email); if(!ds.length)return 0; return Math.round(ds.reduce(function(a,b){return a+b.pct;},0)/ds.length); }
@@ -361,7 +362,7 @@
       +'<div class="card"><h3>Tăng trưởng doanh thu theo tháng</h3><div style="height:240px"><canvas id="c1"></canvas></div></div>'
       + (S.bocTach||'') + (S.chatLuong||'') + (S.dongGop||'') + (S.rank||'')
       + secH('Năng lực')
-      +'<div class="card" style="margin-top:16px"><h3>Tổng quan năng lực (5 mảng)</h3><div class="muted" style="margin-bottom:6px">Mỗi cấp 25%. Tick chuẩn ở các trang cấp là tự cập nhật.</div><div style="height:300px"><canvas id="cradar"></canvas></div></div>'
+      +'<div class="card" style="margin-top:16px"><h3>Tổng quan năng lực (5 mảng)</h3><div class="muted" style="margin-bottom:6px">Đạt chuẩn Nhân viên = 80%, Chuyên gia 90%, Trưởng phòng 95%, GĐ 100%. Tick chuẩn ở các trang cấp là tự cập nhật.</div><div style="height:300px"><canvas id="cradar"></canvas></div></div>'
       +'<div class="card" style="margin-top:16px"><h3>Chi tiết theo mảng</h3>'
       + ds.map(function(x){ return '<div style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><b>'+esc(x.domain)+'</b><span class="muted">'+x.pct+'%</span></div><div class="track"><div class="fill" style="width:'+x.pct+'%"></div></div></div>'; }).join('')
       +'</div>'
