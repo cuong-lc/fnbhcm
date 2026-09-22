@@ -368,12 +368,10 @@
       +'</div>'
       + (S.manhYeu||'')
       + secH('Lộ trình thăng tiến')
-      + (S.tienDo||'')
-      + chalSection(email);
+      + (S.tienDo||'');
     lineChart(document.getElementById('c1'), ms, rdata, 'Doanh thu','#007AFF');
     var clabels=ds.map(function(x){return x.domain;}), cdata=ds.map(function(x){return x.pct;});
     charts.push(new Chart(document.getElementById('cradar'),{type:'radar',data:{labels:clabels,datasets:[{label:'%',data:cdata,fill:true,backgroundColor:'rgba(0,122,255,.16)',borderColor:'#007AFF',pointBackgroundColor:'#16D865',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{min:0,max:100,ticks:{stepSize:25,backdropColor:'transparent'},pointLabels:{font:{size:9}}}},plugins:{legend:{display:false}}}}));
-    attachChal(email);
   }
 
   // ---------- TAB PHÒNG ----------

@@ -32,7 +32,7 @@
   function buildNav(activeFile) {
     const nav = byId("nav");
     if (!nav) return;
-    const items = [["index.html", "Trang chủ"]].concat(
+    const items = [["index.html", "Trang chủ"], ["badges.html", "Thợ săn huy hiệu"]].concat(
       LEVELS.filter(canSeeLevel).map((l) => [l.file, l.short])
     ).concat([["rubric.html", "Rubric"]]);
     nav.innerHTML = items.map(([f, t]) =>

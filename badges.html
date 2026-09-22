@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thợ săn huy hiệu · Khung năng lực Kinh doanh Sapo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="auth.js"></script>
+<style>
+  #bh{max-width:1040px;margin:0 auto;padding:0 16px 70px}
+  #bh .head{margin:22px 0 6px}
+  #bh h2{margin:0;font-size:20px;color:#0F1437}
+  #bh .accent2{height:3px;width:120px;background:linear-gradient(90deg,#007AFF,#16D865);border-radius:3px;margin:8px 0 6px}
+  #bh .sub{color:#5B6472;font-size:13.5px;margin:0 0 6px}
+  #bh .picker{background:#fff;border:1px solid #E2E9F2;border-radius:12px;padding:14px 16px;margin:14px 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  #bh .picker label{font-weight:600;font-size:14px;color:#0F1437}
+  #bh select{font-family:inherit;font-size:14px;padding:9px 12px;border:1.5px solid #cdd5e0;border-radius:9px;min-width:280px;background:#fff}
+  #bh .who{margin-left:auto;font-size:13px;color:#5B6472}
+  #bh .adminbadge{background:#FFF3E6;color:#9a6a00;font-weight:700;font-size:12px;padding:4px 11px;border-radius:20px}
+  #bh .viewbadge{background:#EAF2FF;color:#0057C7;font-weight:700;font-size:12px;padding:4px 11px;border-radius:20px}
+  #bh .card{background:#fff;border:1px solid #E2E9F2;border-radius:14px;padding:18px;margin-top:14px}
+  #bh .chalhd{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  #bh .chalic{font-size:28px}
+  #bh .chalname{font-weight:700;color:#0F1437;font-size:16px}
+  #bh .chaldesc{font-size:12.5px;color:#5B6472}
+  #bh .chalbadge{margin-left:auto;background:linear-gradient(120deg,#FFB800,#FF7A00);color:#fff;font-weight:800;font-size:13px;padding:7px 14px;border-radius:20px}
+  #bh .chalbadge.off{background:#eef1f6;color:#9aa3b2}
+  #bh .row{display:flex;gap:8px;flex-wrap:wrap}
+  #bh .box{min-width:44px;height:40px;padding:0 10px;border:2px solid #dbe3ef;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#6b7686;background:#fff}
+  #bh .box.on{background:linear-gradient(120deg,#FFB800,#FF7A00);border-color:#FF9500;color:#fff}
+  #bh .box.edit{cursor:pointer;transition:.1s}
+  #bh .box.edit:hover{border-color:#FF9500;box-shadow:0 2px 8px rgba(255,149,0,.25)}
+  #bh .single{min-width:150px}
+  #bh .hint{font-size:12px;color:#8a94a6;margin-top:8px}
+  #bh .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0F1437;color:#fff;padding:10px 18px;border-radius:10px;font-size:13.5px;opacity:0;transition:.25s;z-index:50}
+  #bh .toast.show{opacity:1}
+  #bh .loading{padding:40px;text-align:center;color:#5B6472}
+  #bh .empty{color:#9aa3b2;font-size:13px}
+</style>
+</head>
+<body data-page="badges">
+
+<div class="topbar"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> Khung năng lực Kinh doanh</a>
+  <nav class="nav" id="nav"></nav>
+</div></div>
+
+<main id="bh"><div class="loading">Đang tải…</div></main>
+<div class="toast" id="bh-toast"></div>
+
+<script src="framework-data.js"></script>
+<script src="app.js"></script>
+<script>
+(function(){
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function toast(m){ var t=document.getElementById('bh-toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},1800); }
+  var TYPES=[], AW={}, PEOPLE=[], curEmail=null, isOwner=false;
+
+  function tiersOf(bt){ try{ return Array.isArray(bt.tiers)?bt.tiers:JSON.parse(bt.tiers||'[]'); }catch(e){ return []; } }
+  function tierOf(email,code){ var e=(email||'').toLowerCase(); return (AW[e]&&AW[e][code])||0; }
+
+  function badgeCard(bt, tier, editable){
+    var tiers=tiersOf(bt), single=(bt.kind==='single');
+    var label = tier>0 ? (single?'Đạt':(tiers[tier-1]+(bt.unit||''))) : '';
+    var badge = tier>0 ? '<span class="chalbadge">'+bt.icon+' '+esc(label)+'</span>' : '<span class="chalbadge off">chưa đạt</span>';
+    var boxes;
+    if(single){
+      boxes='<div class="box single'+(tier>=1?' on':'')+(editable?' edit':'')+'" data-code="'+esc(bt.code)+'" data-i="1">'+(tier>=1?'✓ Đã đạt':'Đánh dấu đạt')+'</div>';
+    } else {
+      boxes=tiers.map(function(v,idx){var i=idx+1; return '<div class="box'+(i<=tier?' on':'')+(editable?' edit':'')+'" data-code="'+esc(bt.code)+'" data-i="'+i+'">'+esc(v)+'</div>';}).join('');
+    }
+    return '<div class="card"><div class="chalhd"><span class="chalic">'+bt.icon+'</span><div><div class="chalname">'+esc(bt.name)+'</div><div class="chaldesc">'+esc(bt.descr||'')+'</div></div>'+badge+'</div><div class="row">'+boxes+'</div>'+(editable?'<div class="hint">Bấm mốc để trao • bấm lại mốc cao nhất để hạ xuống</div>':'')+'</div>';
+  }
+
+  function renderBadgesFor(email, editable){
+    return TYPES.map(function(bt){ return badgeCard(bt, tierOf(email,bt.code), editable); }).join('');
+  }
+
+  function attachEdit(container){
+    container.querySelectorAll('.box.edit').forEach(function(b){
+      b.onclick=function(){
+        if(!curEmail) return;
+        var code=b.getAttribute('data-code'), i=parseInt(b.getAttribute('data-i'),10);
+        var cur=tierOf(curEmail,code);
+        var target=(cur===i)?i-1:i;
+        b.style.opacity=.5;
+        SB.rpc('set_badge_award',{p_email:curEmail,p_code:code,p_tier:target}).then(function(r){
+          if(r.error){ toast('Lỗi: '+r.error.message); b.style.opacity=1; return; }
+          var e=curEmail.toLowerCase(); AW[e]=AW[e]||{}; if(target>0) AW[e][code]=target; else delete AW[e][code];
+          renderOwnerBody(); toast('Đã cập nhật');
+        });
+      };
+    });
+  }
+
+  function renderOwnerBody(){
+    var box=document.getElementById('bh-editor'); if(!box) return;
+    var p=PEOPLE.filter(function(x){return x.email===curEmail;})[0];
+    box.innerHTML='<div style="font-size:13px;color:#5B6472;margin:2px 0 4px">Đang chỉnh huy hiệu cho <b style="color:#0F1437">'+esc(p?p.full_name:curEmail)+'</b>'+(p&&p.dept?' · '+esc(p.dept):'')+'</div>'+renderBadgesFor(curEmail,true);
+    attachEdit(box);
+  }
+
+  function renderOwner(root){
+    var opts=PEOPLE.map(function(p){ return '<option value="'+esc(p.email)+'">'+esc(p.full_name||p.email)+' · '+esc((p.dept||'').replace('Phòng ','').replace(' HCM',''))+'</option>'; }).join('');
+    root.innerHTML=
+      '<div class="head"><h2>Thợ săn huy hiệu 🏆</h2><div class="accent2"></div>'
+      +'<p class="sub">Trao huy hiệu cho từng nhân viên. Chỉ Giám đốc Trung tâm chỉnh sửa — huy hiệu hiện ở bảng Vinh danh trang chủ.</p></div>'
+      +'<div class="picker"><label>Chọn nhân viên:</label><select id="bh-sel">'+opts+'</select>'
+      +'<span class="who"><span class="adminbadge">Quyền: Giám đốc Trung tâm</span></span></div>'
+      +'<div id="bh-editor"></div>';
+    var sel=document.getElementById('bh-sel');
+    curEmail=PEOPLE.length?PEOPLE[0].email:null;
+    sel.value=curEmail;
+    sel.onchange=function(){ curEmail=sel.value; renderOwnerBody(); };
+    renderOwnerBody();
+  }
+
+  function renderStaff(root){
+    var email=(window.CLF_USER&&CLF_USER.email||'').toLowerCase();
+    var any=TYPES.some(function(bt){return tierOf(email,bt.code)>0;});
+    root.innerHTML=
+      '<div class="head"><h2>Huy hiệu của bạn 🏆</h2><div class="accent2"></div>'
+      +'<p class="sub">Tiến độ huy hiệu Thách thức giới hạn của bạn. Huy hiệu do Giám đốc Trung tâm ghi nhận. <span class="viewbadge">Chỉ xem</span></p></div>'
+      +(any?'':'<p class="empty" style="margin:10px 0">Bạn chưa có huy hiệu nào — cố lên nhé! 🔥</p>')
+      +renderBadgesFor(email,false);
+  }
+
+  function run(){
+    if(!window.SB){ document.getElementById('bh').innerHTML='<div class="loading">Chưa cấu hình hệ thống.</div>'; return; }
+    var prof=window.CLF_PROFILE||{};
+    isOwner=(prof.level==='c4');
+    var q=[ SB.from('badge_types').select('*').eq('active',true).order('sort'),
+            SB.from('badge_awards').select('email,code,tier_index') ];
+    if(isOwner) q.push(SB.from('role_assignments').select('email,full_name,dept,level'));
+    Promise.all(q).then(function(r){
+      if(r[0].error){ document.getElementById('bh').innerHTML='<div class="loading">Không tải được loại huy hiệu.</div>'; return; }
+      TYPES=r[0].data||[];
+      AW={};
+      (r[1].data||[]).forEach(function(a){ var e=(a.email||'').toLowerCase(); (AW[e]=AW[e]||{})[a.code]=a.tier_index; });
+      var root=document.getElementById('bh');
+      if(isOwner){
+        PEOPLE=(r[2]&&r[2].data||[]).slice().sort(function(a,b){ return (a.dept||'').localeCompare(b.dept||'')||(a.full_name||'').localeCompare(b.full_name||''); });
+        renderOwner(root);
+      } else {
+        renderStaff(root);
+      }
+    }, function(){ document.getElementById('bh').innerHTML='<div class="loading">Lỗi tải dữ liệu.</div>'; });
+  }
+  if(window.CLF_READY) run(); else document.addEventListener('clf-ready', run);
+})();
+</script>
+</body>
+</html>

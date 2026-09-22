@@ -214,23 +214,25 @@
   </section>
   <script>
   (function(){
-    var CHAL=[
-      {code:'deal',icon:'🔥',name:'Thợ Săn Deal Khủng',unit:'M',tiers:[10,20,30,40,50,60,70,80,90,100]},
-      {code:'longterm',icon:'⏳',name:'Bậc Thầy Dài Hạn',unit:' năm',tiers:[3,4,5,6,7,8]},
-      {code:'rev',icon:'👑',name:'Vua Doanh Thu',unit:'M',tiers:[50,75,100,125,150,175,200,250,300]}
-    ];
+    var CHAL=[];
     function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+    function tval(c,idx){ if(c.kind==='single') return 'Đạt'; return (c.tiers[idx-1]!=null?c.tiers[idx-1]:idx)+(c.unit||''); }
     function render(rows){
       var byCode={}; CHAL.forEach(function(c){byCode[c.code]={};});
       (rows||[]).forEach(function(r){ var p=String(r.item_key||'').split('_'); if(p[0]!=='chal'||!byCode[p[1]])return; var code=p[1], idx=parseInt(p[2],10)||0, nm=r.full_name||'?'; if(!byCode[code][nm]||idx>byCode[code][nm]) byCode[code][nm]=idx; });
       var html=CHAL.map(function(c){
         var arr=Object.keys(byCode[c.code]).map(function(nm){return {nm:nm,idx:byCode[c.code][nm]};}).sort(function(a,b){return b.idx-a.idx;});
-        var list=arr.length? arr.map(function(x){ return '<div class="bch"><span class="bnm">'+esc(x.nm)+'</span><span class="bval">'+c.icon+' '+c.tiers[x.idx-1]+c.unit+'</span></div>'; }).join('') : '<div style="color:#9aa3b2;font-size:13px;padding:6px 0">Chưa ai đạt — hãy là người đầu tiên!</div>';
+        var list=arr.length? arr.map(function(x){ return '<div class="bch"><span class="bnm">'+esc(x.nm)+'</span><span class="bval">'+c.icon+' '+esc(tval(c,x.idx))+'</span></div>'; }).join('') : '<div style="color:#9aa3b2;font-size:13px;padding:6px 0">Chưa ai đạt — hãy là người đầu tiên!</div>';
         return '<div class="kpi" style="min-width:240px"><div class="lab" style="font-size:15px;font-weight:700;color:#0F1437">'+c.icon+' '+esc(c.name)+'</div><div style="font-size:12px;color:#5B6472;margin:2px 0 10px">'+arr.length+' người đạt</div>'+list+'</div>';
       }).join('');
       document.getElementById('badgeboard').innerHTML=html;
     }
-    function load(){ if(!window.SB) return; SB.rpc('center_badges').then(function(r){ if(r.error){ document.getElementById('badgeboard').innerHTML='<div class="kpi"><div class="val" style="font-size:13px;color:#b00020">Không tải được bảng vinh danh</div></div>'; return; } render(r.data); }); }
+    function load(){ if(!window.SB) return;
+      SB.from('badge_types').select('code,icon,name,unit,tiers,kind,sort').eq('active',true).order('sort').then(function(bt){
+        if(bt.data){ CHAL=bt.data.map(function(t){ var ti; try{ti=Array.isArray(t.tiers)?t.tiers:JSON.parse(t.tiers||'[]');}catch(e){ti=[];} return {code:t.code,icon:t.icon||'🏅',name:t.name,unit:t.unit||'',tiers:ti,kind:t.kind}; }); }
+        SB.rpc('center_badges').then(function(r){ if(r.error){ document.getElementById('badgeboard').innerHTML='<div class="kpi"><div class="val" style="font-size:13px;color:#b00020">Không tải được bảng vinh danh</div></div>'; return; } render(r.data); });
+      });
+    }
     if(window.CLF_READY) load(); else document.addEventListener('clf-ready', load);
   })();
   </script>
