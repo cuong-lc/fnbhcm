@@ -27,6 +27,7 @@
   #bh .card{background:#fff;border:1px solid #E2E9F2;border-radius:14px;padding:18px}
   #bh .chalhd{display:flex;align-items:center;gap:12px;margin-bottom:12px}
   #bh .chalic{font-size:28px}
+  #bh .gicon{width:56px;height:56px;object-fit:contain;flex:none;filter:drop-shadow(0 2px 4px rgba(15,20,55,.18))}
   #bh .chalname{font-weight:700;color:#0F1437;font-size:16px}
   #bh .chaldesc{font-size:12.5px;color:#5B6472}
   #bh .chalbadge{margin-left:auto;background:linear-gradient(120deg,#FFB800,#FF7A00);color:#fff;font-weight:800;font-size:13px;padding:7px 14px;border-radius:20px}
@@ -62,6 +63,7 @@
   function toast(m){ var t=document.getElementById('bh-toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},1800); }
   var TYPES=[], AW={}, PEOPLE=[], curEmail=null, isOwner=false;
 
+  function iconHtml(bt){ return bt.image ? '<img class="gicon" src="'+esc(bt.image)+'" alt="'+esc(bt.name)+'">' : '<span class="chalic">'+bt.icon+'</span>'; }
   function tiersOf(bt){ try{ return Array.isArray(bt.tiers)?bt.tiers:JSON.parse(bt.tiers||'[]'); }catch(e){ return []; } }
   function tierOf(email,code){ var e=(email||'').toLowerCase(); return (AW[e]&&AW[e][code])||0; }
 
@@ -75,7 +77,7 @@
     } else {
       boxes=tiers.map(function(v,idx){var i=idx+1; return '<div class="box'+(i<=tier?' on':'')+(editable?' edit':'')+'" data-code="'+esc(bt.code)+'" data-i="'+i+'">'+esc(v)+'</div>';}).join('');
     }
-    return '<div class="card"><div class="chalhd"><span class="chalic">'+bt.icon+'</span><div><div class="chalname">'+esc(bt.name)+'</div><div class="chaldesc">'+esc(bt.descr||'')+'</div></div>'+badge+'</div><div class="row">'+boxes+'</div>'+(editable?'<div class="hint">Bấm mốc để trao • bấm lại mốc cao nhất để hạ xuống</div>':'')+'</div>';
+    return '<div class="card"><div class="chalhd">'+iconHtml(bt)+'<div><div class="chalname">'+esc(bt.name)+'</div><div class="chaldesc">'+esc(bt.descr||'')+'</div></div>'+badge+'</div><div class="row">'+boxes+'</div>'+(editable?'<div class="hint">Bấm mốc để trao • bấm lại mốc cao nhất để hạ xuống</div>':'')+'</div>';
   }
 
   function renderBadgesFor(email, editable){

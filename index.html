@@ -223,13 +223,14 @@
       var html=CHAL.map(function(c){
         var arr=Object.keys(byCode[c.code]).map(function(nm){return {nm:nm,idx:byCode[c.code][nm]};}).sort(function(a,b){return b.idx-a.idx;});
         var list=arr.length? arr.map(function(x){ return '<div class="bch"><span class="bnm">'+esc(x.nm)+'</span><span class="bval">'+c.icon+' '+esc(tval(c,x.idx))+'</span></div>'; }).join('') : '<div style="color:#9aa3b2;font-size:13px;padding:6px 0">Chưa ai đạt — hãy là người đầu tiên!</div>';
-        return '<div class="kpi" style="min-width:240px"><div class="lab" style="font-size:15px;font-weight:700;color:#0F1437">'+c.icon+' '+esc(c.name)+'</div><div style="font-size:12px;color:#5B6472;margin:2px 0 10px">'+arr.length+' người đạt</div>'+list+'</div>';
+        var ic=c.image?'<img src="'+esc(c.image)+'" style="width:30px;height:30px;object-fit:contain;vertical-align:middle;margin-right:7px">':c.icon+' ';
+        return '<div class="kpi" style="min-width:240px"><div class="lab" style="font-size:15px;font-weight:700;color:#0F1437;display:flex;align-items:center">'+ic+'<span>'+esc(c.name)+'</span></div><div style="font-size:12px;color:#5B6472;margin:2px 0 10px">'+arr.length+' người đạt</div>'+list+'</div>';
       }).join('');
       document.getElementById('badgeboard').innerHTML=html;
     }
     function load(){ if(!window.SB) return;
-      SB.from('badge_types').select('code,icon,name,unit,tiers,kind,sort').eq('active',true).order('sort').then(function(bt){
-        if(bt.data){ CHAL=bt.data.map(function(t){ var ti; try{ti=Array.isArray(t.tiers)?t.tiers:JSON.parse(t.tiers||'[]');}catch(e){ti=[];} return {code:t.code,icon:t.icon||'🏅',name:t.name,unit:t.unit||'',tiers:ti,kind:t.kind}; }); }
+      SB.from('badge_types').select('code,icon,name,unit,tiers,kind,sort,image').eq('active',true).order('sort').then(function(bt){
+        if(bt.data){ CHAL=bt.data.map(function(t){ var ti; try{ti=Array.isArray(t.tiers)?t.tiers:JSON.parse(t.tiers||'[]');}catch(e){ti=[];} return {code:t.code,icon:t.icon||'🏅',name:t.name,unit:t.unit||'',tiers:ti,kind:t.kind,image:t.image}; }); }
         SB.rpc('center_badges').then(function(r){ if(r.error){ document.getElementById('badgeboard').innerHTML='<div class="kpi"><div class="val" style="font-size:13px;color:#b00020">Không tải được bảng vinh danh</div></div>'; return; } render(r.data); });
       });
     }
