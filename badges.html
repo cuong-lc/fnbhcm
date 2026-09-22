@@ -22,7 +22,9 @@
   #bh .who{margin-left:auto;font-size:13px;color:#5B6472}
   #bh .adminbadge{background:#FFF3E6;color:#9a6a00;font-weight:700;font-size:12px;padding:4px 11px;border-radius:20px}
   #bh .viewbadge{background:#EAF2FF;color:#0057C7;font-weight:700;font-size:12px;padding:4px 11px;border-radius:20px}
-  #bh .card{background:#fff;border:1px solid #E2E9F2;border-radius:14px;padding:18px;margin-top:14px}
+  #bh .bgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  @media(max-width:820px){#bh .bgrid{grid-template-columns:1fr}}
+  #bh .card{background:#fff;border:1px solid #E2E9F2;border-radius:14px;padding:18px}
   #bh .chalhd{display:flex;align-items:center;gap:12px;margin-bottom:12px}
   #bh .chalic{font-size:28px}
   #bh .chalname{font-weight:700;color:#0F1437;font-size:16px}
@@ -77,7 +79,7 @@
   }
 
   function renderBadgesFor(email, editable){
-    return TYPES.map(function(bt){ return badgeCard(bt, tierOf(email,bt.code), editable); }).join('');
+    return '<div class="bgrid">'+TYPES.map(function(bt){ return badgeCard(bt, tierOf(email,bt.code), editable); }).join('')+'</div>';
   }
 
   function attachEdit(container){
@@ -107,8 +109,8 @@
   function renderOwner(root){
     var opts=PEOPLE.map(function(p){ return '<option value="'+esc(p.email)+'">'+esc(p.full_name||p.email)+' · '+esc((p.dept||'').replace('Phòng ','').replace(' HCM',''))+'</option>'; }).join('');
     root.innerHTML=
-      '<div class="head"><h2>Thợ săn huy hiệu 🏆</h2><div class="accent2"></div>'
-      +'<p class="sub">Trao huy hiệu cho từng nhân viên. Chỉ Giám đốc Trung tâm chỉnh sửa — huy hiệu hiện ở bảng Vinh danh trang chủ.</p></div>'
+      '<div class="head"><h2>🏛️ SAPO OLYMPUS</h2><div class="accent2"></div>'
+      +'<p class="sub">Đền của 12 vị thần — trao huy hiệu cho từng chiến binh. Chỉ Giám đốc Trung tâm chỉnh sửa; huy hiệu hiện ở Bảng Vinh danh các vị thần ở trang chủ.</p></div>'
       +'<div class="picker"><label>Chọn nhân viên:</label><select id="bh-sel">'+opts+'</select>'
       +'<span class="who"><span class="adminbadge">Quyền: Giám đốc Trung tâm</span></span></div>'
       +'<div id="bh-editor"></div>';
@@ -123,9 +125,9 @@
     var email=(window.CLF_USER&&CLF_USER.email||'').toLowerCase();
     var any=TYPES.some(function(bt){return tierOf(email,bt.code)>0;});
     root.innerHTML=
-      '<div class="head"><h2>Huy hiệu của bạn 🏆</h2><div class="accent2"></div>'
-      +'<p class="sub">Tiến độ huy hiệu Thách thức giới hạn của bạn. Huy hiệu do Giám đốc Trung tâm ghi nhận. <span class="viewbadge">Chỉ xem</span></p></div>'
-      +(any?'':'<p class="empty" style="margin:10px 0">Bạn chưa có huy hiệu nào — cố lên nhé! 🔥</p>')
+      '<div class="head"><h2>🏛️ SAPO OLYMPUS · Huy hiệu của bạn</h2><div class="accent2"></div>'
+      +'<p class="sub">Hành trình chinh phục 12 vị thần Olympus của bạn. Huy hiệu do Giám đốc Trung tâm ghi nhận. <span class="viewbadge">Chỉ xem</span></p></div>'
+      +(any?'':'<p class="empty" style="margin:10px 0">Bạn chưa chinh phục vị thần nào — lên đường thôi! ⚡</p>')
       +renderBadgesFor(email,false);
   }
 
