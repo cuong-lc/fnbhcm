@@ -48,6 +48,20 @@
   #ps .abox .t{font-weight:700;color:#0F1437;font-size:14px}
   #ps .abox .c{font-size:12.5px;color:#5B6472;margin-top:5px;line-height:1.5;white-space:pre-wrap}
   #ps .abox .empty{color:#b0b8c4;font-style:italic}
+  #ps .discsel{display:flex;gap:6px}
+  #ps .discsel .db{width:40px;height:40px;border:1.5px solid #dbe3ef;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#5B6472;cursor:pointer;background:#fff}
+  #ps .discsel .db:hover{border-color:#007AFF}
+  #ps .discsel .db.on{background:#007AFF;border-color:#007AFF;color:#fff}
+  #ps .profile{margin-top:4px}
+  #ps .ptags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  #ps .ptag{background:#EAF2FF;color:#0057C7;font-weight:700;font-size:13px;padding:5px 12px;border-radius:20px}
+  #ps .ptag.disc{background:#FFF3E6;color:#9a6a00}
+  #ps .psum{background:#F7F9FC;border:1px solid #E2E9F2;border-left:3px solid #007AFF;border-radius:8px;padding:11px 13px;font-size:13.5px;line-height:1.55;color:#1F2533;margin-bottom:10px}
+  #ps .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:680px){#ps .pgrid{grid-template-columns:1fr}}
+  #ps .pcell{background:#fff;border:1px solid #E2E9F2;border-radius:10px;padding:10px 12px}
+  #ps .pk{font-size:12px;font-weight:700;color:#0F1437;margin-bottom:3px}
+  #ps .pv{font-size:12.5px;color:#5B6472;line-height:1.5}
   #ps .btn{background:#007AFF;color:#fff;border:none;border-radius:9px;padding:9px 18px;font-weight:600;font-size:13.5px;cursor:pointer;font-family:inherit}
   #ps .btn.sm{padding:7px 13px;font-size:12.5px}
   #ps .btn.gray{background:#eef1f6;color:#1F2533}
@@ -86,8 +100,10 @@
 (function(){
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function toast(m){ var t=document.getElementById('ps-toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},1800); }
-  var PEOPLE=[], NOTES={}, CHECKS={}, ZG={}, NG={}, cur=null;
+  var PEOPLE=[], NOTES={}, CHECKS={}, ZG={}, NG={}, PROFILES={}, cur=null;
   var SIGN_EMOJI={aries:'♈',taurus:'♉',gemini:'♊',cancer:'♋',leo:'♌',virgo:'♍',libra:'♎',scorpio:'♏',sagittarius:'♐',capricorn:'♑',aquarius:'♒',pisces:'♓'};
+  var SIGN_VN={aries:'Bạch Dương',taurus:'Kim Ngưu',gemini:'Song Tử',cancer:'Cự Giải',leo:'Sư Tử',virgo:'Xử Nữ',libra:'Thiên Bình',scorpio:'Bọ Cạp',sagittarius:'Nhân Mã',capricorn:'Ma Kết',aquarius:'Bảo Bình',pisces:'Song Ngư'};
+  var DISCNAME={D:'D · Chủ động',I:'I · Ảnh hưởng',S:'S · Ổn định',C:'C · Kỷ luật'};
   var STLAB={good:'🟢 Tốt',ok:'🟡 Bình thường',watch:'🔴 Cần quan tâm'};
   var STCOL={good:'#16D865',ok:'#FFAE06',watch:'#E5484D'};
 
@@ -99,12 +115,17 @@
   function reduce(n){ while(n>9 && n!==11 && n!==22 && n!==33){ n=String(n).split('').reduce(function(a,c){return a+ +c;},0); } return n; }
   function lifePath(d){ if(!d) return null; var g=d.replace(/-/g,'').split('').map(Number); return reduce(g.reduce(function(a,b){return a+b;},0)); }
 
-  function abox(kind, key){
-    if(key==null) return '<div class="abox"><div class="t">'+(kind==='z'?'Cung hoàng đạo':'Thần số học')+'</div><div class="c empty">Nhập ngày sinh để tự tính.</div></div>';
-    var g = kind==='z' ? ZG[key] : NG[key];
-    var head = kind==='z' ? ((SIGN_EMOJI[key]||'')+' '+((g&&g.title)||key)) : ('🔢 Số chủ đạo '+key+((g&&g.title)&&g.title!=='Số '+key?' · '+g.title:''));
-    var content = (g&&g.content&&g.content.trim()) ? esc(g.content) : '<span class="empty">Chưa có gợi ý cho mục này — anh soạn rồi em nạp vào.</span>';
-    return '<div class="abox"><div class="t">'+esc(head)+'</div><div class="c">'+content+'</div></div>';
+  var PSEC=[['🧬 Tính cách','tinh_cach'],['💪 Điểm mạnh','diem_manh'],['⚡ Động lực','dong_luc'],['💬 Cách giao tiếp','giao_tiep'],['📋 Cách giao việc','giao_viec'],['🔁 Cách feedback','feedback'],['⚠️ Điểm dễ phản ứng','de_phan_ung'],['🧭 Lưu ý cho Leader','luu_y_leader']];
+  function profileHtml(bd, disc){
+    var zk=zodiac(bd), lp=lifePath(bd), cung=zk?SIGN_VN[zk]:null;
+    var tags='<div class="ptags">'+(cung?'<span class="ptag">'+(SIGN_EMOJI[zk]||'')+' '+esc(cung)+'</span>':'')+(lp!=null?'<span class="ptag">🔢 Số chủ đạo '+lp+'</span>':'')+(disc?'<span class="ptag disc">'+esc(DISCNAME[disc]||('DISC '+disc))+'</span>':'')+'</div>';
+    if(!bd) return tags+'<div class="empty2">Nhập ngày sinh để tự tính Cung &amp; Thần số học.</div>';
+    if(!disc) return tags+'<div class="empty2">Chọn nhóm DISC để hiện bộ gợi ý đầy đủ (cách giao tiếp, giao việc, feedback…).</div>';
+    var rec = PROFILES[cung] && PROFILES[cung][String(lp)] && PROFILES[cung][String(lp)][disc];
+    if(!rec) return tags+'<div class="empty2">Chưa có dữ liệu cho tổ hợp này.</div>';
+    var sum = rec.tong_hop ? '<div class="psum">'+esc(rec.tong_hop)+'</div>' : '';
+    var grid = '<div class="pgrid">'+PSEC.map(function(s){ return rec[s[1]] ? '<div class="pcell"><div class="pk">'+s[0]+'</div><div class="pv">'+esc(rec[s[1]])+'</div></div>' : ''; }).join('')+'</div>';
+    return tags+sum+grid;
   }
 
   function flagOf(email){ var arr=CHECKS[email]||[]; return arr.length?arr[0].status:null; }
@@ -148,8 +169,9 @@
     var zk=zodiac(bd), lp=lifePath(bd);
     box.innerHTML=
       '<div class="card"><h3>👤 '+esc(p.full_name||cur)+' <span style="font-weight:500;color:#8a94a6;font-size:12.5px">'+esc(p.dept||'')+'</span></h3>'
-      +'<div class="fld" style="max-width:220px"><label>Ngày sinh</label><input type="date" id="f-bd" value="'+esc(bd)+'"></div>'
-      +'<div class="astro" id="f-astro">'+abox('z',zk)+abox('n',lp)+'</div>'
+      +'<div class="prow"><div class="fld" style="max-width:190px"><label>Ngày sinh</label><input type="date" id="f-bd" value="'+esc(bd)+'"></div>'
+      +'<div class="fld"><label>Nhóm DISC</label><div class="discsel" id="f-disc">'+['D','I','S','C'].map(function(x){return '<div class="db'+((n.disc===x)?' on':'')+'" data-x="'+x+'" title="'+esc(DISCNAME[x])+'">'+x+'</div>';}).join('')+'</div></div></div>'
+      +'<div class="profile" id="f-profile"></div>'
       +'<div style="height:14px"></div>'
       +'<div class="fld"><label>🏠 Gia cảnh</label><textarea id="f-family" placeholder="Hoàn cảnh gia đình, con cái, điều cần lưu ý…">'+esc(n.family||'')+'</textarea></div>'
       +'<div class="fld"><label>🎯 Mong muốn</label><textarea id="f-asp" placeholder="Nguyện vọng, định hướng, điều đang theo đuổi…">'+esc(n.aspiration||'')+'</textarea></div>'
@@ -165,7 +187,10 @@
       +'<div class="tl" id="f-tl"></div>'
       +'</div>';
 
-    document.getElementById('f-bd').onchange=function(){ var v=this.value; document.getElementById('f-astro').innerHTML=abox('z',zodiac(v))+abox('n',lifePath(v)); };
+    function refreshProfile(){ var d=document.querySelector('#f-disc .db.on'); document.getElementById('f-profile').innerHTML=profileHtml(document.getElementById('f-bd').value, d?d.getAttribute('data-x'):null); }
+    document.getElementById('f-bd').onchange=refreshProfile;
+    var ds=document.getElementById('f-disc'); ds.querySelectorAll('.db').forEach(function(b){ b.onclick=function(){ var was=b.classList.contains('on'); ds.querySelectorAll('.db').forEach(function(x){x.classList.remove('on');}); if(!was) b.classList.add('on'); refreshProfile(); }; });
+    refreshProfile();
     document.getElementById('f-save').onclick=saveProfile;
     var st=document.getElementById('f-st'); st.querySelectorAll('.st').forEach(function(b){ b.onclick=function(){ st.querySelectorAll('.st').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); }; });
     document.getElementById('f-add').onclick=addCheckin;
@@ -183,8 +208,10 @@
   }
 
   function saveProfile(){
+    var don=document.querySelector('#f-disc .db.on');
     var body={ email:cur,
       birthday: document.getElementById('f-bd').value || null,
+      disc: don?don.getAttribute('data-x'):null,
       family: document.getElementById('f-family').value,
       aspiration: document.getElementById('f-asp').value,
       strengths: document.getElementById('f-str').value,
@@ -221,14 +248,12 @@
       SB.from('role_assignments').select('email,full_name,dept,level,joined'),
       SB.from('people_notes').select('*'),
       SB.from('checkins').select('*').order('created_at',{ascending:false}),
-      SB.from('zodiac_guides').select('*'),
-      SB.from('numerology_guides').select('*')
+      fetch('profiles.json').then(function(r){return r.ok?r.json():{};}).catch(function(){return {};})
     ]).then(function(r){
       PEOPLE=(r[0].data||[]).filter(function(p){return p.email;}).sort(function(a,b){return (a.dept||'').localeCompare(b.dept||'')||(a.full_name||'').localeCompare(b.full_name||'');});
       (r[1].data||[]).forEach(function(n){ NOTES[(n.email||'').toLowerCase()]=n; NOTES[n.email]=n; });
       (r[2].data||[]).forEach(function(c){ (CHECKS[c.email]=CHECKS[c.email]||[]).push(c); });
-      (r[3].data||[]).forEach(function(g){ ZG[g.sign]=g; });
-      (r[4].data||[]).forEach(function(g){ NG[g.num]=g; });
+      PROFILES=r[3]||{};
       document.getElementById('ps').innerHTML=
         '<div class="head"><h2>🔒 Hồ sơ nhân sự <span class="lock">Chỉ Giám đốc Trung tâm</span></h2><div class="accent2"></div>'
         +'<p class="sub">Sổ tay quản lý người: ngày sinh (tự tính cung &amp; thần số), gia cảnh, mong muốn, điểm mạnh/hạn chế, và nhật ký check-in. Dữ liệu chỉ mình anh xem được.</p></div>'
