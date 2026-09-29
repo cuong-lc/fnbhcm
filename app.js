@@ -32,9 +32,10 @@
   function buildNav(activeFile) {
     const nav = byId("nav");
     if (!nav) return;
+    const isGD = !!(window.CLF_PROFILE && window.CLF_PROFILE.level === "c4");
     const items = [["index.html", "Trang chủ"], ["badges.html", "🏛️ Sapo Olympus"]].concat(
       LEVELS.filter(canSeeLevel).map((l) => [l.file, l.short])
-    ).concat([["rubric.html", "Rubric"]]);
+    ).concat([["rubric.html", "Rubric"]]).concat(isGD ? [["people.html", "🔒 Hồ sơ NS"]] : []);
     nav.innerHTML = items.map(([f, t]) =>
       `<a href="${f}" class="${f === activeFile ? "active" : ""}">${t}</a>`).join("");
   }

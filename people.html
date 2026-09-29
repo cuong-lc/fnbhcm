@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hồ sơ nhân sự · GĐTT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="auth.js"></script>
+<style>
+  #ps{max-width:1120px;margin:0 auto;padding:0 16px 70px}
+  #ps .head{margin:22px 0 4px}
+  #ps h2{margin:0;font-size:20px;color:#0F1437}
+  #ps .lock{background:#FFF3E6;color:#9a6a00;font-weight:700;font-size:12px;padding:4px 11px;border-radius:20px;margin-left:8px;vertical-align:middle}
+  #ps .accent2{height:3px;width:120px;background:linear-gradient(90deg,#007AFF,#16D865);border-radius:3px;margin:8px 0 6px}
+  #ps .sub{color:#5B6472;font-size:13px;margin:0 0 12px}
+  #ps .wrap2{display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start}
+  @media(max-width:820px){#ps .wrap2{grid-template-columns:1fr}}
+  #ps .side{background:#fff;border:1px solid #E2E9F2;border-radius:14px;padding:10px;position:sticky;top:12px;max-height:80vh;overflow:auto}
+  #ps .search{width:100%;padding:9px 11px;border:1.5px solid #cdd5e0;border-radius:9px;font-family:inherit;font-size:13.5px;margin-bottom:8px}
+  #ps .pitem{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;cursor:pointer;font-size:13.5px}
+  #ps .pitem:hover{background:#F0F4F9}
+  #ps .pitem.on{background:#007AFF;color:#fff}
+  #ps .pitem .d{font-size:11px;color:#8a94a6}
+  #ps .pitem.on .d{color:#cfe0ff}
+  #ps .pitem .flag{width:8px;height:8px;border-radius:50%;flex:none}
+  #ps .card{background:#fff;border:1px solid #E2E9F2;border-radius:14px;padding:18px;margin-bottom:16px}
+  #ps .card h3{margin:0 0 12px;font-size:15.5px;color:#0F1437;display:flex;align-items:center;gap:8px}
+  #ps .prow{display:flex;gap:14px;flex-wrap:wrap}
+  #ps .fld{margin-bottom:12px}
+  #ps .fld label{display:block;font-size:12.5px;font-weight:600;color:#5B6472;margin-bottom:4px}
+  #ps input[type=date],#ps textarea{width:100%;font-family:inherit;font-size:14px;border:1.5px solid #cdd5e0;border-radius:9px;padding:9px 11px;box-sizing:border-box}
+  #ps textarea{resize:vertical;min-height:64px;line-height:1.5}
+  #ps .astro{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+  @media(max-width:620px){#ps .astro{grid-template-columns:1fr}}
+  #ps .abox{background:#F7F9FC;border:1px solid #E2E9F2;border-radius:11px;padding:12px}
+  #ps .abox .t{font-weight:700;color:#0F1437;font-size:14px}
+  #ps .abox .c{font-size:12.5px;color:#5B6472;margin-top:5px;line-height:1.5;white-space:pre-wrap}
+  #ps .abox .empty{color:#b0b8c4;font-style:italic}
+  #ps .btn{background:#007AFF;color:#fff;border:none;border-radius:9px;padding:9px 18px;font-weight:600;font-size:13.5px;cursor:pointer;font-family:inherit}
+  #ps .btn.sm{padding:7px 13px;font-size:12.5px}
+  #ps .btn.gray{background:#eef1f6;color:#1F2533}
+  #ps .stbtns{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px}
+  #ps .st{border:1.5px solid #dbe3ef;background:#fff;border-radius:20px;padding:6px 13px;font-size:13px;font-weight:600;cursor:pointer;color:#5B6472}
+  #ps .st.on.good{background:#EAF7EE;border-color:#16D865;color:#0a7d3a}
+  #ps .st.on.ok{background:#FFF7E6;border-color:#FFAE06;color:#9a6a00}
+  #ps .st.on.watch{background:#FDECEC;border-color:#E5484D;color:#b0211f}
+  #ps .tl{margin-top:12px}
+  #ps .ci{display:flex;gap:10px;padding:10px 0;border-top:1px solid #EEF1F6}
+  #ps .ci:first-child{border-top:none}
+  #ps .ci .dot{width:10px;height:10px;border-radius:50%;flex:none;margin-top:5px}
+  #ps .ci .body{flex:1}
+  #ps .ci .meta{font-size:11.5px;color:#8a94a6;display:flex;gap:8px;align-items:center}
+  #ps .ci .note{font-size:13.5px;color:#1F2533;margin-top:2px;white-space:pre-wrap}
+  #ps .ci .del{color:#c0392b;cursor:pointer;font-size:11px;opacity:.6}#ps .ci .del:hover{opacity:1}
+  #ps .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0F1437;color:#fff;padding:10px 18px;border-radius:10px;font-size:13.5px;opacity:0;transition:.25s;z-index:50}
+  #ps .toast.show{opacity:1}
+  #ps .empty2{color:#9aa3b2;font-size:13px;padding:6px 0}
+  #ps .loading,#ps .center{padding:50px;text-align:center;color:#5B6472}
+</style>
+</head>
+<body data-page="people">
+
+<div class="topbar"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> Khung năng lực Kinh doanh</a>
+  <nav class="nav" id="nav"></nav>
+</div></div>
+
+<main id="ps"><div class="loading">Đang tải…</div></main>
+<div class="toast" id="ps-toast"></div>
+
+<script src="framework-data.js"></script>
+<script src="app.js"></script>
+<script>
+(function(){
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function toast(m){ var t=document.getElementById('ps-toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},1800); }
+  var PEOPLE=[], NOTES={}, CHECKS={}, ZG={}, NG={}, cur=null;
+  var SIGN_EMOJI={aries:'♈',taurus:'♉',gemini:'♊',cancer:'♋',leo:'♌',virgo:'♍',libra:'♎',scorpio:'♏',sagittarius:'♐',capricorn:'♑',aquarius:'♒',pisces:'♓'};
+  var STLAB={good:'🟢 Tốt',ok:'🟡 Bình thường',watch:'🔴 Cần quan tâm'};
+  var STCOL={good:'#16D865',ok:'#FFAE06',watch:'#E5484D'};
+
+  function zodiac(d){ if(!d) return null; var p=d.split('-'); var m=+p[1], day=+p[2];
+    var t=[[1,20,'capricorn'],[2,19,'aquarius'],[3,21,'pisces'],[4,20,'aries'],[5,21,'taurus'],[6,21,'gemini'],[7,23,'cancer'],[8,23,'leo'],[9,23,'virgo'],[10,23,'libra'],[11,22,'scorpio'],[12,22,'sagittarius']];
+    var s=t[m-1]; if(day<s[1]) return s[2];
+    return (m===12)?'capricorn':t[m][2];
+  }
+  function reduce(n){ while(n>9 && n!==11 && n!==22 && n!==33){ n=String(n).split('').reduce(function(a,c){return a+ +c;},0); } return n; }
+  function lifePath(d){ if(!d) return null; var g=d.replace(/-/g,'').split('').map(Number); return reduce(g.reduce(function(a,b){return a+b;},0)); }
+
+  function abox(kind, key){
+    if(key==null) return '<div class="abox"><div class="t">'+(kind==='z'?'Cung hoàng đạo':'Thần số học')+'</div><div class="c empty">Nhập ngày sinh để tự tính.</div></div>';
+    var g = kind==='z' ? ZG[key] : NG[key];
+    var head = kind==='z' ? ((SIGN_EMOJI[key]||'')+' '+((g&&g.title)||key)) : ('🔢 Số chủ đạo '+key+((g&&g.title)&&g.title!=='Số '+key?' · '+g.title:''));
+    var content = (g&&g.content&&g.content.trim()) ? esc(g.content) : '<span class="empty">Chưa có gợi ý cho mục này — anh soạn rồi em nạp vào.</span>';
+    return '<div class="abox"><div class="t">'+esc(head)+'</div><div class="c">'+content+'</div></div>';
+  }
+
+  function flagOf(email){ var arr=CHECKS[email]||[]; return arr.length?arr[0].status:null; }
+
+  function renderList(filter){
+    var box=document.getElementById('ps-list'); if(!box) return;
+    var f=(filter||'').toLowerCase();
+    var arr=PEOPLE.filter(function(p){ return !f || (p.full_name||'').toLowerCase().indexOf(f)>=0 || (p.email||'').toLowerCase().indexOf(f)>=0; });
+    box.innerHTML=arr.map(function(p){
+      var fl=flagOf(p.email); var dot=fl?'<span class="flag" style="background:'+STCOL[fl]+'"></span>':'';
+      return '<div class="pitem'+(p.email===cur?' on':'')+'" data-e="'+esc(p.email)+'">'+dot+'<span>'+esc(p.full_name||p.email)+'<div class="d">'+esc((p.dept||'').replace('Phòng ','').replace(' HCM',''))+'</div></span></div>';
+    }).join('') || '<div class="empty2">Không có ai.</div>';
+    box.querySelectorAll('.pitem').forEach(function(el){ el.onclick=function(){ cur=el.getAttribute('data-e'); renderList(document.getElementById('ps-search').value); renderDetail(); }; });
+  }
+
+  function renderDetail(){
+    var box=document.getElementById('ps-detail'); if(!box) return;
+    if(!cur){ box.innerHTML='<div class="card"><div class="empty2">Chọn một nhân viên ở cột trái để xem/ghi hồ sơ.</div></div>'; return; }
+    var p=PEOPLE.filter(function(x){return x.email===cur;})[0]||{};
+    var n=NOTES[cur]||{};
+    var bd=n.birthday||'';
+    var zk=zodiac(bd), lp=lifePath(bd);
+    box.innerHTML=
+      '<div class="card"><h3>👤 '+esc(p.full_name||cur)+' <span style="font-weight:500;color:#8a94a6;font-size:12.5px">'+esc(p.dept||'')+'</span></h3>'
+      +'<div class="fld" style="max-width:220px"><label>Ngày sinh</label><input type="date" id="f-bd" value="'+esc(bd)+'"></div>'
+      +'<div class="astro" id="f-astro">'+abox('z',zk)+abox('n',lp)+'</div>'
+      +'<div style="height:14px"></div>'
+      +'<div class="fld"><label>🏠 Gia cảnh</label><textarea id="f-family" placeholder="Hoàn cảnh gia đình, con cái, điều cần lưu ý…">'+esc(n.family||'')+'</textarea></div>'
+      +'<div class="fld"><label>🎯 Mong muốn</label><textarea id="f-asp" placeholder="Nguyện vọng, định hướng, điều đang theo đuổi…">'+esc(n.aspiration||'')+'</textarea></div>'
+      +'<div class="prow"><div class="fld" style="flex:1;min-width:220px"><label>💪 Điểm mạnh</label><textarea id="f-str" placeholder="Mỗi ý một dòng…">'+esc(n.strengths||'')+'</textarea></div>'
+      +'<div class="fld" style="flex:1;min-width:220px"><label>⚠️ Hạn chế</label><textarea id="f-lim" placeholder="Mỗi ý một dòng…">'+esc(n.limitations||'')+'</textarea></div></div>'
+      +'<button class="btn" id="f-save">Lưu hồ sơ</button>'
+      +(n.updated_at?'<span style="font-size:11.5px;color:#8a94a6;margin-left:10px">Cập nhật: '+new Date(n.updated_at).toLocaleString('vi-VN')+'</span>':'')
+      +'</div>'
+      +'<div class="card"><h3>📝 Check-in</h3>'
+      +'<div class="stbtns" id="f-st"><div class="st good" data-s="good">🟢 Tốt</div><div class="st ok on" data-s="ok">🟡 Bình thường</div><div class="st watch" data-s="watch">🔴 Cần quan tâm</div></div>'
+      +'<textarea id="f-cnote" placeholder="Ghi lại nội dung buổi check-in / quan sát…"></textarea>'
+      +'<div style="margin-top:8px"><button class="btn sm" id="f-add">+ Thêm check-in</button></div>'
+      +'<div class="tl" id="f-tl"></div>'
+      +'</div>';
+
+    document.getElementById('f-bd').onchange=function(){ var v=this.value; document.getElementById('f-astro').innerHTML=abox('z',zodiac(v))+abox('n',lifePath(v)); };
+    document.getElementById('f-save').onclick=saveProfile;
+    var st=document.getElementById('f-st'); st.querySelectorAll('.st').forEach(function(b){ b.onclick=function(){ st.querySelectorAll('.st').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); }; });
+    document.getElementById('f-add').onclick=addCheckin;
+    renderTL();
+  }
+
+  function renderTL(){
+    var tl=document.getElementById('f-tl'); if(!tl) return;
+    var arr=CHECKS[cur]||[];
+    if(!arr.length){ tl.innerHTML='<div class="empty2">Chưa có check-in nào.</div>'; return; }
+    tl.innerHTML=arr.map(function(c){
+      return '<div class="ci"><span class="dot" style="background:'+(STCOL[c.status]||'#ccc')+'"></span><div class="body"><div class="meta"><b style="color:#0F1437">'+new Date(c.created_at).toLocaleDateString('vi-VN')+'</b> · '+(STLAB[c.status]||'')+' <span class="del" data-id="'+c.id+'">Xóa</span></div><div class="note">'+esc(c.note||'')+'</div></div></div>';
+    }).join('');
+    tl.querySelectorAll('.del').forEach(function(d){ d.onclick=function(){ delCheckin(+d.getAttribute('data-id')); }; });
+  }
+
+  function saveProfile(){
+    var body={ email:cur,
+      birthday: document.getElementById('f-bd').value || null,
+      family: document.getElementById('f-family').value,
+      aspiration: document.getElementById('f-asp').value,
+      strengths: document.getElementById('f-str').value,
+      limitations: document.getElementById('f-lim').value,
+      updated_at: new Date().toISOString(),
+      updated_by: (window.CLF_USER&&CLF_USER.email)||null };
+    SB.from('people_notes').upsert(body,{onConflict:'email'}).then(function(r){
+      if(r.error){ toast('Lỗi: '+r.error.message); return; }
+      NOTES[cur]=body; toast('Đã lưu hồ sơ'); renderDetail();
+    });
+  }
+  function addCheckin(){
+    var note=document.getElementById('f-cnote').value.trim();
+    var on=document.querySelector('#f-st .st.on'); var status=on?on.getAttribute('data-s'):'ok';
+    if(!note){ toast('Nhập nội dung check-in đã nhé'); return; }
+    SB.from('checkins').insert({email:cur,status:status,note:note,created_by:(window.CLF_USER&&CLF_USER.email)||null}).select().then(function(r){
+      if(r.error){ toast('Lỗi: '+r.error.message); return; }
+      var row=(r.data&&r.data[0]); (CHECKS[cur]=CHECKS[cur]||[]).unshift(row);
+      document.getElementById('f-cnote').value=''; renderTL(); renderList(document.getElementById('ps-search').value); toast('Đã thêm check-in');
+    });
+  }
+  function delCheckin(id){
+    SB.from('checkins').delete().eq('id',id).then(function(r){
+      if(r.error){ toast('Lỗi: '+r.error.message); return; }
+      CHECKS[cur]=(CHECKS[cur]||[]).filter(function(c){return c.id!==id;}); renderTL(); renderList(document.getElementById('ps-search').value);
+    });
+  }
+
+  function run(){
+    if(!window.SB){ document.getElementById('ps').innerHTML='<div class="center">Chưa cấu hình hệ thống.</div>'; return; }
+    var prof=window.CLF_PROFILE||{};
+    if(prof.level!=='c4'){ document.getElementById('ps').innerHTML='<div class="center"><h2>Không truy cập được</h2><p style="color:#5B6472">Mục Hồ sơ nhân sự chỉ dành cho Giám đốc Trung tâm.</p><p><a href="index.html">← Về trang chủ</a></p></div>'; return; }
+    Promise.all([
+      SB.from('role_assignments').select('email,full_name,dept,level'),
+      SB.from('people_notes').select('*'),
+      SB.from('checkins').select('*').order('created_at',{ascending:false}),
+      SB.from('zodiac_guides').select('*'),
+      SB.from('numerology_guides').select('*')
+    ]).then(function(r){
+      PEOPLE=(r[0].data||[]).filter(function(p){return p.email;}).sort(function(a,b){return (a.dept||'').localeCompare(b.dept||'')||(a.full_name||'').localeCompare(b.full_name||'');});
+      (r[1].data||[]).forEach(function(n){ NOTES[(n.email||'').toLowerCase()]=n; NOTES[n.email]=n; });
+      (r[2].data||[]).forEach(function(c){ (CHECKS[c.email]=CHECKS[c.email]||[]).push(c); });
+      (r[3].data||[]).forEach(function(g){ ZG[g.sign]=g; });
+      (r[4].data||[]).forEach(function(g){ NG[g.num]=g; });
+      document.getElementById('ps').innerHTML=
+        '<div class="head"><h2>🔒 Hồ sơ nhân sự <span class="lock">Chỉ Giám đốc Trung tâm</span></h2><div class="accent2"></div>'
+        +'<p class="sub">Sổ tay quản lý người: ngày sinh (tự tính cung &amp; thần số), gia cảnh, mong muốn, điểm mạnh/hạn chế, và nhật ký check-in. Dữ liệu chỉ mình anh xem được.</p></div>'
+        +'<div class="wrap2"><div class="side"><input class="search" id="ps-search" placeholder="Tìm nhân viên…"><div id="ps-list"></div></div><div id="ps-detail"></div></div>';
+      document.getElementById('ps-search').oninput=function(){ renderList(this.value); };
+      renderList(''); renderDetail();
+    }, function(){ document.getElementById('ps').innerHTML='<div class="center">Lỗi tải dữ liệu.</div>'; });
+  }
+  if(window.CLF_READY) run(); else document.addEventListener('clf-ready', run);
+})();
+</script>
+</body>
+</html>
