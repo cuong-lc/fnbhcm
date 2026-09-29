@@ -21,6 +21,14 @@
   @media(max-width:820px){#ps .wrap2{grid-template-columns:1fr}}
   #ps .side{background:#fff;border:1px solid #E2E9F2;border-radius:14px;padding:10px;position:sticky;top:12px;max-height:80vh;overflow:auto}
   #ps .search{width:100%;padding:9px 11px;border:1.5px solid #cdd5e0;border-radius:9px;font-family:inherit;font-size:13.5px;margin-bottom:8px}
+  #ps .grp{margin-bottom:4px}
+  #ps .ghd{display:flex;align-items:center;gap:8px;padding:10px 11px;border-radius:9px;cursor:pointer;font-weight:700;font-size:13.5px;color:#0F1437;background:#F0F4F9;user-select:none}
+  #ps .ghd:hover{background:#e6edf6}
+  #ps .ghd.open{background:#e3edfb;color:#0057C7}
+  #ps .ghd .cv{width:14px;color:#8a94a6;font-size:12px}
+  #ps .ghd .gn{flex:1}
+  #ps .ghd .gc{background:#fff;border:1px solid #dbe3ef;color:#5B6472;font-size:11.5px;font-weight:700;border-radius:12px;padding:1px 9px}
+  #ps .gbody{padding:2px 0 6px 6px}
   #ps .pitem{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;cursor:pointer;font-size:13.5px}
   #ps .pitem:hover{background:#F0F4F9}
   #ps .pitem.on{background:#007AFF;color:#fff}
@@ -101,15 +109,34 @@
 
   function flagOf(email){ var arr=CHECKS[email]||[]; return arr.length?arr[0].status:null; }
 
+  var OPEN={};
+  function deptOrder(d){ var m=(d||'').match(/FNB\s*(\d+)/i); if(m) return parseInt(m[1],10); if((d||'').indexOf('Trung tâm')>=0) return 90; return 99; }
+  function seniority(p){ return p.joined ? Date.parse(p.joined) : Infinity; }
   function renderList(filter){
     var box=document.getElementById('ps-list'); if(!box) return;
-    var f=(filter||'').toLowerCase();
-    var arr=PEOPLE.filter(function(p){ return !f || (p.full_name||'').toLowerCase().indexOf(f)>=0 || (p.email||'').toLowerCase().indexOf(f)>=0; });
-    box.innerHTML=arr.map(function(p){
-      var fl=flagOf(p.email); var dot=fl?'<span class="flag" style="background:'+STCOL[fl]+'"></span>':'';
-      return '<div class="pitem'+(p.email===cur?' on':'')+'" data-e="'+esc(p.email)+'">'+dot+'<span>'+esc(p.full_name||p.email)+'<div class="d">'+esc((p.dept||'').replace('Phòng ','').replace(' HCM',''))+'</div></span></div>';
-    }).join('') || '<div class="empty2">Không có ai.</div>';
-    box.querySelectorAll('.pitem').forEach(function(el){ el.onclick=function(){ cur=el.getAttribute('data-e'); renderList(document.getElementById('ps-search').value); renderDetail(); }; });
+    var f=(filter||'').toLowerCase().trim();
+    var groups={}; PEOPLE.forEach(function(p){ (groups[p.dept||'—']=groups[p.dept||'—']||[]).push(p); });
+    var depts=Object.keys(groups).sort(function(a,b){ return deptOrder(a)-deptOrder(b) || a.localeCompare(b); });
+    var html='';
+    depts.forEach(function(d){
+      var mem=groups[d].slice().sort(function(a,b){ return seniority(a)-seniority(b) || (a.full_name||'').localeCompare(b.full_name||''); });
+      var matched = f ? mem.filter(function(p){ return (p.full_name||'').toLowerCase().indexOf(f)>=0 || (p.email||'').toLowerCase().indexOf(f)>=0; }) : mem;
+      if(f && !matched.length) return;
+      var open = f ? true : !!OPEN[d];
+      var dn=(d||'—').replace('Phòng ','').replace(' HCM','');
+      html+='<div class="grp"><div class="ghd'+(open?' open':'')+'" data-d="'+esc(d)+'"><span class="cv">'+(open?'▾':'▸')+'</span><span class="gn">'+esc(dn)+'</span><span class="gc">'+matched.length+'</span></div>';
+      if(open){
+        html+='<div class="gbody">'+matched.map(function(p){
+          var fl=flagOf(p.email); var dot=fl?'<span class="flag" style="background:'+STCOL[fl]+'"></span>':'';
+          var yr=p.joined?('vào '+new Date(p.joined).toLocaleDateString('vi-VN')):'';
+          return '<div class="pitem'+(p.email===cur?' on':'')+'" data-e="'+esc(p.email)+'">'+dot+'<span>'+esc(p.full_name||p.email)+'<div class="d">'+yr+'</div></span></div>';
+        }).join('')+'</div>';
+      }
+      html+='</div>';
+    });
+    box.innerHTML=html||'<div class="empty2">Không tìm thấy.</div>';
+    box.querySelectorAll('.ghd').forEach(function(h){ h.onclick=function(){ var d=h.getAttribute('data-d'); OPEN[d]=!OPEN[d]; renderList(document.getElementById('ps-search').value); }; });
+    box.querySelectorAll('.pitem').forEach(function(el){ el.onclick=function(){ cur=el.getAttribute('data-e'); var p=PEOPLE.filter(function(x){return x.email===cur;})[0]; if(p) OPEN[p.dept||'—']=true; renderList(document.getElementById('ps-search').value); renderDetail(); }; });
   }
 
   function renderDetail(){
@@ -191,7 +218,7 @@
     var prof=window.CLF_PROFILE||{};
     if(prof.level!=='c4'){ document.getElementById('ps').innerHTML='<div class="center"><h2>Không truy cập được</h2><p style="color:#5B6472">Mục Hồ sơ nhân sự chỉ dành cho Giám đốc Trung tâm.</p><p><a href="index.html">← Về trang chủ</a></p></div>'; return; }
     Promise.all([
-      SB.from('role_assignments').select('email,full_name,dept,level'),
+      SB.from('role_assignments').select('email,full_name,dept,level,joined'),
       SB.from('people_notes').select('*'),
       SB.from('checkins').select('*').order('created_at',{ascending:false}),
       SB.from('zodiac_guides').select('*'),
