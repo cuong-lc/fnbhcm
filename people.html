@@ -65,7 +65,9 @@
   #ps .btn{background:#007AFF;color:#fff;border:none;border-radius:9px;padding:9px 18px;font-weight:600;font-size:13.5px;cursor:pointer;font-family:inherit}
   #ps .btn.sm{padding:7px 13px;font-size:12.5px}
   #ps .btn.gray{background:#eef1f6;color:#1F2533}
-  #ps .stbtns{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px}
+  #ps .cihdr{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+  #ps .cidate{font-family:inherit;font-size:13px;border:1.5px solid #cdd5e0;border-radius:9px;padding:8px 10px}
+  #ps .stbtns{display:flex;gap:7px;flex-wrap:wrap}
   #ps .st{border:1.5px solid #dbe3ef;background:#fff;border-radius:20px;padding:6px 13px;font-size:13px;font-weight:600;cursor:pointer;color:#5B6472}
   #ps .st.on.good{background:#EAF7EE;border-color:#16D865;color:#0a7d3a}
   #ps .st.on.ok{background:#FFF7E6;border-color:#FFAE06;color:#9a6a00}
@@ -100,6 +102,7 @@
 (function(){
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function toast(m){ var t=document.getElementById('ps-toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},1800); }
+  function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
   var PEOPLE=[], NOTES={}, CHECKS={}, ZG={}, NG={}, PROFILES={}, cur=null;
   var SIGN_EMOJI={aries:'♈',taurus:'♉',gemini:'♊',cancer:'♋',leo:'♌',virgo:'♍',libra:'♎',scorpio:'♏',sagittarius:'♐',capricorn:'♑',aquarius:'♒',pisces:'♓'};
   var SIGN_VN={aries:'Bạch Dương',taurus:'Kim Ngưu',gemini:'Song Tử',cancer:'Cự Giải',leo:'Sư Tử',virgo:'Xử Nữ',libra:'Thiên Bình',scorpio:'Bọ Cạp',sagittarius:'Nhân Mã',capricorn:'Ma Kết',aquarius:'Bảo Bình',pisces:'Song Ngư'};
@@ -181,7 +184,7 @@
       +(n.updated_at?'<span style="font-size:11.5px;color:#8a94a6;margin-left:10px">Cập nhật: '+new Date(n.updated_at).toLocaleString('vi-VN')+'</span>':'')
       +'</div>'
       +'<div class="card"><h3>📝 Check-in</h3>'
-      +'<div class="stbtns" id="f-st"><div class="st good" data-s="good">🟢 Tốt</div><div class="st ok on" data-s="ok">🟡 Bình thường</div><div class="st watch" data-s="watch">🔴 Cần quan tâm</div></div>'
+      +'<div class="cihdr"><input type="date" id="f-cdate" class="cidate" value="'+todayStr()+'" max="'+todayStr()+'"><div class="stbtns" id="f-st"><div class="st good" data-s="good">🟢 Tốt</div><div class="st ok on" data-s="ok">🟡 Bình thường</div><div class="st watch" data-s="watch">🔴 Cần quan tâm</div></div></div>'
       +'<textarea id="f-cnote" placeholder="Ghi lại nội dung buổi check-in / quan sát…"></textarea>'
       +'<div style="margin-top:8px"><button class="btn sm" id="f-add">+ Thêm check-in</button></div>'
       +'<div class="tl" id="f-tl"></div>'
@@ -227,9 +230,12 @@
     var note=document.getElementById('f-cnote').value.trim();
     var on=document.querySelector('#f-st .st.on'); var status=on?on.getAttribute('data-s'):'ok';
     if(!note){ toast('Nhập nội dung check-in đã nhé'); return; }
-    SB.from('checkins').insert({email:cur,status:status,note:note,created_by:(window.CLF_USER&&CLF_USER.email)||null}).select().then(function(r){
+    var dv=document.getElementById('f-cdate').value;
+    var created = dv ? new Date(dv+'T12:00:00').toISOString() : new Date().toISOString();
+    SB.from('checkins').insert({email:cur,status:status,note:note,created_by:(window.CLF_USER&&CLF_USER.email)||null,created_at:created}).select().then(function(r){
       if(r.error){ toast('Lỗi: '+r.error.message); return; }
-      var row=(r.data&&r.data[0]); (CHECKS[cur]=CHECKS[cur]||[]).unshift(row);
+      var row=(r.data&&r.data[0]); (CHECKS[cur]=CHECKS[cur]||[]).push(row);
+      CHECKS[cur].sort(function(a,b){ return new Date(b.created_at)-new Date(a.created_at); });
       document.getElementById('f-cnote').value=''; renderTL(); renderList(document.getElementById('ps-search').value); toast('Đã thêm check-in');
     });
   }
