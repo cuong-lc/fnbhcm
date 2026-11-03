@@ -10,6 +10,8 @@
   const RESTRICTED = "c4";
   const isGD = () => (window.CLF_PROFILE && window.CLF_PROFILE.level) === "c4";
   const canSeeLevel = (l) => l.id !== RESTRICTED || isGD();
+  // Nhân viên (c1) / Thử việc (c0): ẩn lộ trình 4 cấp, mục Trưởng phòng & Rubric
+  const isStaffView = () => { const lv = (window.CLF_PROFILE && window.CLF_PROFILE.level) || ""; return lv === "c0" || lv === "c1"; };
 
   // ---- storage: đồng bộ Supabase (hydrate qua auth.js -> window.CLF_PROGRESS) ----
   const PROG = window.CLF_PROGRESS || (window.CLF_PROGRESS = {});
@@ -33,9 +35,10 @@
     const nav = byId("nav");
     if (!nav) return;
     const isGD = !!(window.CLF_PROFILE && window.CLF_PROFILE.level === "c4");
+    const staff = isStaffView();
     const items = [["index.html", "Trang chủ"], ["badges.html", "🏛️ Sapo Olympus"]].concat(
-      LEVELS.filter(canSeeLevel).map((l) => [l.file, l.short])
-    ).concat([["rubric.html", "Rubric"]]).concat(isGD ? [["people.html", "🔒 Hồ sơ NS"]] : []);
+      LEVELS.filter(canSeeLevel).filter((l) => !(staff && l.id === "c3")).map((l) => [l.file, l.short])
+    ).concat(staff ? [] : [["rubric.html", "Rubric"]]).concat(isGD ? [["people.html", "🔒 Hồ sơ NS"]] : []);
     nav.innerHTML = items.map(([f, t]) =>
       `<a href="${f}" class="${f === activeFile ? "active" : ""}">${t}</a>`).join("");
   }
@@ -46,6 +49,9 @@
 
   // ================= INDEX =================
   function renderIndex() {
+    // Nhân viên/Thử việc: ẩn hẳn khối "Bốn cấp trong lộ trình"
+    const lvSec = byId("levels-section");
+    if (lvSec && isStaffView()) lvSec.style.display = "none";
     // level cards
     const grid = byId("levels");
     if (grid) {
