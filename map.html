@@ -7,15 +7,57 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="auth.js"></script>
 <style>
   #mapwrap{max-width:1180px;margin:0 auto;padding:0 16px 40px}
-  #mapframe{width:100%;height:78vh;min-height:520px;border:1px solid var(--line);border-radius:14px;background:#fff}
-  .maptools{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 16px}
-  .maptools a{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 14px;font-weight:600;font-size:13.5px;color:#17130D;text-decoration:none}
-  .maptools a:hover{border-color:var(--gold1)}
+  #mapbox{position:relative;width:100%;height:76vh;min-height:520px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#eee}
+  #map{position:absolute;inset:0}
+  .mtoolbar{position:absolute;z-index:5;top:12px;left:12px;right:12px;display:flex;gap:8px;flex-wrap:wrap;pointer-events:none}
+  .mtoolbar>*{pointer-events:auto}
+  .mbtn{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 13px;font-weight:600;font-size:13px;color:#17130D;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  .mbtn:hover{border-color:var(--gold1)}
+  .mbtn.primary{background:linear-gradient(135deg,var(--gold1),var(--gold2));border:none;color:#17130D}
+  .msearch{display:flex;gap:0;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);min-width:280px;flex:1;max-width:460px}
+  .msearch input{border:0;outline:0;padding:8px 12px;font-size:13px;flex:1;font-family:var(--font)}
+  .msearch button{border:0;background:#17130D;color:#fff;padding:0 14px;font-weight:600;font-size:13px;cursor:pointer}
+  .mcount{position:absolute;z-index:5;left:12px;bottom:12px;background:#17130D;color:#fff;font-size:12px;font-weight:600;padding:7px 13px;border-radius:20px;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+  .mhint{position:absolute;z-index:6;top:58px;left:50%;transform:translateX(-50%);background:#17130D;color:#fff;font-size:13px;font-weight:600;padding:9px 16px;border-radius:10px;display:none;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+  /* pin markers */
+  .pin{width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 5px rgba(0,0,0,.35);cursor:pointer}
+  .pin.signed{background:#16A34A}.pin.lead{background:#F59E0B}.pin.partner{background:#2563EB}.pin.comp{background:#DC2626}
+  .pin.me{background:#111;width:18px;height:18px;border-radius:50%;transform:none}
+  /* popup */
+  .maplibregl-popup-content{border-radius:12px;padding:0;overflow:hidden;min-width:230px;max-width:280px;font-family:var(--font)}
+  .pp-img{width:100%;height:120px;object-fit:cover;display:block;background:#f0ece2}
+  .pp-body{padding:12px 13px}
+  .pp-cat{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;color:#fff;margin-bottom:6px}
+  .pp-name{font-size:15px;font-weight:800;color:#17130D;margin:0 0 3px}
+  .pp-addr{font-size:12px;color:#5B6150;margin:0 0 6px;line-height:1.4}
+  .pp-note{font-size:12.5px;color:#2A2318;margin:0 0 8px;line-height:1.45;white-space:pre-wrap}
+  .pp-meta{font-size:11px;color:#8a7a55;margin-bottom:8px}
+  .pp-acts{display:flex;gap:7px}
+  .pp-acts button{flex:1;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px;font-size:12px;font-weight:600;cursor:pointer}
+  .pp-acts .del{color:#b00020;border-color:#f0c9ce}
+  /* form modal */
+  #formmask{position:fixed;inset:0;background:rgba(10,8,4,.45);z-index:50;display:none;align-items:center;justify-content:center;padding:16px}
+  #formcard{background:#fff;border-radius:16px;max-width:430px;width:100%;max-height:92vh;overflow:auto;padding:20px}
+  #formcard h3{margin:0 0 4px;font-size:18px;color:#17130D}
+  #formcard .fsub{font-size:12.5px;color:#6B6150;margin:0 0 14px}
+  #formcard label{display:block;font-size:12.5px;font-weight:600;color:#2A2318;margin:10px 0 4px}
+  #formcard input[type=text],#formcard textarea,#formcard select{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13.5px;font-family:var(--font);outline:0}
+  #formcard textarea{min-height:60px;resize:vertical}
+  #formcard .coords{font-size:12px;color:#8a7a55;margin-top:6px}
+  #formcard .frow{display:flex;gap:10px;margin-top:18px}
+  #formcard .frow button{flex:1;border-radius:10px;padding:11px;font-weight:700;font-size:14px;cursor:pointer;border:0}
+  #fsave{background:linear-gradient(135deg,var(--gold1),var(--gold2));color:#17130D}
+  #fcancel{background:#f2ece0;color:#5B6150}
+  .leg{display:flex;gap:14px;flex-wrap:wrap;margin:12px 2px 0;font-size:12.5px;color:#5B6150}
+  .leg span{display:inline-flex;align-items:center;gap:5px}
+  .leg i{width:12px;height:12px;border-radius:50%;display:inline-block}
 </style>
 </head>
 <body data-page="map">
@@ -30,25 +72,231 @@
   <div class="wrap">
     <div class="eyebrow">Công cụ bán hàng</div>
     <h1>🗺️ Bản đồ khách hàng</h1>
-    <p>Tra cứu khách hàng quanh một địa chỉ hoặc link Google Maps, ghim vị trí và xem danh sách địa điểm ngay trên bản đồ.</p>
+    <p>Ghim khách đã ký lên bản đồ: nhập địa chỉ, chấm trực tiếp, hoặc check-in ngay tại điểm khi đi thị trường.</p>
   </div>
 </header>
 
 <main class="wrap">
   <section class="section" style="padding-top:22px">
     <div id="mapwrap">
-      <div class="maptools">
-        <a href="https://sapo-customer-map.netlify.app/" target="_blank" rel="noopener">↗ Mở toàn màn hình</a>
+      <div id="mapbox">
+        <div id="map"></div>
+        <div class="mtoolbar">
+          <button class="mbtn primary" id="btnAdd">➕ Thêm điểm</button>
+          <button class="mbtn" id="btnCheckin">📍 Check-in tại đây</button>
+          <button class="mbtn" id="btnMe">🧭 Vị trí của tôi</button>
+          <div class="msearch">
+            <input id="q" placeholder="Tìm địa chỉ… vd: 123 Lê Lợi, Quận 1">
+            <button id="btnSearch">Tìm</button>
+          </div>
+        </div>
+        <div class="mhint" id="hint">Chạm lên bản đồ để đặt ghim</div>
+        <div class="mcount" id="count">Đang tải…</div>
       </div>
-      <iframe id="mapframe" src="https://sapo-customer-map.netlify.app/"
-        allow="geolocation; clipboard-write" referrerpolicy="no-referrer-when-downgrade"
-        title="Bản đồ khách hàng Sapo"></iframe>
+      <div class="leg">
+        <span><i style="background:#16A34A"></i>Khách đã ký</span>
+        <span><i style="background:#F59E0B"></i>Tiềm năng</span>
+        <span><i style="background:#2563EB"></i>Đối tác</span>
+        <span><i style="background:#DC2626"></i>Đối thủ</span>
+      </div>
     </div>
   </section>
 </main>
 
+<!-- form thêm/sửa -->
+<div id="formmask">
+  <div id="formcard">
+    <h3 id="ftitle">Thêm điểm mới</h3>
+    <p class="fsub" id="fhint">Điền thông tin khách hàng tại vị trí đã chọn.</p>
+    <label>Tên khách / quán *</label>
+    <input type="text" id="fname" placeholder="VD: Cà phê The Moon Garden">
+    <label>Phân loại</label>
+    <select id="fcat">
+      <option value="signed">Khách đã ký</option>
+      <option value="lead">Khách tiềm năng</option>
+      <option value="partner">Đối tác đồng hành</option>
+      <option value="comp">Đối thủ</option>
+    </select>
+    <label>Địa chỉ</label>
+    <input type="text" id="faddr" placeholder="Số nhà, đường, phường, quận…">
+    <label>Ghi chú</label>
+    <textarea id="fnote" placeholder="Tình trạng, người liên hệ, lịch hẹn…"></textarea>
+    <label>Ảnh (mặt tiền/quán)</label>
+    <input type="file" id="fimg" accept="image/*">
+    <div class="coords" id="fcoords"></div>
+    <div class="frow">
+      <button id="fcancel">Huỷ</button>
+      <button id="fsave">Lưu điểm</button>
+    </div>
+  </div>
+</div>
+
 <footer class="foot" id="foot"></footer>
 <script src="framework-data.js"></script>
 <script src="app.js"></script>
+<script>
+(function(){
+  var CATCOLOR={signed:'#16A34A',lead:'#F59E0B',partner:'#2563EB',comp:'#DC2626'};
+  var CATNAME={signed:'Khách đã ký',lead:'Khách tiềm năng',partner:'Đối tác đồng hành',comp:'Đối thủ'};
+  var CATCLS={signed:'signed',lead:'lead',partner:'partner',comp:'comp'};
+  var map, markers=[], meMarker=null, pendingMarker=null, addMode=false, editId=null, pick={lat:null,lng:null};
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function $(id){return document.getElementById(id);}
+  function isGD(){return (window.CLF_PROFILE&&window.CLF_PROFILE.level)==='c4';}
+  function myId(){return window.CLF_USER&&window.CLF_USER.id;}
+
+  function initMap(){
+    map=new maplibregl.Map({
+      container:'map',
+      style:'https://tiles.openfreemap.org/styles/liberty',
+      center:[106.700,10.776], zoom:11, attributionControl:true
+    });
+    map.addControl(new maplibregl.NavigationControl({showCompass:false}),'bottom-right');
+    map.on('load', loadPlaces);
+    map.on('click', function(e){
+      if(!addMode) return;
+      setPick(e.lngLat.lat, e.lngLat.lng, true);
+      exitAddMode();
+      openForm(null);
+    });
+  }
+
+  function clearMarkers(){ markers.forEach(function(m){m.remove();}); markers=[]; }
+
+  function loadPlaces(){
+    if(!window.SB){ $('count').textContent='Chưa đăng nhập'; return; }
+    SB.from('places').select('*').then(function(r){
+      if(r.error){ $('count').textContent='Lỗi tải dữ liệu'; return; }
+      clearMarkers();
+      var data=r.data||[]; var bounds=new maplibregl.LngLatBounds();
+      data.forEach(function(p){
+        var el=document.createElement('div');
+        el.className='pin '+(CATCLS[p.category]||'signed');
+        var mk=new maplibregl.Marker({element:el,anchor:'bottom'}).setLngLat([p.lng,p.lat]).addTo(map);
+        mk.getElement().addEventListener('click',function(ev){ ev.stopPropagation(); openPopup(p,mk); });
+        markers.push(mk); bounds.extend([p.lng,p.lat]);
+      });
+      $('count').textContent=data.length+' điểm đang hiển thị';
+      if(data.length){ try{ map.fitBounds(bounds,{padding:70,maxZoom:15,duration:600}); }catch(e){} }
+    });
+  }
+
+  function openPopup(p,mk){
+    var canEdit = isGD() || (p.owner_id && p.owner_id===myId());
+    var img = p.image_url? '<img class="pp-img" src="'+esc(p.image_url)+'">':'';
+    var acts = canEdit? '<div class="pp-acts"><button onclick="window.__edit(\''+p.id+'\')">Sửa</button><button class="del" onclick="window.__del(\''+p.id+'\')">Xoá</button></div>':'';
+    var html='<div>'+img+'<div class="pp-body">'
+      +'<span class="pp-cat" style="background:'+(CATCOLOR[p.category]||'#16A34A')+'">'+esc(CATNAME[p.category]||p.category)+'</span>'
+      +'<div class="pp-name">'+esc(p.name)+'</div>'
+      +(p.address?'<div class="pp-addr">📍 '+esc(p.address)+'</div>':'')
+      +(p.note?'<div class="pp-note">'+esc(p.note)+'</div>':'')
+      +'<div class="pp-meta">Thêm bởi '+esc(p.owner_email||'?')+'</div>'
+      +acts+'</div></div>';
+    new maplibregl.Popup({offset:28,closeButton:true}).setLngLat([p.lng,p.lat]).setHTML(html).addTo(map);
+    window.__places=window.__places||{}; window.__places[p.id]=p;
+  }
+
+  window.__edit=function(id){ var p=window.__places[id]; if(!p)return; editId=id; setPick(p.lat,p.lng,false); openForm(p); };
+  window.__del=function(id){
+    if(!confirm('Xoá điểm này?'))return;
+    SB.from('places').delete().eq('id',id).then(function(r){ if(r.error){alert('Không xoá được: '+r.error.message);return;} loadPlaces(); });
+  };
+
+  // ---- add modes ----
+  function enterAddMode(){ addMode=true; $('hint').style.display='block'; map.getCanvas().style.cursor='crosshair'; }
+  function exitAddMode(){ addMode=false; $('hint').style.display='none'; map.getCanvas().style.cursor=''; }
+  function setPick(lat,lng,fly){ pick.lat=lat; pick.lng=lng; if(fly) map.flyTo({center:[lng,lat],zoom:Math.max(map.getZoom(),15)});
+    if(pendingMarker)pendingMarker.remove();
+    var el=document.createElement('div'); el.className='pin signed'; el.style.opacity='.6';
+    pendingMarker=new maplibregl.Marker({element:el,anchor:'bottom'}).setLngLat([lng,lat]).addTo(map);
+  }
+
+  $('btnAdd').onclick=function(){ editId=null; enterAddMode(); };
+  $('btnCheckin').onclick=function(){
+    if(!navigator.geolocation){alert('Thiết bị không hỗ trợ định vị');return;}
+    $('btnCheckin').textContent='Đang định vị…';
+    navigator.geolocation.getCurrentPosition(function(pos){
+      $('btnCheckin').textContent='📍 Check-in tại đây';
+      var la=pos.coords.latitude, ln=pos.coords.longitude;
+      setPick(la,ln,true); editId=null; reverseFill(la,ln); openForm(null);
+    },function(){ $('btnCheckin').textContent='📍 Check-in tại đây'; alert('Không lấy được vị trí. Hãy cho phép truy cập định vị.'); },{enableHighAccuracy:true,timeout:10000});
+  };
+  $('btnMe').onclick=function(){
+    if(!navigator.geolocation){alert('Thiết bị không hỗ trợ định vị');return;}
+    navigator.geolocation.getCurrentPosition(function(pos){
+      var la=pos.coords.latitude, ln=pos.coords.longitude;
+      if(meMarker)meMarker.remove();
+      var el=document.createElement('div'); el.className='pin me';
+      meMarker=new maplibregl.Marker({element:el}).setLngLat([ln,la]).addTo(map);
+      map.flyTo({center:[ln,la],zoom:15});
+    },function(){alert('Không lấy được vị trí.');},{enableHighAccuracy:true,timeout:10000});
+  };
+
+  // ---- geocode (Nominatim) ----
+  function geocode(q){
+    return fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=vn&q='+encodeURIComponent(q),{headers:{'Accept':'application/json'}})
+      .then(function(r){return r.json();}).then(function(a){ return (a&&a[0])? {lat:parseFloat(a[0].lat),lng:parseFloat(a[0].lon),label:a[0].display_name}:null; });
+  }
+  function reverseFill(lat,lng){
+    fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lng,{headers:{'Accept':'application/json'}})
+      .then(function(r){return r.json();}).then(function(d){ if(d&&d.display_name && !$('faddr').value) $('faddr').value=d.display_name; }).catch(function(){});
+  }
+  $('btnSearch').onclick=doSearch; $('q').addEventListener('keydown',function(e){if(e.key==='Enter')doSearch();});
+  function doSearch(){
+    var q=$('q').value.trim(); if(!q)return;
+    $('btnSearch').textContent='…';
+    geocode(q).then(function(g){
+      $('btnSearch').textContent='Tìm';
+      if(!g){alert('Không tìm thấy địa chỉ này');return;}
+      setPick(g.lat,g.lng,true); editId=null; $('faddr').value=g.label||q; openForm(null);
+    }).catch(function(){ $('btnSearch').textContent='Tìm'; alert('Lỗi tra cứu địa chỉ'); });
+  }
+
+  // ---- form ----
+  function openForm(p){
+    $('ftitle').textContent = p? 'Sửa điểm' : 'Thêm điểm mới';
+    $('fhint').textContent = p? 'Cập nhật thông tin điểm này.' : 'Điền thông tin khách hàng tại vị trí đã chọn.';
+    $('fname').value=p?p.name:''; $('fcat').value=p?(p.category||'signed'):'signed';
+    $('faddr').value=p?(p.address||''):$('faddr').value; $('fnote').value=p?(p.note||''):''; $('fimg').value='';
+    $('fcoords').textContent = (pick.lat!=null)? ('Toạ độ: '+pick.lat.toFixed(5)+', '+pick.lng.toFixed(5)) : '';
+    $('formmask').style.display='flex';
+  }
+  function closeForm(){ $('formmask').style.display='none'; if(pendingMarker){pendingMarker.remove();pendingMarker=null;} editId=null; }
+  $('fcancel').onclick=closeForm;
+  $('formmask').addEventListener('click',function(e){ if(e.target===$('formmask')) closeForm(); });
+
+  $('fsave').onclick=function(){
+    var name=$('fname').value.trim();
+    if(!name){alert('Nhập tên khách/quán');return;}
+    if(pick.lat==null){alert('Chưa có toạ độ điểm');return;}
+    $('fsave').textContent='Đang lưu…'; $('fsave').disabled=true;
+    var file=$('fimg').files[0];
+    var doSave=function(imgUrl){
+      var rec={ name:name, category:$('fcat').value, address:$('faddr').value.trim()||null,
+        note:$('fnote').value.trim()||null, lat:pick.lat, lng:pick.lng, updated_at:new Date().toISOString() };
+      if(imgUrl!==undefined) rec.image_url=imgUrl;
+      var q;
+      if(editId){ q=SB.from('places').update(rec).eq('id',editId); }
+      else { rec.owner_id=myId(); rec.owner_email=window.CLF_USER&&window.CLF_USER.email; q=SB.from('places').insert(rec); }
+      q.then(function(r){
+        $('fsave').textContent='Lưu điểm'; $('fsave').disabled=false;
+        if(r.error){alert('Không lưu được: '+r.error.message);return;}
+        closeForm(); loadPlaces();
+      });
+    };
+    if(file){
+      var ext=(file.name.split('.').pop()||'jpg').toLowerCase();
+      var path=(myId()||'anon')+'/'+Date.now()+'.'+ext;
+      SB.storage.from('places').upload(path,file,{upsert:true}).then(function(u){
+        if(u.error){ alert('Lỗi tải ảnh, vẫn lưu điểm không ảnh.'); doSave(editId?undefined:null); return; }
+        var pub=SB.storage.from('places').getPublicUrl(path); doSave(pub.data.publicUrl);
+      });
+    } else { doSave(editId?undefined:null); }
+  };
+
+  function start(){ if(!window.SB){return;} initMap(); }
+  if(window.CLF_READY) start(); else document.addEventListener('clf-ready', start);
+})();
+</script>
 </body>
 </html>
