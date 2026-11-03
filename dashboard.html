@@ -381,8 +381,9 @@
     var emails=mem.map(function(m){return m.email;});
     var ms=months(); var rdata=ms.map(function(m){return DATA.deptPeriod[dept+'|'+m]||0;});
     var latest=rdata[rdata.length-1]||0; var prev=rdata[rdata.length-2]||0;
-    var basis = prev||latest; // "doanh thu tháng trước" làm cơ sở tiến tới chuẩn
-    var pctTarget=Math.min(100, Math.round(basis/PHONG_TARGET*100));
+    var basis = latest; // dùng doanh thu tháng gần nhất làm cơ sở tiến tới chuẩn
+    var realPct=Math.round(basis/PHONG_TARGET*100);
+    var pctTarget=Math.min(100, realPct);
     // chuẩn nhân sự
     var tp=mem.filter(function(m){return m.level==='c3';})[0];
     var tpStars= tp? (DATA.stars[tp.email.toLowerCase()]||0):0;
@@ -393,14 +394,14 @@
       +'<div class="kpis">'
       +'<div class="kpi"><div class="lab">Phòng</div><div class="val" style="font-size:17px">'+esc(dept)+'</div><div class="sub">'+mem.length+' người</div></div>'
       +'<div class="kpi"><div class="lab">Doanh thu tháng gần nhất</div><div class="val">'+short(latest)+'</div></div>'
-      +'<div class="kpi"><div class="lab">Tháng trước (cơ sở chuẩn)</div><div class="val">'+short(basis)+'</div></div>'
+      +'<div class="kpi"><div class="lab">Tháng trước</div><div class="val">'+short(prev)+'</div></div>'
       +'</div>'
       +'<div class="grid">'
       +'<div class="card"><h3>Doanh thu phòng theo tháng</h3><div style="height:240px"><canvas id="cp"></canvas></div></div>'
       +'<div class="card"><h3>Tiến tới chuẩn</h3>'
         +'<div style="font-size:13px"><b>Doanh thu cả phòng</b> vs chuẩn '+short(PHONG_TARGET)+'</div>'
         +'<div class="track" style="height:18px"><div class="fill" style="width:'+pctTarget+'%"></div></div>'
-        +'<div class="muted" style="margin:4px 0 14px">'+short(basis)+' / '+short(PHONG_TARGET)+' = <b>'+pctTarget+'%</b></div>'
+        +'<div class="muted" style="margin:4px 0 14px">'+short(basis)+' / '+short(PHONG_TARGET)+' = <b>'+realPct+'%</b></div>'
         +'<div style="font-size:13px;font-weight:600;margin-bottom:4px">Chuẩn nhân sự</div>'
         +chk(tpStars>=STD.tpMin, 'Trưởng phòng đạt ≥'+STD.tpMin+' sao <span class="stars">'+'★'.repeat(tpStars)+'</span>')
         +chk(c3cnt>=STD.key3, '≥'+STD.key3+' nhân sự key ≥3 sao (hiện '+c3cnt+')')
