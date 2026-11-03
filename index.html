@@ -217,15 +217,19 @@
     var CHAL=[];
     function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
     function tval(c,idx){ if(c.kind==='single') return 'Đạt'; return (c.tiers[idx-1]!=null?c.tiers[idx-1]:idx)+(c.unit||''); }
+    function fmtM(v){ var m=v/1e6; var s=Math.round(m*10)/10; return (s%1===0? s.toFixed(0): s.toFixed(1).replace('.',','))+'M'; }
+    var TOPN=10;
     function render(rows){
       var byCode={}; CHAL.forEach(function(c){byCode[c.code]={};});
-      (rows||[]).forEach(function(r){ var p=String(r.item_key||'').split('_'); if(p[0]!=='chal'||!byCode[p[1]])return; var code=p[1], idx=parseInt(p[2],10)||0, nm=r.full_name||'?'; if(!byCode[code][nm]||idx>byCode[code][nm]) byCode[code][nm]=idx; });
+      (rows||[]).forEach(function(r){ var p=String(r.item_key||'').split('_'); if(p[0]!=='chal'||!byCode[p[1]])return; var code=p[1], idx=parseInt(p[2],10)||0, nm=r.full_name||'?'; var cur=byCode[code][nm]; if(!cur||idx>cur.idx) byCode[code][nm]={idx:idx,val:(r.val!=null?Number(r.val):null)}; });
       var html=CHAL.map(function(c){
-        var arr=Object.keys(byCode[c.code]).map(function(nm){return {nm:nm,idx:byCode[c.code][nm]};}).sort(function(a,b){return b.idx-a.idx;});
-        var list=arr.length? arr.map(function(x){ return '<div class="bch"><span class="bnm">'+esc(x.nm)+'</span><span class="bval">'+c.icon+' '+esc(tval(c,x.idx))+'</span></div>'; }).join('') : '<div style="color:#9aa3b2;font-size:13px;padding:6px 0">Chưa ai đạt — hãy là người đầu tiên!</div>';
+        var arr=Object.keys(byCode[c.code]).map(function(nm){var e=byCode[c.code][nm];return {nm:nm,idx:e.idx,val:e.val};}).sort(function(a,b){ var ka=(a.val!=null?a.val:a.idx), kb=(b.val!=null?b.val:b.idx); return kb-ka; });
+        var total=arr.length; var top=arr.slice(0,TOPN);
+        var list=top.length? top.map(function(x){ var disp=(x.val!=null)?fmtM(x.val):esc(tval(c,x.idx)); return '<div class="bch"><span class="bnm">'+esc(x.nm)+'</span><span class="bval">'+c.icon+' '+disp+'</span></div>'; }).join('') : '<div style="color:#9aa3b2;font-size:13px;padding:6px 0">Chưa ai đạt — hãy là người đầu tiên!</div>';
         var ic=c.image?'<img src="'+esc(c.image)+'" style="width:30px;height:30px;object-fit:contain;vertical-align:middle;margin-right:7px">':c.icon+' ';
         var dsc=c.descr?'<div style="font-size:12px;color:#8a7a55;line-height:1.45;margin:4px 0 2px">'+esc(c.descr)+'</div>':'';
-        return '<div class="kpi" style="min-width:240px"><div class="lab" style="font-size:15px;font-weight:700;color:#17130D;display:flex;align-items:center">'+ic+'<span>'+esc(c.name)+'</span></div>'+dsc+'<div style="font-size:12px;color:#5B6472;margin:2px 0 10px">'+arr.length+' người đạt</div>'+list+'</div>';
+        var cnt=total>TOPN?('Top '+TOPN+' / '+total+' người đạt'):(total+' người đạt');
+        return '<div class="kpi" style="min-width:240px"><div class="lab" style="font-size:15px;font-weight:700;color:#17130D;display:flex;align-items:center">'+ic+'<span>'+esc(c.name)+'</span></div>'+dsc+'<div style="font-size:12px;color:#5B6472;margin:2px 0 10px">'+cnt+'</div>'+list+'</div>';
       }).join('');
       document.getElementById('badgeboard').innerHTML=html;
     }
