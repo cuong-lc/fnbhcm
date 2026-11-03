@@ -4,17 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hồ sơ năng lực · Sapo</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root{--blue:#007AFF;--green:#16D865;--berkeley:#0F1437;--offblue:#F0F4F9;--gray:#5B6472;--line:#E2E9F2}
+  :root{--blue:#B8872F;--green:#16D865;--berkeley:#17130D;--offblue:#FFFCF5;--gray:#5B6472;--line:#ECE4D5}
   *{box-sizing:border-box}
-  body{margin:0;font-family:'Inter',system-ui,sans-serif;background:var(--offblue);color:#1F2533}
+  body{margin:0;font-family:'Roboto',system-ui,sans-serif;background:var(--offblue);color:#1F2533}
   .wrap{max-width:980px;margin:0 auto;padding:0 16px 70px}
   header.h{background:var(--berkeley);color:#fff;padding:18px 0}
   header.h .wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
   .logo{font-weight:700;display:flex;align-items:center;gap:9px}
   .dot{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,var(--blue),var(--green))}
-  .me{margin-left:auto;font-size:13px;color:#c7d2e8}.me a{color:#9ECCFF;cursor:pointer}
+  .me{margin-left:auto;font-size:13px;color:#c7d2e8}.me a{color:#E7C877;cursor:pointer}
   .hero{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-top:18px;display:flex;gap:18px;align-items:center;flex-wrap:wrap}
   .avatar{width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--green));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px;flex:none}
   .hero h1{margin:0;font-size:22px;color:var(--berkeley)}
@@ -37,7 +37,7 @@
   .mini{flex:1;height:11px;background:var(--offblue);border-radius:7px;overflow:hidden}
   .minif{height:100%;background:linear-gradient(90deg,var(--blue),var(--green))}
   .barrow .v{width:54px;text-align:right;font-size:13px;color:var(--gray)}
-  a.back{color:#9ECCFF;text-decoration:none}
+  a.back{color:#E7C877;text-decoration:none}
 </style>
 </head>
 <body>
@@ -145,19 +145,19 @@
     html+='<div class="card" style="margin-top:16px"><h3>Tổng quan năng lực (5 mảng)</h3>'
       +'<div class="muted" style="margin-bottom:6px">Đạt chuẩn Nhân viên = 80%, Chuyên gia 90%, Trưởng phòng 95%, GĐ 100%. Tự cập nhật khi tick chuẩn ở các trang cấp.</div>'
       +'<div class="grid"><div><canvas id="radar2" height="300"></canvas></div><div>'
-      + _ds.map(function(x){ return '<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><b>'+esc(x.domain)+'</b><span class="muted">'+x.pct+'%</span></div><div style="height:10px;background:#F0F4F9;border-radius:6px;overflow:hidden;margin-top:4px"><div style="height:100%;background:linear-gradient(90deg,#007AFF,#16D865);width:'+x.pct+'%"></div></div></div>'; }).join('')
+      + _ds.map(function(x){ return '<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><b>'+esc(x.domain)+'</b><span class="muted">'+x.pct+'%</span></div><div style="height:10px;background:#FFFCF5;border-radius:6px;overflow:hidden;margin-top:4px"><div style="height:100%;background:linear-gradient(90deg,#C8912E,#E7C877);width:'+x.pct+'%"></div></div></div>'; }).join('')
       +'</div></div></div>';
 
     // ===== 4 dashboard tự soi (quản lý xem) =====
-    function pbar(p,c){ p=Math.max(0,Math.min(100,Math.round(p))); return '<div style="height:11px;background:#F0F4F9;border-radius:7px;overflow:hidden"><div style="height:100%;width:'+p+'%;background:'+(c||'linear-gradient(90deg,#007AFF,#16D865)')+'"></div></div>'; }
+    function pbar(p,c){ p=Math.max(0,Math.min(100,Math.round(p))); return '<div style="height:11px;background:#FFFCF5;border-radius:7px;overflow:hidden"><div style="height:100%;width:'+p+'%;background:'+(c||'linear-gradient(90deg,#C8912E,#E7C877)')+'"></div></div>'; }
     var msP={}; revs.forEach(function(r){ msP[r.period]=1; }); var msArr=Object.keys(msP).sort(); var nM=msArr.length, lpr=msArr[msArr.length-1];
     var cum={total:0,soft:0,hard:0,other:0,merch:0,renew:0}; revs.forEach(function(r){ cum.total+=Number(r.amount)||0; cum.soft+=Number(r.soft)||0; cum.hard+=Number(r.hard)||0; cum.other+=Number(r.other)||0; cum.merch+=Number(r.merchants)||0; cum.renew+=Number(r.renew)||0; });
     var _btot=(cum.soft+cum.hard+cum.other)||1, _pc=function(x){return Math.round(x/_btot*100);};
     html+='<div class="card" style="margin-top:16px"><h3>Doanh thu bóc tách (luỹ kế '+nM+' tháng)</h3>'
       +'<div style="display:flex;height:16px;border-radius:6px;overflow:hidden;margin-bottom:12px"><div style="width:'+_pc(cum.soft)+'%;background:#1D9E75"></div><div style="width:'+_pc(cum.hard)+'%;background:#378ADD"></div><div style="width:'+_pc(cum.other)+'%;background:#EF9F27"></div></div>'
-      +'<div class="grid" style="margin-top:0"><div style="background:#F0F4F9;border-radius:10px;padding:10px"><div class="muted"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#1D9E75;margin-right:5px"></span>Mềm</div><div style="font-weight:700">'+short(cum.soft)+' · '+_pc(cum.soft)+'%</div></div>'
-      +'<div style="background:#F0F4F9;border-radius:10px;padding:10px"><div class="muted"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#378ADD;margin-right:5px"></span>Cứng</div><div style="font-weight:700">'+short(cum.hard)+' · '+_pc(cum.hard)+'%</div></div>'
-      +'<div style="background:#F0F4F9;border-radius:10px;padding:10px"><div class="muted"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#EF9F27;margin-right:5px"></span>Khác</div><div style="font-weight:700">'+short(cum.other)+' · '+_pc(cum.other)+'%</div></div></div></div>';
+      +'<div class="grid" style="margin-top:0"><div style="background:#FFFCF5;border-radius:10px;padding:10px"><div class="muted"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#1D9E75;margin-right:5px"></span>Mềm</div><div style="font-weight:700">'+short(cum.soft)+' · '+_pc(cum.soft)+'%</div></div>'
+      +'<div style="background:#FFFCF5;border-radius:10px;padding:10px"><div class="muted"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#378ADD;margin-right:5px"></span>Cứng</div><div style="font-weight:700">'+short(cum.hard)+' · '+_pc(cum.hard)+'%</div></div>'
+      +'<div style="background:#FFFCF5;border-radius:10px;padding:10px"><div class="muted"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#EF9F27;margin-right:5px"></span>Khác</div><div style="font-weight:700">'+short(cum.other)+' · '+_pc(cum.other)+'%</div></div></div></div>';
     // mạnh/yếu + việc nên làm
     var _sorted=_ds.slice().sort(function(a,b){return a.pct-b.pct;}), weak=_sorted[0], strong=_sorted[_sorted.length-1], acts=[];
     if(weak){ if(weak.domain===_D1){ var CK=(window.CLF&&CLF.CHECKLISTS&&CLF.CHECKLISTS.c1)||null; if(CK){ for(var pi=0;pi<CK.length&&acts.length<3;pi++){ var pp=CK[pi]; for(var ci=0;ci<pp.categories.length&&acts.length<3;ci++){ var cat=pp.categories[ci]; for(var ii=0;ii<cat.items.length&&acts.length<3;ii++){ if(!_done['clf_c1_ck_'+pi+'_'+ci+'_'+ii]) acts.push(cat.items[ii].n); } } } } } else { var cmps=(comps||[]).filter(function(c){return c.domain===weak.domain;}); for(var i=0;i<cmps.length&&acts.length<3;i++){ if(!_done['clf_c1_comp_'+cmps[i].id]) acts.push(cmps[i].name); } } }
@@ -187,15 +187,15 @@
     revs.forEach(function(r){ if(r.period===lpr) lastMerch=Number(r.merchants)||0; });
     html+='<div class="card" style="margin-top:16px"><h3>Chất lượng đơn &amp; khách hàng</h3>'
       +'<div class="muted" style="font-size:12px;margin-bottom:8px">Doanh thu/khách đã trừ doanh thu gia hạn.</div>'
-      +'<div class="grid" style="margin-top:0"><div style="background:#F0F4F9;border-radius:10px;padding:12px"><div class="muted">Số KH đã chinh phục</div><div class="big" style="font-size:24px">'+Math.round(cum.merch)+'</div></div>'
-      +'<div style="background:#F0F4F9;border-radius:10px;padding:12px"><div class="muted">DT / khách · DT mềm / khách</div><div style="font-weight:700;font-size:18px;color:#007AFF">'+tr1(avgKH)+' · '+tr1(softKH)+'</div></div></div></div>';
+      +'<div class="grid" style="margin-top:0"><div style="background:#FFFCF5;border-radius:10px;padding:12px"><div class="muted">Số KH đã chinh phục</div><div class="big" style="font-size:24px">'+Math.round(cum.merch)+'</div></div>'
+      +'<div style="background:#FFFCF5;border-radius:10px;padding:12px"><div class="muted">DT / khách · DT mềm / khách</div><div style="font-weight:700;font-size:18px;color:#B8872F">'+tr1(avgKH)+' · '+tr1(softKH)+'</div></div></div></div>';
     // đóng góp phòng
     if(prof.dept && /^Phòng/.test(prof.dept)){
       var pr=peers.filter(function(r){return r.period===lpr;}), phongTot=0, myAmt=0;
       pr.forEach(function(r){ phongTot+=Number(r.amount)||0; }); revs.forEach(function(r){ if(r.period===lpr) myAmt=Number(r.amount)||0; });
       var pct7=phongTot?myAmt/phongTot*100:0, rk=1; pr.forEach(function(r){ if((Number(r.amount)||0)>myAmt) rk++; });
       html+='<div class="card" style="margin-top:16px"><h3>Đóng góp vào phòng · tháng '+esc(lpr||'')+'</h3>'
-        +'<div class="muted" style="font-size:12px;margin-bottom:5px">'+esc(prof.dept)+' · '+pr.length+' người</div>'+pbar(pct7,'#007AFF')
+        +'<div class="muted" style="font-size:12px;margin-bottom:5px">'+esc(prof.dept)+' · '+pr.length+' người</div>'+pbar(pct7,'#B8872F')
         +'<div class="muted" style="margin:4px 0 8px">'+short(myAmt)+' / '+short(phongTot)+' = <b>'+Math.round(pct7)+'%</b> doanh thu phòng</div>'
         +'<div style="font-size:13px">Xếp thứ <b>'+rk+'</b> / '+pr.length+' trong phòng</div></div>';
     }
@@ -203,11 +203,11 @@
     document.getElementById('root').innerHTML=html;
 
     var ctx=document.getElementById('radar');
-    new Chart(ctx,{type:'radar',data:{labels:labels,datasets:[{label:'% thành thạo',data:data,fill:true,backgroundColor:'rgba(0,122,255,.18)',borderColor:'#007AFF',pointBackgroundColor:'#16D865',borderWidth:2}]},
+    new Chart(ctx,{type:'radar',data:{labels:labels,datasets:[{label:'% thành thạo',data:data,fill:true,backgroundColor:'rgba(184,135,47,.18)',borderColor:'#B8872F',pointBackgroundColor:'#16D865',borderWidth:2}]},
       options:{responsive:true,scales:{r:{min:0,max:100,ticks:{stepSize:25,backdropColor:'transparent'},pointLabels:{font:{size:12}}}},plugins:{legend:{display:false}}}});
 
     var clabels=_ds.map(function(x){return x.domain;}), cdata=_ds.map(function(x){return x.pct;});
-    new Chart(document.getElementById('radar2'),{type:'radar',data:{labels:clabels,datasets:[{label:'%',data:cdata,fill:true,backgroundColor:'rgba(0,122,255,.16)',borderColor:'#007AFF',pointBackgroundColor:'#16D865',borderWidth:2}]},
+    new Chart(document.getElementById('radar2'),{type:'radar',data:{labels:clabels,datasets:[{label:'%',data:cdata,fill:true,backgroundColor:'rgba(184,135,47,.16)',borderColor:'#B8872F',pointBackgroundColor:'#16D865',borderWidth:2}]},
       options:{responsive:true,scales:{r:{min:0,max:100,ticks:{stepSize:25,backdropColor:'transparent'},pointLabels:{font:{size:9}}}},plugins:{legend:{display:false}}}});
   }
 

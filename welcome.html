@@ -4,24 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Welcome Onboard · Sapo FNB</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root{--blue:#007AFF;--green:#16D865;--berkeley:#0F1437;--offblue:#F0F4F9;--gray:#5B6472;--line:#E2E9F2;--amber:#FFAE06}
+  :root{--blue:#B8872F;--green:#16D865;--berkeley:#17130D;--offblue:#FFFCF5;--gray:#5B6472;--line:#ECE4D5;--amber:#FFAE06}
   *{box-sizing:border-box}
-  body{margin:0;font-family:'Inter',system-ui,sans-serif;background:var(--offblue);color:#1F2533}
+  body{margin:0;font-family:'Roboto',system-ui,sans-serif;background:var(--offblue);color:#1F2533}
   .wrap{max-width:1040px;margin:0 auto;padding:0 16px 70px}
   header.h{background:var(--berkeley);color:#fff;padding:16px 0}
   header.h .wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
   .logo{font-weight:800;display:flex;align-items:center;gap:9px}
   .dot{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,var(--blue),var(--green))}
-  .me{margin-left:auto;font-size:13px;color:#c7d2e8}.me a{color:#9ECCFF;cursor:pointer;text-decoration:none}
+  .me{margin-left:auto;font-size:13px;color:#c7d2e8}.me a{color:#E7C877;cursor:pointer;text-decoration:none}
   .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:16px}
-  .hero{background:linear-gradient(135deg,#0F1437,#143a8a);color:#fff;border:none}
+  .hero{background:linear-gradient(135deg,#17130D,#143a8a);color:#fff;border:none}
   .hero h1{margin:0 0 2px;font-size:22px}
   .hero .sub{color:#c7d2e8;font-size:13px}
   .ring-row{display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-top:14px}
   .ring{width:128px;height:128px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:conic-gradient(var(--green) calc(var(--p)*1%), rgba(255,255,255,.18) 0)}
-  .ring .inner{width:104px;height:104px;border-radius:50%;background:#0F1437;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ring .inner{width:104px;height:104px;border-radius:50%;background:#17130D;display:flex;flex-direction:column;align-items:center;justify-content:center}
   .ring .pct{font-size:30px;font-weight:800;line-height:1}
   .ring .lab{font-size:11px;color:#c7d2e8;margin-top:3px}
   .secbars{flex:1;min-width:240px}
@@ -59,7 +59,7 @@
   .bx.big{flex:1;min-width:30px}
   .callgrid{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
   .callw{display:flex;flex-direction:column;align-items:center;gap:3px}
-  .cwk{font-size:11px;font-weight:600;color:#5B6472;background:#F0F4F9;border-radius:6px;padding:2px 9px}
+  .cwk{font-size:11px;font-weight:600;color:#5B6472;background:#FFFCF5;border-radius:6px;padding:2px 9px}
   .cwk.ok{background:#16D865;color:#fff}
   .cin{width:62px;text-align:center;border:1.5px solid #cdd5e0;border-radius:6px;padding:5px;font-family:inherit;font-size:13px}
   .ctg{font-size:11px;color:#5B6472}
@@ -213,9 +213,9 @@
       for(var w=0;w<ct.weeks.length;w++){ var wk=w+2, val=Number(MET[it.k+'_w'+wk]||0), tgt=ct.weeks[w], ok=val>=tgt && val>0;
         rows+='<div class="callw"><span class="cwk'+(ok?' ok':'')+'">T'+wk+'</span><input class="cin" type="number" min="0" value="'+(val||'')+'" placeholder="0" data-mk="'+it.k+'_w'+wk+'"><span class="ctg">/ '+tgt+'</span></div>'; }
       var pct=ct.target?Math.min(100,Math.round(ct.sum/ct.target*100)):0;
-      return '<div class="count"><div class="ctop"><b>'+esc(it.t)+'</b><span style="color:#007AFF;font-weight:700">'+ct.sum+'/'+ct.target+' cuộc</span></div>'
+      return '<div class="count"><div class="ctop"><b>'+esc(it.t)+'</b><span style="color:#B8872F;font-weight:700">'+ct.sum+'/'+ct.target+' cuộc</span></div>'
         +'<div class="callgrid">'+rows+'</div>'
-        +'<div style="margin-top:10px"><div style="height:11px;background:#F0F4F9;border-radius:7px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#007AFF,#16D865)"></div></div>'
+        +'<div style="margin-top:10px"><div style="height:11px;background:#FFFCF5;border-radius:7px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#C8912E,#E7C877)"></div></div>'
         +'<div class="muted" style="font-size:12px;margin-top:3px">Tổng đã gọi <b>'+ct.sum+'</b> / mục tiêu <b>'+ct.target+'</b> cuộc — có thể bù tuần thiếu</div></div></div>';
     }
     if(it.type==='count'){
@@ -223,7 +223,7 @@
       var label = it.money? (c*(it.each||1))+'/'+total+' triệu' : (it.week? c+'/'+it.n+' tuần' : (c*(it.each||1))+'/'+total+(it.suffix||''));
       var bx='';
       for(var i=1;i<=it.n;i++){ var on=PROG['obd_'+it.k+'_'+i]; var cap= it.week? ('T'+(i+1)) : (it.money? i : ((it.each||1)>1? (i*(it.each||1)) : i)); bx+='<div class="bx'+(it.n>20?' big':'')+(on?' on':'')+'" data-k="'+it.k+'" data-n="'+it.n+'" data-i="'+i+'">'+cap+'</div>'; }
-      return '<div class="count"><div class="ctop"><b>'+esc(it.t)+'</b><span style="color:#007AFF;font-weight:700">'+label+'</span></div><div class="boxes">'+bx+'</div></div>';
+      return '<div class="count"><div class="ctop"><b>'+esc(it.t)+'</b><span style="color:#B8872F;font-weight:700">'+label+'</span></div><div class="boxes">'+bx+'</div></div>';
     }
     var on=PROG['obd_'+it.k];
     return '<div class="item'+(on?' done':'')+'"><div class="cb'+(on?' on':'')+'" data-key="obd_'+it.k+'">'+(on?'✓':'')+'</div><div class="tx">'+esc(it.t)+(it.opt?'<span class="opt">không bắt buộc</span>':'')+'</div></div>';

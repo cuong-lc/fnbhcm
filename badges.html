@@ -5,30 +5,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Thợ săn huy hiệu · Khung năng lực Kinh doanh Sapo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="auth.js"></script>
 <style>
+  /* Olympus = dark (phương án B) */
+  body{background:#FFFCF5}
+  .topbar{background:#17130D !important;border-bottom:1px solid #2A2318 !important}
+  .topbar .brand{color:#fff !important}
+  .topbar .brand .dot{background:linear-gradient(135deg,#D4A94C,#F0D48A) !important}
+  .topbar .nav a{color:#C7B079 !important}
+  .topbar .nav a:hover{background:rgba(255,255,255,.08) !important;color:#fff !important}
+  .topbar .nav a.active{background:linear-gradient(135deg,#D4A94C,#F0D48A) !important;color:#17130D !important}
   #bh{max-width:1040px;margin:0 auto;padding:0 16px 70px}
   #bh .head{margin:22px 0 6px}
-  #bh h2{margin:0;font-size:20px;color:#0F1437}
-  #bh .accent2{height:3px;width:120px;background:linear-gradient(90deg,#007AFF,#16D865);border-radius:3px;margin:8px 0 6px}
+  #bh h2{margin:0;font-size:20px;color:#17130D}
+  #bh .accent2{height:3px;width:120px;background:linear-gradient(90deg,#D4A94C,#F0D48A);border-radius:3px;margin:8px 0 6px}
   #bh .sub{color:#5B6472;font-size:13.5px;margin:0 0 6px}
-  #bh .picker{background:#fff;border:1px solid #E2E9F2;border-radius:12px;padding:14px 16px;margin:14px 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-  #bh .picker label{font-weight:600;font-size:14px;color:#0F1437}
+  #bh .picker{background:#fff;border:1px solid #ECE4D5;border-radius:12px;padding:14px 16px;margin:14px 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  #bh .picker label{font-weight:600;font-size:14px;color:#17130D}
   #bh select{font-family:inherit;font-size:14px;padding:9px 12px;border:1.5px solid #cdd5e0;border-radius:9px;min-width:280px;background:#fff}
   #bh .who{margin-left:auto;font-size:13px;color:#5B6472}
   #bh .adminbadge{background:#FFF3E6;color:#9a6a00;font-weight:700;font-size:12px;padding:4px 11px;border-radius:20px}
   #bh .viewbadge{background:#EAF2FF;color:#0057C7;font-weight:700;font-size:12px;padding:4px 11px;border-radius:20px}
   #bh .bgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
   @media(max-width:820px){#bh .bgrid{grid-template-columns:1fr}}
-  #bh .card{background:#fff;border:1px solid #E2E9F2;border-radius:14px;padding:18px}
+  #bh .card{background:#fff;border:1px solid #ECE4D5;border-radius:14px;padding:18px}
   #bh .chalhd{display:flex;align-items:center;gap:12px;margin-bottom:12px}
   #bh .chalic{font-size:28px}
   #bh .gicon{width:56px;height:56px;object-fit:contain;flex:none;filter:drop-shadow(0 2px 4px rgba(15,20,55,.18))}
-  #bh .chalname{font-weight:700;color:#0F1437;font-size:16px}
+  #bh .chalname{font-weight:700;color:#17130D;font-size:16px}
   #bh .chaldesc{font-size:12.5px;color:#5B6472}
   #bh .chalbadge{margin-left:auto;background:linear-gradient(120deg,#FFB800,#FF7A00);color:#fff;font-weight:800;font-size:13px;padding:7px 14px;border-radius:20px}
   #bh .chalbadge.off{background:#eef1f6;color:#9aa3b2}
@@ -39,7 +47,7 @@
   #bh .box.edit:hover{border-color:#FF9500;box-shadow:0 2px 8px rgba(255,149,0,.25)}
   #bh .single{min-width:150px}
   #bh .hint{font-size:12px;color:#8a94a6;margin-top:8px}
-  #bh .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0F1437;color:#fff;padding:10px 18px;border-radius:10px;font-size:13.5px;opacity:0;transition:.25s;z-index:50}
+  #bh .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#17130D;color:#fff;padding:10px 18px;border-radius:10px;font-size:13.5px;opacity:0;transition:.25s;z-index:50}
   #bh .toast.show{opacity:1}
   #bh .loading{padding:40px;text-align:center;color:#5B6472}
   #bh .empty{color:#9aa3b2;font-size:13px}
@@ -104,7 +112,7 @@
   function renderOwnerBody(){
     var box=document.getElementById('bh-editor'); if(!box) return;
     var p=PEOPLE.filter(function(x){return x.email===curEmail;})[0];
-    box.innerHTML='<div style="font-size:13px;color:#5B6472;margin:2px 0 4px">Đang chỉnh huy hiệu cho <b style="color:#0F1437">'+esc(p?p.full_name:curEmail)+'</b>'+(p&&p.dept?' · '+esc(p.dept):'')+'</div>'+renderBadgesFor(curEmail,true);
+    box.innerHTML='<div style="font-size:13px;color:#5B6472;margin:2px 0 4px">Đang chỉnh huy hiệu cho <b style="color:#17130D">'+esc(p?p.full_name:curEmail)+'</b>'+(p&&p.dept?' · '+esc(p.dept):'')+'</div>'+renderBadgesFor(curEmail,true);
     attachEdit(box);
   }
 

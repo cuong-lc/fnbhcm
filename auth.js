@@ -34,15 +34,15 @@
     var lvl = p.level ? (LV[p.level] || p.level) : '(chưa gán cấp)';
     var bar = document.createElement('div');
     bar.id = 'clf-userbar';
-    bar.style.cssText = 'background:#0b1020;color:#cfe0ff;font:13px/1.4 Inter,system-ui,sans-serif;padding:8px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap';
+    bar.style.cssText = 'background:#17130D;color:#cfe0ff;font:13px/1.4 Inter,system-ui,sans-serif;padding:8px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap';
     bar.innerHTML =
       '<span>👤 <b style="color:#fff">' + esc(window.CLF_USER.email) + '</b></span>' +
       '<span>Cấp: <b style="color:#16D865">' + esc(lvl) + '</b></span>' +
       '<span style="margin-left:auto"></span>' +
-      '<a href="index.html" style="color:#9ECCFF;text-decoration:none">Trang chủ</a>' +
-      '<a href="welcome.html" style="color:#9ECCFF;text-decoration:none">Hội nhập</a>' +
-      (isM ? '<a href="dashboard.html" style="color:#9ECCFF;text-decoration:none">Dashboard</a>' : '') +
-      (isM ? '<a href="admin.html" style="color:#9ECCFF;text-decoration:none">Admin</a>' : '') +
+      '<a href="index.html" style="color:#E7C877;text-decoration:none">Trang chủ</a>' +
+      '<a href="welcome.html" style="color:#E7C877;text-decoration:none">Hội nhập</a>' +
+      (isM ? '<a href="dashboard.html" style="color:#E7C877;text-decoration:none">Dashboard</a>' : '') +
+      (isM ? '<a href="admin.html" style="color:#E7C877;text-decoration:none">Admin</a>' : '') +
       '<a id="clf-logout" style="color:#ff9b9b;text-decoration:none;cursor:pointer">Đăng xuất</a>';
     document.body.insertBefore(bar, document.body.firstChild);
     var lo = document.getElementById('clf-logout');

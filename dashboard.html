@@ -4,17 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard · Sapo FNB</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root{--blue:#007AFF;--green:#16D865;--berkeley:#0F1437;--offblue:#F0F4F9;--gray:#5B6472;--line:#E2E9F2;--amber:#FFAE06}
+  :root{--blue:#D4A94C;--green:#16D865;--berkeley:#17130D;--offblue:#FFFCF5;--gray:#5B6472;--line:#ECE4D5;--amber:#FFAE06}
   *{box-sizing:border-box}
-  body{margin:0;font-family:'Inter',system-ui,sans-serif;background:var(--offblue);color:#1F2533}
+  body{margin:0;font-family:'Roboto',system-ui,sans-serif;background:var(--offblue);color:#1F2533}
   .wrap{max-width:1120px;margin:0 auto;padding:0 16px 70px}
   header.h{background:var(--berkeley);color:#fff;padding:16px 0}
   header.h .wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
   .logo{font-weight:700;display:flex;align-items:center;gap:9px}
   .dot{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,var(--blue),var(--green))}
-  .me{margin-left:auto;font-size:13px;color:#c7d2e8}.me a{color:#9ECCFF;cursor:pointer}
+  .me{margin-left:auto;font-size:13px;color:#c7d2e8}.me a{color:#F0D48A;cursor:pointer}
   .tabs{display:flex;gap:8px;margin:18px 0 6px;border-bottom:1px solid var(--line);flex-wrap:wrap}
   .tab{padding:9px 16px;border:none;background:none;font-family:inherit;font-size:14px;font-weight:600;color:var(--gray);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px}
   .tab.active{color:var(--blue);border-bottom-color:var(--blue)}
@@ -40,7 +40,7 @@
   .chk .b{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;flex:none}
   .b.ok{background:var(--green)} .b.no{background:#cdd5e0;color:#fff}
   .stars{color:var(--amber);letter-spacing:1px}
-  a.plink{color:#0F1437;text-decoration:none;border-bottom:1px dotted #9bb}
+  a.plink{color:#17130D;text-decoration:none;border-bottom:1px dotted #9bb}
   .chalcard{margin-top:14px}
   .chalhd{display:flex;align-items:center;gap:12px;margin-bottom:10px}
   .chalic{font-size:26px;flex:none;line-height:1}
@@ -147,8 +147,8 @@
     return {done:done, total:DATA.items.length, all:all, parts:P};
   }
   function deptMembers(dept){ return DATA.people.filter(function(p){return (p.dept||'')===dept;}); }
-  function lineChart(canvas,labels,data,label,color){ charts.push(new Chart(canvas,{type:'line',data:{labels:labels,datasets:[{label:label,data:data,borderColor:color||'#007AFF',backgroundColor:'rgba(0,122,255,.12)',fill:true,tension:.3,pointRadius:4,pointBackgroundColor:color||'#007AFF'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:function(v){return short(v);}}}}}})); }
-  function barChart(canvas,labels,data,label,colors){ charts.push(new Chart(canvas,{type:'bar',data:{labels:labels,datasets:[{label:label,data:data,backgroundColor:colors||'#007AFF',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:function(v){return short(v);}}}}}})); }
+  function lineChart(canvas,labels,data,label,color){ charts.push(new Chart(canvas,{type:'line',data:{labels:labels,datasets:[{label:label,data:data,borderColor:color||'#D4A94C',backgroundColor:'rgba(212,169,76,.12)',fill:true,tension:.3,pointRadius:4,pointBackgroundColor:color||'#D4A94C'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:function(v){return short(v);}}}}}})); }
+  function barChart(canvas,labels,data,label,colors){ charts.push(new Chart(canvas,{type:'bar',data:{labels:labels,datasets:[{label:label,data:data,backgroundColor:colors||'#D4A94C',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:function(v){return short(v);}}}}}})); }
 
   // ---- điểm năng lực 5 domain (trọng số: NV 80% · CG +10 · TP +5 · GĐ +5) ----
   var LEVELS4=['c1','c2','c3','c4'];
@@ -213,7 +213,7 @@
       var gap=Number(rk.above_gap)||0;
       S.rank='<div class="card" style="margin-top:16px"><h3>Thứ hạng doanh thu · toàn Trung tâm</h3>'
         +'<div class="muted" style="font-size:12px;margin-bottom:6px">Tháng '+esc(DATA.myContribPeriod||lp)+' · '+rk.n+' sale</div>'
-        +'<div style="display:flex;align-items:baseline;gap:10px"><span style="font-size:30px;font-weight:700;color:#007AFF">#'+rk.rnk+'</span><span class="muted">/ '+rk.n+'</span></div>'
+        +'<div style="display:flex;align-items:baseline;gap:10px"><span style="font-size:30px;font-weight:700;color:#D4A94C">#'+rk.rnk+'</span><span class="muted">/ '+rk.n+'</span></div>'
         +(rk.rnk>1? '<div style="font-size:13px;margin-top:6px">Còn <b>'+short(gap)+'</b> nữa là vượt lên hạng <b>#'+(rk.rnk-1)+'</b>.</div>' : '<div style="font-size:13px;margin-top:6px;color:#0a8a3a">🏆 Đang dẫn đầu trung tâm!</div>')
         +'</div>';
     }
@@ -263,7 +263,7 @@
       var cper=DATA.myContribPeriod||lp, pct=Number(c.total)?Number(c.mine)/Number(c.total)*100:0;
       S.dongGop='<div class="card" style="margin-top:16px"><h3>Đóng góp vào phòng · tháng '+esc(cper)+'</h3>'
         +'<div class="muted" style="font-size:12px;margin-bottom:5px">'+esc(c.dept)+' · '+c.n+' người</div>'
-        +bar(pct,'#007AFF')
+        +bar(pct,'#D4A94C')
         +'<div class="muted" style="margin:4px 0 8px">'+short(Number(c.mine))+' / '+short(Number(c.total))+' = <b>'+Math.round(pct)+'%</b> doanh thu phòng</div>'
         +'<div style="font-size:13px">Xếp thứ <b>'+c.rnk+'</b> / '+c.n+' trong phòng</div>'
         +'</div>';
@@ -274,14 +274,14 @@
       var rank=1; peers.forEach(function(v){ if(v>myAmt) rank++; });
       S.dongGop='<div class="card" style="margin-top:16px"><h3>Đóng góp vào phòng · tháng '+esc(lp)+'</h3>'
         +'<div class="muted" style="font-size:12px;margin-bottom:5px">'+esc(dept)+' · '+peers.length+' người</div>'
-        +bar(pct2,'#007AFF')
+        +bar(pct2,'#D4A94C')
         +'<div class="muted" style="margin:4px 0 8px">'+short(myAmt)+' / '+short(phongTot)+' = <b>'+Math.round(pct2)+'%</b> doanh thu phòng</div>'
         +'<div style="font-size:13px">Xếp thứ <b>'+rank+'</b> / '+peers.length+' trong phòng</div>'
         +'</div>';
     }
     return S;
   }
-  function secH(t){ return '<div style="margin:30px 0 6px;display:flex;align-items:center;gap:12px"><span style="font-size:18px;font-weight:700;color:var(--berkeley)">'+t+'</span><div style="flex:1;height:2px;background:linear-gradient(90deg,#007AFF,#16D865);opacity:.45;border-radius:2px"></div></div>'; }
+  function secH(t){ return '<div style="margin:30px 0 6px;display:flex;align-items:center;gap:12px"><span style="font-size:18px;font-weight:700;color:var(--berkeley)">'+t+'</span><div style="flex:1;height:2px;background:linear-gradient(90deg,#D4A94C,#F0D48A);opacity:.45;border-radius:2px"></div></div>'; }
 
   // ---------- render khung tab ----------
   function render(){
@@ -369,9 +369,9 @@
       + (S.manhYeu||'')
       + secH('Lộ trình thăng tiến')
       + (S.tienDo||'');
-    lineChart(document.getElementById('c1'), ms, rdata, 'Doanh thu','#007AFF');
+    lineChart(document.getElementById('c1'), ms, rdata, 'Doanh thu','#D4A94C');
     var clabels=ds.map(function(x){return x.domain;}), cdata=ds.map(function(x){return x.pct;});
-    charts.push(new Chart(document.getElementById('cradar'),{type:'radar',data:{labels:clabels,datasets:[{label:'%',data:cdata,fill:true,backgroundColor:'rgba(0,122,255,.16)',borderColor:'#007AFF',pointBackgroundColor:'#16D865',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{min:0,max:100,ticks:{stepSize:25,backdropColor:'transparent'},pointLabels:{font:{size:9}}}},plugins:{legend:{display:false}}}}));
+    charts.push(new Chart(document.getElementById('cradar'),{type:'radar',data:{labels:clabels,datasets:[{label:'%',data:cdata,fill:true,backgroundColor:'rgba(212,169,76,.16)',borderColor:'#D4A94C',pointBackgroundColor:'#16D865',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{min:0,max:100,ticks:{stepSize:25,backdropColor:'transparent'},pointLabels:{font:{size:9}}}},plugins:{legend:{display:false}}}}));
   }
 
   // ---------- TAB PHÒNG ----------
@@ -415,7 +415,7 @@
             +'<td class="r">'+pc+'%</td><td class="r">'+short(rv[lm]||0)+'</td></tr>';
         }).join('')
       +'</table></div>';
-    barChart(document.getElementById('cp'), ms, rdata, 'Doanh thu phòng', ms.map(function(){return '#007AFF';}));
+    barChart(document.getElementById('cp'), ms, rdata, 'Doanh thu phòng', ms.map(function(){return '#D4A94C';}));
     var dsel=document.getElementById('deptsel'); if(dsel) dsel.onchange=function(e){ clearCharts(); renderPhong(el, e.target.value); };
   }
 
@@ -443,7 +443,7 @@
           return '<tr><td>'+esc(d)+'</td><td class="r">'+n+'</td><td class="r">'+short(rv)+'</td><td class="r"><b style="color:'+(pc>=100?'#0a8a3a':'#9a6a00')+'">'+pc+'%</b></td></tr>'; }).join('')
       +'</table></div>';
     lineChart(document.getElementById('ctt'), ms, centerM, 'Trung tâm','#16D865');
-    barChart(document.getElementById('cdept'), dlist.map(function(d){return d.replace('Phòng ','').replace(' HCM','');}), byDeptLatest, 'Theo phòng', dlist.map(function(){return '#007AFF';}));
+    barChart(document.getElementById('cdept'), dlist.map(function(d){return d.replace('Phòng ','').replace(' HCM','');}), byDeptLatest, 'Theo phòng', dlist.map(function(){return '#D4A94C';}));
   }
 
   if(!window.SUPA || SUPA.URL.indexOf('YOUR-PROJECT')>=0){ notAllowed('Chưa cấu hình config.js'); }
