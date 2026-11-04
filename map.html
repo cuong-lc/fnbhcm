@@ -150,6 +150,7 @@
       <button id="floc" type="button">📍 Vị trí hiện tại</button>
     </div>
     <div class="coords no" id="fcoords">Chưa có vị trí</div>
+    <div id="fmsg" style="font-size:12px;margin-top:6px;display:none"></div>
     <div class="frow">
       <button id="fcancel">Huỷ</button>
       <button id="fsave">Lưu điểm</button>
@@ -274,28 +275,45 @@
   };
 
   function parseCoords(s){ if(!s)return null; var m=String(s).match(/(-?\d{1,2}\.\d{3,})[,\s@]+\s*(-?\d{2,3}\.\d{3,})/); if(m){ var a=parseFloat(m[1]),b=parseFloat(m[2]); if(a>=8&&a<=24&&b>=100&&b<=116) return {lat:a,lng:b,label:'Toạ độ'}; } return null; }
-  function geocode(q){
-    var hasCity=/h[oồ] ch[ií] minh|hcm|tp\.?\s*hcm|vi[eệ]t nam|h[aà] n[oộ]i|\btp\b/i.test(q);
-    var qq=q+(hasCity?'':', Thành phố Hồ Chí Minh');
+  function geocodeOne(qq){
     var vb='';
     try{ if(map){ var b=map.getBounds(); vb='&viewbox='+b.getWest()+','+b.getNorth()+','+b.getEast()+','+b.getSouth()+'&bounded=0'; } }catch(e){}
     return fetch('https://nominatim.openstreetmap.org/search?format=json&addressdetails=0&limit=1&countrycodes=vn'+vb+'&q='+encodeURIComponent(qq),{headers:{'Accept':'application/json'}})
-      .then(function(r){return r.json();}).then(function(a){ return (a&&a[0])?{lat:parseFloat(a[0].lat),lng:parseFloat(a[0].lon),label:a[0].display_name}:null; }); }
+      .then(function(r){return r.json();}).then(function(a){ return (a&&a[0])?{lat:parseFloat(a[0].lat),lng:parseFloat(a[0].lon),label:a[0].display_name}:null; }).catch(function(){return null;});
+  }
+  async function geocode(q){
+    var hasCity=/h[oồ] ch[ií] minh|hcm|tp\.?\s*hcm|vi[eệ]t nam|h[aà] n[oộ]i/i.test(q);
+    var city=hasCity?'':', Thành phố Hồ Chí Minh';
+    var noHouse=q.replace(/^\s*\d+\s*[a-zA-Z]?\s*[\/-]?\s*\d*\s*,?\s*/,'').trim(); // bỏ số nhà đầu
+    var streetOnly=q.split(',')[0].replace(/^\s*\d+\s*[a-zA-Z]?\s*[\/-]?\s*\d*\s*/,'').trim(); // chỉ tên đường, bỏ quận
+    var tries=[q+city];
+    if(noHouse && noHouse!==q) tries.push(noHouse+city);
+    if(streetOnly && tries.indexOf(streetOnly+', Hồ Chí Minh')<0) tries.push(streetOnly+', Hồ Chí Minh');
+    for(var i=0;i<tries.length;i++){ var g=await geocodeOne(tries[i]); if(g){ g.approx=(i>0); return g; } }
+    return null;
+  }
   function reverseFill(lat,lng){ fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lng,{headers:{'Accept':'application/json'}}).then(function(r){return r.json();}).then(function(d){ if(d&&d.display_name && !$('faddr').value) $('faddr').value=d.display_name; }).catch(function(){}); }
 
   $('btnSearch').onclick=doFly; $('q').addEventListener('keydown',function(e){if(e.key==='Enter')doFly();});
-  function doFly(){ var q=$('q').value.trim(); if(!q)return; $('btnSearch').textContent='…'; geocode(q).then(function(g){ $('btnSearch').textContent='Tìm'; if(!g){alert('Không tìm thấy');return;} map.flyTo({center:[g.lng,g.lat],zoom:14}); }).catch(function(){$('btnSearch').textContent='Tìm';}); }
+  function doFly(){ var q=$('q').value.trim(); if(!q)return; $('btnSearch').textContent='…'; geocode(q).then(function(g){ $('btnSearch').textContent='Tìm'; if(!g){ var c=$('count'),old=c.textContent; c.textContent='Không tìm thấy "'+q+'"'; setTimeout(function(){c.textContent=old;},2500); return; } map.flyTo({center:[g.lng,g.lat],zoom:15}); }).catch(function(){$('btnSearch').textContent='Tìm';}); }
 
+  function fmsg(t,color){ var e=$('fmsg'); if(!t){e.style.display='none';return;} e.textContent=t; e.style.color=color||'#b00020'; e.style.display='block'; }
   $('fgeo').onclick=function(){
-    var q=$('faddr').value.trim(); if(!q){alert('Nhập địa chỉ trước');return;}
+    fmsg('');
+    var q=$('faddr').value.trim(); if(!q){fmsg('Nhập địa chỉ trước đã.');return;}
     var c=parseCoords(q)||parseCoords($('fcontact').value); // dán toạ độ / link có toạ độ -> lấy thẳng
     if(c){ setPick(c.lat,c.lng,true); return; }
     $('fgeo').textContent='…';
-    geocode(q).then(function(g){ $('fgeo').textContent='📍 Định vị'; if(!g){alert('Không tìm thấy địa chỉ này.\nMẹo: thêm phường/quận, hoặc dán toạ độ "10.77,106.69", hoặc dùng "Chọn trên bản đồ" rồi kéo ghim.');return;} setPick(g.lat,g.lng,true); $('formmask').style.display='none'; enterAddMode(); }).catch(function(){ $('fgeo').textContent='📍 Định vị'; alert('Lỗi tra cứu'); }); };
+    geocode(q).then(function(g){ $('fgeo').textContent='📍 Định vị';
+      if(!g){ fmsg('Không tìm thấy địa chỉ này. Dùng "Chọn trên bản đồ" để chấm tay, hoặc dán toạ độ dạng 10.77,106.69.'); return; }
+      setPick(g.lat,g.lng,true); $('formmask').style.display='none'; enterAddMode();
+      $('hint').textContent = g.approx ? 'Chỉ tới gần đúng tên đường — KÉO ghim xám cho đúng nhà rồi bấm "Dùng vị trí này"' : 'Kéo ghim xám để chỉnh đúng vị trí rồi bấm "Dùng vị trí này"';
+    }).catch(function(){ $('fgeo').textContent='📍 Định vị'; fmsg('Lỗi tra cứu, thử lại hoặc chấm trên bản đồ.'); }); };
 
-  $('fpickmap').onclick=function(){ $('formmask').style.display='none'; enterAddMode(); };
+  $('fpickmap').onclick=function(){ $('formmask').style.display='none'; $('hint').textContent='Chạm lên bản đồ để đặt ghim · kéo ghim xám để chỉnh đúng vị trí'; enterAddMode(); };
 
   function openForm(p,keepCoords){
+    $('fmsg').style.display='none';
     $('ftitle').textContent = (p||editId)? 'Sửa điểm' : 'Thêm điểm mới';
     $('fname').value=p?p.name:($('fname').value||'');
     $('fquymo').value=p?(p.quymo||QUYMO[0]):($('fquymo').value||QUYMO[0]);
@@ -306,20 +324,21 @@
     showCoords();
     $('formmask').style.display='flex';
   }
-  function closeForm(){ $('formmask').style.display='none'; if(pendingMarker){pendingMarker.remove();pendingMarker=null;} editId=null; pick={lat:null,lng:null}; $('fname').value='';$('faddr').value='';$('fcontact').value='';$('fnote').value=''; }
+  function closeForm(){ $('formmask').style.display='none'; $('fmsg').style.display='none'; if(pendingMarker){pendingMarker.remove();pendingMarker=null;} editId=null; pick={lat:null,lng:null}; $('fname').value='';$('faddr').value='';$('fcontact').value='';$('fnote').value=''; }
   $('fcancel').onclick=closeForm;
   $('formmask').addEventListener('click',function(e){ if(e.target===$('formmask')) closeForm(); });
 
   $('fsave').onclick=function(){
-    var name=$('fname').value.trim(); if(!name){alert('Nhập tên khách/quán');return;}
-    if(pick.lat==null){alert('Chưa có vị trí. Bấm Định vị, Chọn trên bản đồ, hoặc Vị trí hiện tại.');return;}
+    fmsg('');
+    var name=$('fname').value.trim(); if(!name){fmsg('Nhập tên khách/quán.');return;}
+    if(pick.lat==null){fmsg('Chưa có vị trí. Bấm Định vị, Chọn trên bản đồ, hoặc Vị trí hiện tại.');return;}
     $('fsave').textContent='Đang lưu…'; $('fsave').disabled=true;
     var file=$('fimg').files[0];
     var doSave=function(imgUrl){
       var rec={ name:name, quymo:$('fquymo').value, linhvuc:$('flinhvuc').value, address:$('faddr').value.trim()||null, contact:$('fcontact').value.trim()||null, note:$('fnote').value.trim()||null, lat:pick.lat, lng:pick.lng, updated_at:new Date().toISOString() };
       if(imgUrl!==undefined) rec.image_url=imgUrl;
       var q = editId? SB.from('places').update(rec).eq('id',editId) : (function(){ rec.owner_id=myId(); rec.owner_email=window.CLF_USER&&window.CLF_USER.email; rec.category='signed'; return SB.from('places').insert(rec); })();
-      q.then(function(r){ $('fsave').textContent='Lưu điểm'; $('fsave').disabled=false; if(r.error){alert('Không lưu được: '+r.error.message);return;} closeForm(); loadPlaces(); });
+      q.then(function(r){ $('fsave').textContent='Lưu điểm'; $('fsave').disabled=false; if(r.error){fmsg('Không lưu được: '+r.error.message);return;} closeForm(); loadPlaces(); });
     };
     if(file){ var ext=(file.name.split('.').pop()||'jpg').toLowerCase(); var path=(myId()||'anon')+'/'+Date.now()+'.'+ext; SB.storage.from('places').upload(path,file,{upsert:true}).then(function(u){ if(u.error){alert('Lỗi tải ảnh, vẫn lưu điểm không ảnh.'); doSave(editId?undefined:null); return;} doSave(SB.storage.from('places').getPublicUrl(path).data.publicUrl); }); }
     else { doSave(editId?undefined:null); }
