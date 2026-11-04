@@ -105,7 +105,8 @@
             <button id="btnSearch">Tìm</button>
           </div>
         </div>
-        <div class="mhint" id="hint">Chạm lên bản đồ để đặt ghim</div>
+        <div class="mhint" id="hint">Chạm lên bản đồ để đặt ghim · kéo ghim xám để chỉnh đúng vị trí</div>
+        <button class="mbtn primary" id="donebar" style="position:absolute;z-index:7;bottom:14px;left:50%;transform:translateX(-50%);display:none;font-size:14px;padding:11px 20px">✓ Dùng vị trí này</button>
         <div class="mcount" id="count">Đang tải…</div>
         <div id="ptpanel">
           <div class="ph" id="pthead"><span>👤 Phụ trách</span><span id="ptclear" style="font-weight:600;color:#8a6a1e;font-size:11.5px;display:none">Bỏ lọc ✕</span></div>
@@ -182,7 +183,7 @@
     map=new maplibregl.Map({container:'map',style:'https://tiles.openfreemap.org/styles/liberty',center:[106.700,10.776],zoom:11,attributionControl:true});
     map.addControl(new maplibregl.NavigationControl({showCompass:false}),'bottom-right');
     map.on('load', loadPlaces);
-    map.on('click', function(e){ if(!addMode) return; setPick(e.lngLat.lat,e.lngLat.lng,false); exitAddMode(); openForm(editId?window.__places[editId]:null,true); });
+    map.on('click', function(e){ if(!addMode) return; setPick(e.lngLat.lat,e.lngLat.lng,false); });
   }
   function clearMarkers(){ markers.forEach(function(m){m.remove();}); markers=[]; }
 
@@ -249,10 +250,11 @@
   window.__edit=function(id){ var p=window.__places[id]; if(!p)return; editId=id; setPick(p.lat,p.lng,false); openForm(p,false); };
   window.__del=function(id){ if(!confirm('Xoá điểm này?'))return; SB.from('places').delete().eq('id',id).then(function(r){ if(r.error){alert('Không xoá được: '+r.error.message);return;} loadPlaces(); }); };
 
-  function enterAddMode(){ addMode=true; $('hint').style.display='block'; if(map)map.getCanvas().style.cursor='crosshair'; }
-  function exitAddMode(){ addMode=false; $('hint').style.display='none'; if(map)map.getCanvas().style.cursor=''; }
-  function showCoords(){ if(pick.lat!=null){ $('fcoords').className='coords ok'; $('fcoords').textContent='✓ Đã có vị trí: '+pick.lat.toFixed(5)+', '+pick.lng.toFixed(5); } else { $('fcoords').className='coords no'; $('fcoords').textContent='Chưa có vị trí — bấm Định vị / Chọn trên bản đồ / Vị trí hiện tại'; } }
-  function setPick(lat,lng,fly){ pick.lat=lat; pick.lng=lng; if(map){ if(fly)map.flyTo({center:[lng,lat],zoom:Math.max(map.getZoom(),15)}); if(pendingMarker)pendingMarker.remove(); var el=document.createElement('div'); el.className='pin'; el.style.background='#111'; el.style.opacity='.55'; pendingMarker=new maplibregl.Marker({element:el,anchor:'bottom'}).setLngLat([lng,lat]).addTo(map);} showCoords(); }
+  function enterAddMode(){ addMode=true; $('hint').style.display='block'; $('donebar').style.display='block'; if(map)map.getCanvas().style.cursor='crosshair'; }
+  function exitAddMode(){ addMode=false; $('hint').style.display='none'; $('donebar').style.display='none'; if(map)map.getCanvas().style.cursor=''; }
+  document.getElementById('donebar').onclick=function(){ exitAddMode(); openForm(null,true); };
+  function showCoords(){ if(pick.lat!=null){ $('fcoords').className='coords ok'; $('fcoords').textContent='✓ Đã có vị trí ('+pick.lat.toFixed(5)+', '+pick.lng.toFixed(5)+') — kéo ghim xám trên bản đồ để chỉnh đúng nhà'; } else { $('fcoords').className='coords no'; $('fcoords').textContent='Chưa có vị trí — bấm Định vị / Chọn trên bản đồ / Vị trí hiện tại'; } }
+  function setPick(lat,lng,fly){ pick.lat=lat; pick.lng=lng; if(map){ if(fly)map.flyTo({center:[lng,lat],zoom:Math.max(map.getZoom(),16)}); if(pendingMarker)pendingMarker.remove(); var el=document.createElement('div'); el.className='pin'; el.style.background='#111'; el.style.opacity='.6'; pendingMarker=new maplibregl.Marker({element:el,anchor:'bottom',draggable:true}).setLngLat([lng,lat]).addTo(map); pendingMarker.on('dragend',function(){ var ll=pendingMarker.getLngLat(); pick.lat=ll.lat; pick.lng=ll.lng; showCoords(); }); } showCoords(); }
 
   $('btnAdd').onclick=function(){ editId=null; pick={lat:null,lng:null}; openForm(null,false); };
   $('btnCheckin').onclick=function(){ editId=null; pick={lat:null,lng:null}; gpsFill(true); };
@@ -271,18 +273,30 @@
     navigator.geolocation.getCurrentPosition(function(pos){ var la=pos.coords.latitude,ln=pos.coords.longitude; if(meMarker)meMarker.remove(); var el=document.createElement('div'); el.className='pin me'; meMarker=new maplibregl.Marker({element:el}).setLngLat([ln,la]).addTo(map); map.flyTo({center:[ln,la],zoom:15}); },function(){alert('Không lấy được vị trí.');},{enableHighAccuracy:true,timeout:10000});
   };
 
-  function geocode(q){ return fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=vn&q='+encodeURIComponent(q),{headers:{'Accept':'application/json'}}).then(function(r){return r.json();}).then(function(a){ return (a&&a[0])?{lat:parseFloat(a[0].lat),lng:parseFloat(a[0].lon),label:a[0].display_name}:null; }); }
+  function parseCoords(s){ if(!s)return null; var m=String(s).match(/(-?\d{1,2}\.\d{3,})[,\s@]+\s*(-?\d{2,3}\.\d{3,})/); if(m){ var a=parseFloat(m[1]),b=parseFloat(m[2]); if(a>=8&&a<=24&&b>=100&&b<=116) return {lat:a,lng:b,label:'Toạ độ'}; } return null; }
+  function geocode(q){
+    var hasCity=/h[oồ] ch[ií] minh|hcm|tp\.?\s*hcm|vi[eệ]t nam|h[aà] n[oộ]i|\btp\b/i.test(q);
+    var qq=q+(hasCity?'':', Thành phố Hồ Chí Minh');
+    var vb='';
+    try{ if(map){ var b=map.getBounds(); vb='&viewbox='+b.getWest()+','+b.getNorth()+','+b.getEast()+','+b.getSouth()+'&bounded=0'; } }catch(e){}
+    return fetch('https://nominatim.openstreetmap.org/search?format=json&addressdetails=0&limit=1&countrycodes=vn'+vb+'&q='+encodeURIComponent(qq),{headers:{'Accept':'application/json'}})
+      .then(function(r){return r.json();}).then(function(a){ return (a&&a[0])?{lat:parseFloat(a[0].lat),lng:parseFloat(a[0].lon),label:a[0].display_name}:null; }); }
   function reverseFill(lat,lng){ fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lng,{headers:{'Accept':'application/json'}}).then(function(r){return r.json();}).then(function(d){ if(d&&d.display_name && !$('faddr').value) $('faddr').value=d.display_name; }).catch(function(){}); }
 
   $('btnSearch').onclick=doFly; $('q').addEventListener('keydown',function(e){if(e.key==='Enter')doFly();});
   function doFly(){ var q=$('q').value.trim(); if(!q)return; $('btnSearch').textContent='…'; geocode(q).then(function(g){ $('btnSearch').textContent='Tìm'; if(!g){alert('Không tìm thấy');return;} map.flyTo({center:[g.lng,g.lat],zoom:14}); }).catch(function(){$('btnSearch').textContent='Tìm';}); }
 
-  $('fgeo').onclick=function(){ var q=$('faddr').value.trim(); if(!q){alert('Nhập địa chỉ trước');return;} $('fgeo').textContent='…'; geocode(q).then(function(g){ $('fgeo').textContent='📍 Định vị'; if(!g){alert('Không tìm thấy địa chỉ này. Thử rõ hơn, hoặc dùng "Chọn trên bản đồ".');return;} setPick(g.lat,g.lng,true); }).catch(function(){ $('fgeo').textContent='📍 Định vị'; alert('Lỗi tra cứu'); }); };
+  $('fgeo').onclick=function(){
+    var q=$('faddr').value.trim(); if(!q){alert('Nhập địa chỉ trước');return;}
+    var c=parseCoords(q)||parseCoords($('fcontact').value); // dán toạ độ / link có toạ độ -> lấy thẳng
+    if(c){ setPick(c.lat,c.lng,true); return; }
+    $('fgeo').textContent='…';
+    geocode(q).then(function(g){ $('fgeo').textContent='📍 Định vị'; if(!g){alert('Không tìm thấy địa chỉ này.\nMẹo: thêm phường/quận, hoặc dán toạ độ "10.77,106.69", hoặc dùng "Chọn trên bản đồ" rồi kéo ghim.');return;} setPick(g.lat,g.lng,true); $('formmask').style.display='none'; enterAddMode(); }).catch(function(){ $('fgeo').textContent='📍 Định vị'; alert('Lỗi tra cứu'); }); };
 
   $('fpickmap').onclick=function(){ $('formmask').style.display='none'; enterAddMode(); };
 
   function openForm(p,keepCoords){
-    $('ftitle').textContent = p? 'Sửa điểm' : 'Thêm điểm mới';
+    $('ftitle').textContent = (p||editId)? 'Sửa điểm' : 'Thêm điểm mới';
     $('fname').value=p?p.name:($('fname').value||'');
     $('fquymo').value=p?(p.quymo||QUYMO[0]):($('fquymo').value||QUYMO[0]);
     $('flinhvuc').value=p?(p.linhvuc||LINHVUC[0]):($('flinhvuc').value||LINHVUC[0]);
