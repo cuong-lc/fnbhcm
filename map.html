@@ -60,8 +60,16 @@
   #formcard input[type=text],#formcard textarea,#formcard select{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13.5px;font-family:var(--font);outline:0}
   #formcard textarea{min-height:56px;resize:vertical}
   .f2{display:flex;gap:10px}.f2>div{flex:1}
+  .acwrap{position:relative}
   .addrrow{display:flex;gap:8px}.addrrow input{flex:1}
   .addrrow button{border:1px solid var(--gold1);background:#FBF3E2;color:#8a6a1e;border-radius:9px;padding:0 12px;font-weight:700;font-size:12.5px;cursor:pointer;white-space:nowrap}
+  .acbox{position:absolute;left:0;right:0;top:100%;margin-top:4px;z-index:20;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,.14);max-height:240px;overflow:auto;display:none}
+  .acitem{padding:9px 11px;font-size:13px;cursor:pointer;border-top:1px solid #f4efe4;line-height:1.35}
+  .acitem:first-child{border-top:0}
+  .acitem:hover{background:#FBF3E2}
+  .acitem .main{font-weight:600;color:#17130D}
+  .acitem .sub{font-size:11.5px;color:#8a7a55;margin-top:1px}
+  .acbox .pwr{padding:5px 11px;font-size:10px;color:#b9ad90;text-align:right;border-top:1px solid #f4efe4}
   .locrow{display:flex;gap:8px;margin-top:10px}
   .locrow button{flex:1;border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px;font-size:12.5px;font-weight:600;cursor:pointer}
   .coords{font-size:12px;margin-top:8px;font-weight:600}
@@ -134,10 +142,13 @@
         <select id="flinhvuc"></select>
       </div>
     </div>
-    <label>Địa chỉ</label>
-    <div class="addrrow">
-      <input type="text" id="faddr" placeholder="Số nhà, đường, phường, quận / khu vực">
-      <button id="fgeo" type="button">📍 Định vị</button>
+    <label>Địa chỉ <span style="font-weight:400;color:#8a7a55">(gõ để chọn gợi ý)</span></label>
+    <div class="acwrap">
+      <div class="addrrow">
+        <input type="text" id="faddr" autocomplete="off" placeholder="Gõ: 146 Nguyễn Thị Nhỏ…">
+        <button id="fgeo" type="button">📍 Định vị</button>
+      </div>
+      <div id="fac" class="acbox"></div>
     </div>
     <label>Liên hệ (link FB / Google Maps / web)</label>
     <input type="text" id="fcontact" placeholder="https://...">
@@ -292,10 +303,22 @@
     for(var i=0;i<tries.length;i++){ var g=await geocodeOne(tries[i]); if(g){ g.approx=(i>0); return g; } }
     return null;
   }
+
+  // ===== Goong (địa chỉ Việt Nam chính xác) =====
+  var GK=window.GOONG_KEY||'';
+  function gBias(){ try{ if(map){var c=map.getCenter(); return c.lat.toFixed(5)+','+c.lng.toFixed(5);} }catch(e){} return ''; }
+  function gAC(input){ var loc=gBias(); return fetch('https://rsapi.goong.io/Place/AutoComplete?api_key='+GK+'&input='+encodeURIComponent(input)+(loc?'&location='+loc:'')).then(function(r){return r.json();}).then(function(j){return (j&&j.predictions)||[];}).catch(function(){return [];}); }
+  function gDetail(pid){ return fetch('https://rsapi.goong.io/Place/Detail?api_key='+GK+'&place_id='+encodeURIComponent(pid)).then(function(r){return r.json();}).then(function(j){ var l=j&&j.result&&j.result.geometry&&j.result.geometry.location; return l?{lat:l.lat,lng:l.lng,label:(j.result.formatted_address||j.result.name||'')}:null; }).catch(function(){return null;}); }
+  function gGeocode(addr){ return fetch('https://rsapi.goong.io/geocode?api_key='+GK+'&address='+encodeURIComponent(addr)).then(function(r){return r.json();}).then(function(j){ var x=j&&j.results&&j.results[0]; return x?{lat:x.geometry.location.lat,lng:x.geometry.location.lng,label:x.formatted_address}:null; }).catch(function(){return null;}); }
+  var acTimer=null, acItems=[];
+  function hideAC(){ $('fac').style.display='none'; }
+  function renderAC(preds){ acItems=preds||[]; var box=$('fac'); if(!acItems.length){hideAC();return;} box.innerHTML=acItems.map(function(p,i){ var m=p.structured_formatting||{}; return '<div class="acitem" data-i="'+i+'"><div class="main">'+esc(m.main_text||p.description)+'</div>'+(m.secondary_text?'<div class="sub">'+esc(m.secondary_text)+'</div>':'')+'</div>'; }).join('')+'<div class="pwr">Gợi ý bởi Goong</div>'; box.style.display='block'; [].forEach.call(box.querySelectorAll('.acitem'),function(el){ el.onmousedown=function(ev){ ev.preventDefault(); pickAC(parseInt(el.getAttribute('data-i'),10)); }; }); }
+  function pickAC(i){ var p=acItems[i]; if(!p)return; $('faddr').value=p.description; hideAC(); fmsg('Đang lấy toạ độ…','#8a6a1e'); gDetail(p.place_id).then(function(g){ if(!g){ fmsg('Không lấy được toạ độ. Bấm Định vị hoặc Chọn trên bản đồ.'); return; } fmsg(''); setPick(g.lat,g.lng,true); }); }
+  if(GK){ $('faddr').addEventListener('input',function(){ var v=$('faddr').value.trim(); clearTimeout(acTimer); if(v.length<3){hideAC();return;} acTimer=setTimeout(function(){ gAC(v).then(renderAC); },300); }); $('faddr').addEventListener('blur',function(){ setTimeout(hideAC,160); }); }
   function reverseFill(lat,lng){ fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lng,{headers:{'Accept':'application/json'}}).then(function(r){return r.json();}).then(function(d){ if(d&&d.display_name && !$('faddr').value) $('faddr').value=d.display_name; }).catch(function(){}); }
 
   $('btnSearch').onclick=doFly; $('q').addEventListener('keydown',function(e){if(e.key==='Enter')doFly();});
-  function doFly(){ var q=$('q').value.trim(); if(!q)return; $('btnSearch').textContent='…'; geocode(q).then(function(g){ $('btnSearch').textContent='Tìm'; if(!g){ var c=$('count'),old=c.textContent; c.textContent='Không tìm thấy "'+q+'"'; setTimeout(function(){c.textContent=old;},2500); return; } map.flyTo({center:[g.lng,g.lat],zoom:15}); }).catch(function(){$('btnSearch').textContent='Tìm';}); }
+  function doFly(){ var q=$('q').value.trim(); if(!q)return; $('btnSearch').textContent='…'; (GK?gGeocode(q).then(function(g){return g||geocode(q);}):geocode(q)).then(function(g){ $('btnSearch').textContent='Tìm'; if(!g){ var c=$('count'),old=c.textContent; c.textContent='Không tìm thấy "'+q+'"'; setTimeout(function(){c.textContent=old;},2500); return; } map.flyTo({center:[g.lng,g.lat],zoom:15}); }).catch(function(){$('btnSearch').textContent='Tìm';}); }
 
   function fmsg(t,color){ var e=$('fmsg'); if(!t){e.style.display='none';return;} e.textContent=t; e.style.color=color||'#b00020'; e.style.display='block'; }
   $('fgeo').onclick=function(){
@@ -303,11 +326,14 @@
     var q=$('faddr').value.trim(); if(!q){fmsg('Nhập địa chỉ trước đã.');return;}
     var c=parseCoords(q)||parseCoords($('fcontact').value); // dán toạ độ / link có toạ độ -> lấy thẳng
     if(c){ setPick(c.lat,c.lng,true); return; }
-    $('fgeo').textContent='…';
-    geocode(q).then(function(g){ $('fgeo').textContent='📍 Định vị';
-      if(!g){ fmsg('Không tìm thấy địa chỉ này. Dùng "Chọn trên bản đồ" để chấm tay, hoặc dán toạ độ dạng 10.77,106.69.'); return; }
-      setPick(g.lat,g.lng,true); $('formmask').style.display='none'; enterAddMode();
-      $('hint').textContent = g.approx ? 'Chỉ tới gần đúng tên đường — KÉO ghim xám cho đúng nhà rồi bấm "Dùng vị trí này"' : 'Kéo ghim xám để chỉnh đúng vị trí rồi bấm "Dùng vị trí này"';
+    $('fgeo').textContent='…'; hideAC();
+    (GK? gGeocode(q):Promise.resolve(null)).then(function(gg){
+      if(gg){ $('fgeo').textContent='📍 Định vị'; setPick(gg.lat,gg.lng,true); return; } // Goong chính xác -> giữ form, pin đã đặt
+      return geocode(q).then(function(g){ $('fgeo').textContent='📍 Định vị';
+        if(!g){ fmsg('Không tìm thấy địa chỉ này. Dùng "Chọn trên bản đồ" để chấm tay, hoặc dán toạ độ dạng 10.77,106.69.'); return; }
+        setPick(g.lat,g.lng,true); $('formmask').style.display='none'; enterAddMode();
+        $('hint').textContent = g.approx ? 'Chỉ tới gần đúng tên đường — KÉO ghim xám cho đúng nhà rồi bấm "Dùng vị trí này"' : 'Kéo ghim xám để chỉnh đúng vị trí rồi bấm "Dùng vị trí này"';
+      });
     }).catch(function(){ $('fgeo').textContent='📍 Định vị'; fmsg('Lỗi tra cứu, thử lại hoặc chấm trên bản đồ.'); }); };
 
   $('fpickmap').onclick=function(){ $('formmask').style.display='none'; $('hint').textContent='Chạm lên bản đồ để đặt ghim · kéo ghim xám để chỉnh đúng vị trí'; enterAddMode(); };
@@ -324,7 +350,7 @@
     showCoords();
     $('formmask').style.display='flex';
   }
-  function closeForm(){ $('formmask').style.display='none'; $('fmsg').style.display='none'; if(pendingMarker){pendingMarker.remove();pendingMarker=null;} editId=null; pick={lat:null,lng:null}; $('fname').value='';$('faddr').value='';$('fcontact').value='';$('fnote').value=''; }
+  function closeForm(){ $('formmask').style.display='none'; $('fmsg').style.display='none'; hideAC(); if(pendingMarker){pendingMarker.remove();pendingMarker=null;} editId=null; pick={lat:null,lng:null}; $('fname').value='';$('faddr').value='';$('fcontact').value='';$('fnote').value=''; }
   $('fcancel').onclick=closeForm;
   $('formmask').addEventListener('click',function(e){ if(e.target===$('formmask')) closeForm(); });
 
