@@ -35,8 +35,11 @@
     const nav = byId("nav");
     if (!nav) return;
     const isGD = !!(window.CLF_PROFILE && window.CLF_PROFILE.level === "c4");
+    const isLeader = isGD || (window.CLF_PROFILE && window.CLF_PROFILE.level === "c3");
     const staff = isStaffView();
     const items = [["index.html", "Trang chủ"], ["badges.html", "🏛️ Olympus"], ["map.html", "🗺️ Bản đồ KH"]].concat(
+      isLeader ? [["camnangleader.html", "📘 Cẩm nang Leader"]] : []
+    ).concat(
       LEVELS.filter(canSeeLevel).filter((l) => !(staff && l.id === "c3")).map((l) => [l.file, l.short])
     ).concat(staff ? [] : [["rubric.html", "Rubric"]]).concat(isGD ? [["people.html", "🔒 Hồ sơ NS"]] : []);
     nav.innerHTML = items.map(([f, t]) =>

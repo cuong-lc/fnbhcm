@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cẩm nang Leader · FNBHCM HUB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="auth.js"></script>
+<style>
+  .cn-intro{color:var(--gray);font-size:14.5px;max-width:720px;margin:2px 0 4px;line-height:1.6}
+  .cn-sec{margin:26px 0 0}
+  .cn-head{display:flex;align-items:center;gap:13px;margin:0 0 14px}
+  .cn-ic{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex:none;
+          background:linear-gradient(135deg,var(--gold1),var(--gold2));color:#17130D}
+  .cn-head h2{margin:0;font-size:19px;color:var(--berkeley)}
+  .cn-head .cn-sub{margin:1px 0 0;font-size:13px;color:var(--gray);font-weight:500}
+  .cn-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:860px){.cn-grid{grid-template-columns:1fr}}
+  .cn-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 17px}
+  .cn-card.top{border-top:4px solid var(--gold1)}
+  .cn-card h3{margin:0 0 11px;font-size:15.5px;color:var(--berkeley);display:flex;align-items:center;gap:8px}
+  .cn-card h3 .e{font-size:17px}
+  .cn-li{display:flex;gap:9px;align-items:flex-start;padding:7px 0;font-size:14px;line-height:1.5;border-top:1px solid #F4EFE4}
+  .cn-li:first-of-type{border-top:0}
+  .cn-li .d{color:var(--gold1);font-weight:800;line-height:1.4;flex:none}
+  .cn-li b{color:var(--berkeley)}
+  .cn-li span{color:var(--dark)}
+  /* day/slot cards */
+  .cn-slot{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px 17px;margin-bottom:13px}
+  .cn-slot .sh{display:flex;flex-wrap:wrap;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:11px}
+  .cn-time{background:#17130D;color:#F0D48A;font-weight:700;font-size:12.5px;padding:4px 11px;border-radius:9px;white-space:nowrap}
+  .cn-slot .st{font-weight:700;font-size:15.5px;color:var(--berkeley);flex:1;min-width:180px}
+  .cn-tag{font-size:11.5px;font-weight:700;color:var(--poly);background:#FBF3E2;padding:3px 10px;border-radius:20px;white-space:nowrap}
+  .cn-task{display:flex;gap:9px;align-items:flex-start;font-size:14px;line-height:1.55;color:var(--dark);padding:6px 0}
+  .cn-task .k{color:var(--green);font-weight:800;flex:none;line-height:1.5}
+  /* weekly 3 cols */
+  .cn-week{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:860px){.cn-week{grid-template-columns:1fr}}
+  .cn-wcol{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px 16px;border-top:4px solid var(--gold1)}
+  .cn-wday{font-size:12.5px;font-weight:800;color:var(--berkeley);letter-spacing:.3px}
+  .cn-wtag{display:inline-block;font-size:10.5px;font-weight:800;color:#17130D;background:linear-gradient(135deg,var(--gold1),var(--gold2));padding:2px 9px;border-radius:20px;margin:6px 0 2px}
+  .cn-wtitle{font-weight:700;font-size:14.5px;color:var(--berkeley);margin:7px 0 10px;line-height:1.4}
+  /* monthly */
+  .cn-month{background:#fff;border:1px solid var(--line);border-left:4px solid var(--gold1);border-radius:12px;padding:15px 18px;margin-bottom:12px}
+  .cn-mtop{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:9px}
+  .cn-mtop h3{margin:0;font-size:15.5px;color:var(--berkeley)}
+  .cn-mtime{font-size:11.5px;font-weight:700;color:var(--poly);background:#FBF3E2;padding:3px 10px;border-radius:20px}
+  .cn-mline{display:flex;gap:9px;align-items:flex-start;font-size:14px;line-height:1.55;color:var(--dark);padding:5px 0}
+  .cn-mline .k{color:var(--gold1);font-weight:800;flex:none}
+  .cn-note{background:#FBF7EE;border:1px dashed var(--gold2);border-radius:12px;padding:13px 16px;margin:24px 0 8px;font-size:13.5px;color:var(--dark);line-height:1.6}
+</style>
+</head>
+<body data-page="camnang">
+
+<div class="topbar"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> FNBHCM HUB</a>
+  <nav class="nav" id="nav"></nav>
+</div></div>
+
+<header class="hero">
+  <span class="box1"></span><span class="box2"></span>
+  <div class="wrap">
+    <div class="eyebrow">Dành cho Leader · Trưởng phòng F&amp;B</div>
+    <h1>Cẩm nang Vận hành &amp; Quản lý đội ngũ</h1>
+    <p class="cn-intro">Checklist công việc chuẩn của một Leader FNB — việc cần làm mỗi ngày, mỗi tuần, mỗi tháng để giữ nhịp đội ngũ và về đích doanh số. Tham khảo và linh hoạt theo thực tế từng chặng.</p>
+  </div>
+</header>
+
+<nav class="secnav wrap">
+  <a href="#tongquan">Tổng quan</a>
+  <a href="#ngay">Hàng ngày</a>
+  <a href="#tuan">Hàng tuần</a>
+  <a href="#thang">Hàng tháng</a>
+</nav>
+
+<main class="wrap">
+
+  <!-- 1. TỔNG QUAN -->
+  <section id="tongquan" class="cn-sec" style="scroll-margin-top:120px">
+    <div class="cn-head">
+      <div class="cn-ic">🎯</div>
+      <div><h2>1. Tổng quan — Leader thì làm gì?</h2>
+      <p class="cn-sub">Ba trục chính một Leader phải nắm</p></div>
+    </div>
+    <div class="cn-grid">
+      <div class="cn-card top">
+        <h3><span class="e">📈</span> Quản trị mục tiêu</h3>
+        <div class="cn-li"><span class="d">•</span><div><b>Doanh số / Hợp đồng:</b> <span>theo dõi kết quả tuần &amp; tháng của từng nhân viên.</span></div></div>
+        <div class="cn-li"><span class="d">•</span><div><b>Cơ cấu doanh thu:</b> <span>Phần mềm + Phần cứng + Hóa đơn điện tử.</span></div></div>
+        <div class="cn-li"><span class="d">•</span><div><b>Vận hành:</b> <span>số cuộc gọi, số nhập/ngày, số lịch demo, tỷ lệ chuyển đổi.</span></div></div>
+      </div>
+      <div class="cn-card top">
+        <h3><span class="e">👥</span> Quản trị con người</h3>
+        <div class="cn-li"><span class="d">•</span><div><b>Hướng dẫn, kèm cặp nhân sự:</b> <span>định hướng, kèm cặp, coaching 1-1.</span></div></div>
+        <div class="cn-li"><span class="d">•</span><div><b>Đào tạo kỹ năng:</b> <span>kiến thức sản phẩm, kỹ năng sale…</span></div></div>
+        <div class="cn-li"><span class="d">•</span><div><b>Truyền năng lượng:</b> <span>động viên, giải tỏa áp lực bị khách từ chối, tạo động lực cho anh em.</span></div></div>
+      </div>
+      <div class="cn-card top">
+        <h3><span class="e">🏪</span> Thị trường &amp; Khách hàng</h3>
+        <div class="cn-li"><span class="d">•</span><div><b>Trực tiếp chốt deal lớn:</b> <span>hỗ trợ nhân viên gặp chủ chuỗi / quán lớn.</span></div></div>
+        <div class="cn-li"><span class="d">•</span><div><b>Nắm bắt đối thủ:</b> <span>cập nhật tính năng &amp; giá trị cạnh tranh trên thị trường.</span></div></div>
+        <div class="cn-li"><span class="d">•</span><div><b>Xử lý ca khó:</b> <span>giải quyết triệt để các khiếu nại kỹ thuật / triển khai.</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. HÀNG NGÀY -->
+  <section id="ngay" class="cn-sec" style="scroll-margin-top:120px">
+    <div class="cn-head">
+      <div class="cn-ic">⏰</div>
+      <div><h2>2. Daily Routine — Checklist hàng ngày</h2>
+      <p class="cn-sub">Có thể linh hoạt tùy thời điểm &amp; khối lượng công việc</p></div>
+    </div>
+
+    <div class="cn-slot">
+      <div class="sh"><span class="cn-time">08:05 – 08:30</span><span class="st">Họp nhanh đầu ngày</span><span class="cn-tag">Đầu ngày · Khởi động</span></div>
+      <div class="cn-task"><span class="k">✓</span><span>Tháo gỡ 1–2 vướng mắc từ hôm trước (khách chê giá cao, hoãn lịch đi gặp…).</span></div>
+      <div class="cn-task"><span class="k">✓</span><span>Trao đổi tài nguyên khách hàng, đưa giải pháp xử lý (nếu có), mục tiêu công việc của từng nhân sự.</span></div>
+      <div class="cn-task"><span class="k">✓</span><span>Thống nhất mục tiêu, hành động và đầu ra rõ ràng team cần đạt trong ngày.</span></div>
+      <div class="cn-task"><span class="k">✓</span><span>Gửi báo cáo nội dung công việc &amp; mục tiêu hằng ngày cho GĐTT + đề xuất (nếu có).</span></div>
+    </div>
+
+    <div class="cn-slot">
+      <div class="sh"><span class="cn-time">08:30 – 11:30</span><span class="st">Bám sát công việc &amp; đào tạo tại chỗ</span><span class="cn-tag">Buổi sáng · Tập trung</span></div>
+      <div class="cn-task"><span class="k">✓</span><span>Follow các chỉ số: tỷ lệ chuyển đổi (check lead công ty, đảm bảo tương tác đúng rule), NCGP, nhắc nhở; chuẩn hóa trạng thái lead trên 360 để follow chính xác.</span></div>
+      <div class="cn-task"><span class="k">✓</span><span>Nghe ngẫu nhiên cuộc gọi của sale để hướng dẫn: hẹn gặp, báo giá, xử lý từ chối…</span></div>
+      <div class="cn-task"><span class="k">✓</span><span>Đôn đốc, giữ nhịp hiệu suất công việc trong team; hướng dẫn xử lý vấn đề phát sinh.</span></div>
+      <div class="cn-task"><span class="k">✓</span><span>11:30 — review công việc &amp; hiệu suất tạo khách hàng buổi sáng, có phương án dự kiến cho buổi chiều.</span></div>
+    </div>
+
+    <div class="cn-slot">
+      <div class="sh"><span class="cn-time">13:30 – 16:30</span><span class="st">Hỗ trợ đi gặp trực tiếp cùng sale &amp; xử lý deal khó</span><span class="cn-tag">Buổi chiều · Field sales</span></div>
+      <div class="cn-task"><span class="k">✓</span><span>Gặp khách cùng sale, hỗ trợ xử lý deal khó hoặc nhân sự mới.</span></div>
+      <div class="cn-task"><span class="k">✓</span><span>Đào tạo tại chỗ và xử lý các vấn đề phát sinh.</span></div>
+      <div class="cn-task"><span class="k">✓</span><span>Bán hàng trực tiếp: tìm kiếm, ký hợp đồng, chăm sóc khách cũ — đảm bảo kết quả công việc cá nhân.</span></div>
+    </div>
+
+    <div class="cn-slot">
+      <div class="sh"><span class="cn-time">16:30 – 17:30</span><span class="st">Tổng kết</span><span class="cn-tag">Cuối ngày · Tổng kết</span></div>
+      <div class="cn-task"><span class="k">✓</span><span>Đối chiếu tiến độ: tổng cuộc gọi, số cuộc gặp trực tiếp, hợp đồng chốt / doanh số so với mục tiêu đầu ngày.</span></div>
+      <div class="cn-task"><span class="k">✓</span><span>Khen thưởng &amp; nhắc nhở người làm tốt và chưa tốt, khích lệ tinh thần team.</span></div>
+      <div class="cn-task"><span class="k">✓</span><span>Xử lý đầu việc tồn đọng: hiệu suất, hợp đồng, triển khai, kho, khách hàng; dự kiến tài nguyên &amp; kế hoạch hôm sau.</span></div>
+    </div>
+  </section>
+
+  <!-- 3. HÀNG TUẦN -->
+  <section id="tuan" class="cn-sec" style="scroll-margin-top:120px">
+    <div class="cn-head">
+      <div class="cn-ic">🗓️</div>
+      <div><h2>3. Weekly Routine — Nhịp trong tuần</h2>
+      <p class="cn-sub">Mở chặng → giữa chặng → đóng chặng</p></div>
+    </div>
+    <div class="cn-week">
+      <div class="cn-wcol">
+        <div class="cn-wday">THỨ HAI</div>
+        <div class="cn-wtag">KICK-OFF</div>
+        <div class="cn-wtitle">Giao target &amp; triển khai chiến dịch</div>
+        <div class="cn-task"><span class="k">✓</span><span>Họp giao ban trung tâm + phòng (~45 phút/cuộc).</span></div>
+        <div class="cn-task"><span class="k">✓</span><span>Thống nhất mục tiêu chặng &amp; các hành động cần follow xuyên suốt chặng.</span></div>
+        <div class="cn-task"><span class="k">✓</span><span>Phổ biến chương trình khuyến mại trong chặng.</span></div>
+      </div>
+      <div class="cn-wcol">
+        <div class="cn-wday">THỨ 3 – THỨ 5</div>
+        <div class="cn-wtag">TRAINING &amp; DATA</div>
+        <div class="cn-wtitle">Đào tạo &amp; rà soát phễu chuyển đổi</div>
+        <div class="cn-task"><span class="k">✓</span><span>Thứ 3 hoặc 4: đào tạo sale — kịch bản demo tính năng khó, xử lý từ chối, kiến thức sản phẩm…</span></div>
+        <div class="cn-task"><span class="k">✓</span><span>Rà soát phễu lead: tỷ lệ nhập lead ➔ cuộc gọi ➔ cuộc gặp ➔ deal chốt.</span></div>
+        <div class="cn-task"><span class="k">✓</span><span>Check-in 1-1 cho nhân viên chậm tiến độ, tỷ lệ chốt thấp.</span></div>
+      </div>
+      <div class="cn-wcol">
+        <div class="cn-wday">THỨ 6 – THỨ 7</div>
+        <div class="cn-wtag">REVIEW &amp; ĐÓNG CHẶNG</div>
+        <div class="cn-wtitle">Đóng sổ tuần &amp; xử lý deal ngâm</div>
+        <div class="cn-task"><span class="k">✓</span><span>Tập trung gọi chốt các deal đang ngâm (pending).</span></div>
+        <div class="cn-task"><span class="k">✓</span><span>Họp tổng kết tuần, dự kiến tài nguyên chặng sau (~30 phút).</span></div>
+        <div class="cn-task"><span class="k">✓</span><span>Tổng hợp vấn đề còn tồn &amp; đúc kết bài học thực chiến.</span></div>
+        <div class="cn-task"><span class="k">✓</span><span>Review &amp; làm báo cáo công việc cho GĐTT, có kế hoạch cho chặng tiếp theo.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. HÀNG THÁNG -->
+  <section id="thang" class="cn-sec" style="scroll-margin-top:120px">
+    <div class="cn-head">
+      <div class="cn-ic">📊</div>
+      <div><h2>4. Vận hành tháng</h2>
+      <p class="cn-sub">Việc lớn theo chu kỳ tháng</p></div>
+    </div>
+
+    <div class="cn-month">
+      <div class="cn-mtop"><h3>Lập kế hoạch tháng &amp; phân bổ mục tiêu</h3><span class="cn-mtime">Trước 12h ngày 1 hằng tháng</span></div>
+      <div class="cn-mline"><span class="k">›</span><span>Lên kế hoạch, phân bổ nguồn doanh thu từ phòng xuống từng nhân sự.</span></div>
+      <div class="cn-mline"><span class="k">›</span><span>Đảm bảo tính thực thi &amp; hành động rõ ràng, cụ thể.</span></div>
+      <div class="cn-mline"><span class="k">›</span><span>Báo cáo kết quả tháng cũ &amp; kế hoạch tháng mới với GĐTT: phương án cụ thể cho từng nhân sự, đủ chỉ số hiệu suất, điểm làm được / chưa được, đề xuất cải thiện.</span></div>
+    </div>
+
+    <div class="cn-month">
+      <div class="cn-mtop"><h3>Vận hành</h3><span class="cn-mtime">Không cố định</span></div>
+      <div class="cn-mline"><span class="k">›</span><span>Tham gia các cuộc họp cấp công ty, khối, trung tâm.</span></div>
+      <div class="cn-mline"><span class="k">›</span><span>Nhắc nhở sale quy trình, quy định.</span></div>
+      <div class="cn-mline"><span class="k">›</span><span>Phân tích số liệu báo cáo, phát hiện điểm nghẽn &amp; đề xuất hành động.</span></div>
+      <div class="cn-mline"><span class="k">›</span><span>Theo dõi &amp; tối ưu các quy trình liên quan hoạt động bán hàng của team.</span></div>
+      <div class="cn-mline"><span class="k">›</span><span>Tìm kiếm, mở rộng, phát triển kênh bán hàng qua đối tác, khách hàng &amp; các mối quan hệ xã hội.</span></div>
+    </div>
+
+    <div class="cn-month">
+      <div class="cn-mtop"><h3>Gắn kết đội nhóm</h3><span class="cn-mtime">Không cố định</span></div>
+      <div class="cn-mline"><span class="k">›</span><span>Xây dựng môi trường làm việc công bằng, minh bạch, gắn kết.</span></div>
+      <div class="cn-mline"><span class="k">›</span><span>Tổ chức đi ăn cùng team ít nhất 1 lần/tháng.</span></div>
+      <div class="cn-mline"><span class="k">›</span><span>Tổ chức game, khen thưởng để động viên tinh thần nhân sự.</span></div>
+    </div>
+
+    <div class="cn-note">💡 Cẩm nang là khung tham khảo — Leader linh hoạt theo thực tế từng chặng, từng nhân sự. Việc gì chưa phù hợp, phản hồi lại GĐTT để cập nhật.</div>
+  </section>
+
+</main>
+
+<footer class="foot" id="foot"></footer>
+
+<script src="framework-data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
