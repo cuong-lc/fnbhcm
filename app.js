@@ -41,6 +41,18 @@
     ).concat(staff ? [] : [["rubric.html", "Rubric"]]).concat(isGD ? [["people.html", "🔒 Hồ sơ NS"]] : []);
     nav.innerHTML = items.map(([f, t]) =>
       `<a href="${f}" class="${f === activeFile ? "active" : ""}">${t}</a>`).join("");
+    // Nút ☰ cho mobile
+    const wrap = nav.parentElement;
+    let tg = byId("navtoggle");
+    if (!tg && wrap) {
+      tg = document.createElement("button");
+      tg.id = "navtoggle"; tg.className = "navtoggle"; tg.type = "button";
+      tg.setAttribute("aria-label", "Menu"); tg.textContent = "☰";
+      tg.onclick = (e) => { e.stopPropagation(); nav.classList.toggle("open"); };
+      wrap.insertBefore(tg, nav);
+      document.addEventListener("click", (e) => { if (!nav.contains(e.target) && e.target !== tg) nav.classList.remove("open"); });
+    }
+    [].forEach.call(nav.querySelectorAll("a"), (a) => a.addEventListener("click", () => nav.classList.remove("open")));
   }
   function buildFoot() {
     const f = byId("foot");

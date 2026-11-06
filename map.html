@@ -34,7 +34,13 @@
   #ptpanel .pr.ttfnb{color:#8a6a1e;font-weight:700}
   #ptpanel .pr .c{background:#ECE4D5;color:#5B6150;font-weight:700;border-radius:20px;padding:1px 8px;font-size:11.5px}
   #ptpanel .pr.ttfnb .c{background:linear-gradient(135deg,var(--gold1),var(--gold2));color:#17130D}
+  #ptpanel .pr.me{color:#17130D;font-weight:800;background:#FBF3E2}
+  #ptpanel .pr.me .c{background:linear-gradient(135deg,var(--gold1),var(--gold2));color:#17130D}
+  #ptpanel .ph .cv{font-size:11px;color:#8a7a55;transition:transform .15s;margin-left:6px}
+  #ptpanel.collapsed .pl{display:none}
+  #ptpanel.collapsed .ph .cv{transform:rotate(-90deg)}
   .pin.ttfnb{box-shadow:0 0 0 3px #E7C877, 0 2px 5px rgba(0,0,0,.35)}
+  @media(max-width:720px){ #ptpanel{width:62%;max-height:52%} }
   .mhint{position:absolute;z-index:6;top:58px;left:50%;transform:translateX(-50%);background:#17130D;color:#fff;font-size:13px;font-weight:600;padding:9px 16px;border-radius:10px;display:none;box-shadow:0 2px 8px rgba(0,0,0,.25)}
   .pin{width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 5px rgba(0,0,0,.35);cursor:pointer}
   .pin.me{background:#111;width:18px;height:18px;border-radius:50%;transform:none}
@@ -118,7 +124,7 @@
         <button class="mbtn primary" id="donebar" style="position:absolute;z-index:7;bottom:14px;left:50%;transform:translateX(-50%);display:none;font-size:14px;padding:11px 20px">✓ Dùng vị trí này</button>
         <div class="mcount" id="count">Đang tải…</div>
         <div id="ptpanel">
-          <div class="ph" id="pthead"><span>👤 Phụ trách</span><span id="ptclear" style="font-weight:600;color:#8a6a1e;font-size:11.5px;display:none">Bỏ lọc ✕</span></div>
+          <div class="ph" id="pthead"><span>👤 Phụ trách <span class="cv">▾</span></span><span id="ptclear" style="font-weight:600;color:#8a6a1e;font-size:11.5px;display:none">Bỏ lọc ✕</span></div>
           <div class="pl" id="ptlist"></div>
         </div>
       </div>
@@ -214,34 +220,45 @@
     });
   }
 
+  function myEmail(){ return ((window.CLF_USER&&window.CLF_USER.email)||'').toLowerCase(); }
   function renderAll(fit){
     clearMarkers();
-    var bounds=new maplibregl.LngLatBounds(), shown=0, ttfnb=0, counts={};
+    var ME=myEmail();
+    var bounds=new maplibregl.LngLatBounds(), shown=0, ttfnb=0, me=0, counts={};
     DATA.forEach(function(p){
       var pt=phutrach(p); counts[pt.name]=(counts[pt.name]||0)+1; if(pt.ttfnb) ttfnb++;
-      if(curFilter && pt.name!==curFilter) return;
+      var mine=((p.owner_email||'').toLowerCase()===ME && ME); if(mine) me++;
+      if(curFilter==='__me__'){ if(!mine) return; }
+      else if(curFilter){ if(pt.name!==curFilter) return; }
       var el=document.createElement('div'); el.className='pin'+(pt.ttfnb?' ttfnb':''); el.style.background=lvColor(p.linhvuc);
       var mk=new maplibregl.Marker({element:el,anchor:'bottom'}).setLngLat([p.lng,p.lat]).addTo(map);
       mk.getElement().addEventListener('click',function(ev){ ev.stopPropagation(); openPopup(p); });
       markers.push(mk); bounds.extend([p.lng,p.lat]); shown++;
     });
     var total=DATA.length, withsale=total-ttfnb;
-    $('count').textContent = curFilter ? (shown+' điểm · lọc: '+curFilter) : (total+' điểm · '+withsale+' có sale · '+ttfnb+' TTFNB');
-    renderPanel(counts);
+    var flab = curFilter==='__me__' ? 'Tôi' : curFilter;
+    $('count').textContent = curFilter ? (shown+' điểm · lọc: '+flab) : (total+' điểm · '+withsale+' có sale · '+ttfnb+' TTFNB');
+    renderPanel(counts, me);
     $('ptclear').style.display = curFilter? 'inline':'none';
     if(fit && shown){ try{ map.fitBounds(bounds,{padding:70,maxZoom:15,duration:600}); }catch(e){} }
   }
 
-  function renderPanel(counts){
+  function renderPanel(counts, me){
     var names=Object.keys(counts).filter(function(n){return n!=='TTFNB';}).sort(function(a,b){return counts[b]-counts[a]||a.localeCompare(b);});
     if(counts['TTFNB']) names.push('TTFNB');
-    $('ptlist').innerHTML = names.map(function(n){
+    var html='';
+    if(myEmail()) html+='<div class="pr me'+(curFilter==='__me__'?' on':'')+'" data-n="__me__"><span>⭐ Tôi (khách của tôi)</span><span class="c">'+(me||0)+'</span></div>';
+    html+=names.map(function(n){
       var tt=(n==='TTFNB'); var on=(curFilter===n);
       return '<div class="pr'+(tt?' ttfnb':'')+(on?' on':'')+'" data-n="'+esc(n)+'"><span>'+(tt?'🏛️ ':'')+esc(n)+'</span><span class="c">'+counts[n]+'</span></div>';
-    }).join('') || '<div style="padding:10px 12px;color:#9aa3b2;font-size:12.5px">Chưa có điểm nào</div>';
+    }).join('');
+    $('ptlist').innerHTML = html || '<div style="padding:10px 12px;color:#9aa3b2;font-size:12.5px">Chưa có điểm nào</div>';
     [].forEach.call($('ptlist').querySelectorAll('.pr'),function(row){ row.onclick=function(){ var n=row.getAttribute('data-n'); curFilter=(curFilter===n)?null:n; renderAll(true); }; });
   }
   document.getElementById('ptclear').onclick=function(e){ e.stopPropagation(); curFilter=null; renderAll(true); };
+  // thu gọn / mở bảng phụ trách (mặc định đóng trên mobile)
+  document.getElementById('pthead').addEventListener('click',function(e){ if(e.target&&e.target.id==='ptclear') return; document.getElementById('ptpanel').classList.toggle('collapsed'); });
+  if(window.innerWidth<=720){ document.getElementById('ptpanel').classList.add('collapsed'); }
 
   function openPopup(p){
     var canEdit = isGD() || (p.owner_id && p.owner_id===myId());

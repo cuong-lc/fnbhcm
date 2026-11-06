@@ -25,6 +25,14 @@ h1,h2,h3,h4{color:var(--berkeley);line-height:1.2;margin:0}
 .nav a{color:#6b5f48;padding:7px 12px;border-radius:9px;font-size:14px;font-weight:600}
 .nav a:hover{background:#F6EFDE;color:var(--berkeley);text-decoration:none}
 .nav a.active{background:linear-gradient(135deg,var(--gold1),var(--gold2));color:#1A1713}
+.navtoggle{display:none;background:none;border:0;font-size:24px;line-height:1;cursor:pointer;color:var(--berkeley);margin-left:auto;padding:4px 10px}
+@media(max-width:720px){
+  .topbar .wrap{position:relative;gap:10px;height:56px;flex-wrap:nowrap}
+  .navtoggle{display:block}
+  .nav{position:absolute;top:100%;right:8px;left:8px;margin:0;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 28px rgba(0,0,0,.18);flex-direction:column;flex-wrap:nowrap;padding:6px;gap:2px;display:none}
+  .nav.open{display:flex}
+  .nav a{width:100%;padding:12px 12px;font-size:15px}
+}
 
 /* hero — Enterprise cream + gold */
 .hero{background:linear-gradient(135deg,#FFFCF5,#FBF3E2);color:var(--berkeley);padding:46px 0 56px;position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
