@@ -1,4 +1,4 @@
-/* ===== Sapo Competency Framework — app logic ===== */
+/* ===== Competency Framework — app logic ===== */
 (function () {
   const { LEVELS, GROUPS, COMPETENCIES } = window.CLF;
   const byId = (id) => document.getElementById(id);
@@ -36,7 +36,7 @@
     if (!nav) return;
     const isGD = !!(window.CLF_PROFILE && window.CLF_PROFILE.level === "c4");
     const staff = isStaffView();
-    const items = [["index.html", "Trang chủ"], ["badges.html", "🏛️ Sapo Olympus"], ["map.html", "🗺️ Bản đồ KH"]].concat(
+    const items = [["index.html", "Trang chủ"], ["badges.html", "🏛️ Olympus"], ["map.html", "🗺️ Bản đồ KH"]].concat(
       LEVELS.filter(canSeeLevel).filter((l) => !(staff && l.id === "c3")).map((l) => [l.file, l.short])
     ).concat(staff ? [] : [["rubric.html", "Rubric"]]).concat(isGD ? [["people.html", "🔒 Hồ sơ NS"]] : []);
     nav.innerHTML = items.map(([f, t]) =>
@@ -56,7 +56,7 @@
   }
   function buildFoot() {
     const f = byId("foot");
-    if (f) f.innerHTML = `<div class="wrap"><span>Khung năng lực đội ngũ Kinh doanh · Sapo</span><span>Bản nháp để duyệt — nội dung có thể điều chỉnh</span></div>`;
+    if (f) f.innerHTML = `<div class="wrap"><span>Khung năng lực đội ngũ Kinh doanh</span><span>Bản nháp để duyệt — nội dung có thể điều chỉnh</span></div>`;
   }
 
   // ================= INDEX =================
@@ -124,10 +124,10 @@
       if (head) { head.style.background = "#0F1437"; head.innerHTML = `<div class="wrap"><h1>Không truy cập được</h1></div>`; }
       const main = byId("main");
       if (main) main.innerHTML = `<div class="progress-wrap" style="display:block;text-align:center;padding:30px"><p>Trang cấp <b>Giám đốc Trung tâm</b> chỉ dành cho Giám đốc Trung tâm.</p><p><a href="index.html">← Về trang chủ</a></p></div>`;
-      document.title = "Không truy cập được · Sapo";
+      document.title = "Không truy cập được ";
       return;
     }
-    document.title = lv.title + " · Khung năng lực Kinh doanh Sapo";
+    document.title = lv.title + " · Khung năng lực Kinh doanh";
 
     // header
     const head = byId("pagehead");
@@ -247,7 +247,7 @@
       const stages = CLF.VALUE_STAGES;
       const ids = lv.valueStages;
       const names = stages.filter((s) => ids.includes(s.id)).map((s) => s.name).join(" + ");
-      html += `<h2 id="sec-cv" style="font-size:20px;margin-top:32px">Giá trị cốt lõi Sapo</h2>
+      html += `<h2 id="sec-cv" style="font-size:20px;margin-top:32px">Giá trị cốt lõi</h2>
         <div class="sub" style="margin-top:4px">Mức độ kỳ vọng ở cấp này: <b style="color:var(--blue)">${esc(names)}</b></div>
         <div class="vstage">${stages.map((s) => {
           const on = ids.includes(s.id);

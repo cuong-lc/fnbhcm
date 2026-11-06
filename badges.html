@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Thợ săn huy hiệu · Khung năng lực Kinh doanh Sapo</title>
+<title>Thợ săn huy hiệu · Khung năng lực Kinh doanh</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
@@ -119,7 +119,7 @@
   function renderOwner(root){
     var opts=PEOPLE.map(function(p){ return '<option value="'+esc(p.email)+'">'+esc(p.full_name||p.email)+' · '+esc((p.dept||'').replace('Phòng ','').replace(' HCM',''))+'</option>'; }).join('');
     root.innerHTML=
-      '<div class="head"><h2>🏛️ SAPO OLYMPUS</h2><div class="accent2"></div>'
+      '<div class="head"><h2>🏛️ OLYMPUS</h2><div class="accent2"></div>'
       +'<p class="sub">Đền của 12 vị thần — trao huy hiệu cho từng chiến binh. Chỉ Giám đốc Trung tâm chỉnh sửa; huy hiệu hiện ở Bảng Vinh danh các vị thần ở trang chủ.</p></div>'
       +'<div class="picker"><label>Chọn nhân viên:</label><select id="bh-sel">'+opts+'</select>'
       +'<span class="who"><span class="adminbadge">Quyền: Giám đốc Trung tâm</span></span></div>'
@@ -135,7 +135,7 @@
     var email=(window.CLF_USER&&CLF_USER.email||'').toLowerCase();
     var any=TYPES.some(function(bt){return tierOf(email,bt.code)>0;});
     root.innerHTML=
-      '<div class="head"><h2>🏛️ SAPO OLYMPUS · Huy hiệu của bạn</h2><div class="accent2"></div>'
+      '<div class="head"><h2>🏛️ OLYMPUS · Huy hiệu của bạn</h2><div class="accent2"></div>'
       +'<p class="sub">Hành trình chinh phục 12 vị thần Olympus của bạn. Huy hiệu do Giám đốc Trung tâm ghi nhận. <span class="viewbadge">Chỉ xem</span></p></div>'
       +(any?'':'<p class="empty" style="margin:10px 0">Bạn chưa chinh phục vị thần nào — lên đường thôi! ⚡</p>')
       +renderBadgesFor(email,false);

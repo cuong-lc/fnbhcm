@@ -1,5 +1,5 @@
 /* ============================================================
-   KHUNG NĂNG LỰC ĐỘI NGŨ KINH DOANH SAPO — DỮ LIỆU
+   KHUNG NĂNG LỰC ĐỘI NGŨ KINH DOANH — DỮ LIỆU
    Anh có thể chỉnh trực tiếp nội dung trong file này.
    Cấu trúc: LEVELS (4 cấp) + GROUPS (5 domain) + COMPETENCIES (13 năng lực).
    Mỗi năng lực có: levels (chuẩn cần đạt từng cấp) + playbook (cần bổ sung gì để lên cấp).
@@ -117,7 +117,7 @@ const LEVELS = [
       "Kết quả kinh doanh nhóm ổn định, bền vững qua nhiều kỳ",
       "Tổ chức có nhu cầu hoặc vị trí trống ở cấp này",
       "Được tín nhiệm bởi đội nhóm và cấp trên",
-      "Phù hợp giá trị và văn hoá Sapo",
+      "Phù hợp giá trị và văn hoá công ty",
       "Quyết định bổ nhiệm của Ban lãnh đạo"
     ]
   },
@@ -173,9 +173,9 @@ const GROUPS = [
 const COMPETENCIES = [
   // ===== D1 · KIẾN THỨC CHUYÊN MÔN =====
   {
-    id: "san-pham", group: "d1", name: "Sản phẩm & hệ sinh thái Sapo",
+    id: "san-pham", group: "d1", name: "Sản phẩm & hệ sinh thái",
     levels: {
-      c1: "Nắm các sản phẩm cốt lõi (Sapo POS, Web, F&B, GO) và bảng giá; trình bày đúng các tính năng chính.",
+      c1: "Nắm các sản phẩm cốt lõi (POS, Web, F&B, GO) và bảng giá; trình bày đúng các tính năng chính.",
       c2: "Tư vấn trọn hệ sinh thái, ghép giải pháp theo nhu cầu, so sánh được với đối thủ.",
       c3: "Đào tạo kiến thức sản phẩm cho nhóm; cập nhật và phổ biến sản phẩm mới kịp thời.",
       c4: "Định hướng combo/giải pháp theo ngành; phản hồi nhu cầu thị trường về cho đội sản phẩm."
@@ -481,7 +481,7 @@ const CHECKLISTS = {
 };
 
 /* ============================================================
-   GIÁ TRỊ CỐT LÕI SAPO + thang mức độ làm chủ.
+   GIÁ TRỊ CỐT LÕI + thang mức độ làm chủ.
    Mỗi cấp có valueStages (mức độ kỳ vọng) tham chiếu id bên dưới.
    ============================================================ */
 const VALUE_STAGES = [
@@ -520,7 +520,7 @@ const CORE_VALUES = [
     name: "Tinh thần đồng đội",
     behaviors: [
       "Sẵn lòng hỗ trợ, hướng dẫn, động viên để giúp đồng nghiệp hoàn thành công việc.",
-      "Đặt lợi ích của Sapo lên trên lợi ích của cá nhân và nhóm của mình.",
+      "Đặt lợi ích của công ty lên trên lợi ích của cá nhân và nhóm của mình.",
       "Đồng thuận để đạt mục tiêu: chủ động trao đổi, phản biện trên tinh thần xây dựng để đi đến thống nhất chung; khi tập thể đã quyết định, dù cá nhân chưa hoàn toàn đồng ý vẫn cam kết hành động nhất quán. (Bổ sung 11/2025)"
     ]
   },
