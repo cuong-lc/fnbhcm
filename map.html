@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=goong1"></script>
+<script src="config.js?v=goong2"></script>
 <script src="auth.js"></script>
 <style>
   #mapwrap{max-width:1180px;margin:0 auto;padding:0 16px 40px}
@@ -86,7 +86,7 @@
 <body data-page="map">
 
 <div class="topbar"><div class="wrap">
-  <a class="brand" href="index.html"><span class="dot"></span> Khung năng lực Kinh doanh</a>
+  <a class="brand" href="index.html"><span class="dot"></span> FNBHCM HUB</a>
   <nav class="nav" id="nav"></nav>
 </div></div>
 
@@ -192,7 +192,9 @@
   $('leg').innerHTML=LINHVUC.map(function(v){return '<span><i style="background:'+lvColor(v)+'"></i>'+esc(v)+'</span>';}).join('');
 
   function initMap(){
-    map=new maplibregl.Map({container:'map',style:'https://tiles.openfreemap.org/styles/liberty',center:[106.700,10.776],zoom:11,attributionControl:true});
+    var MTK=window.GOONG_MAPTILES_KEY||'';
+    var style = MTK? 'https://tiles.goong.io/assets/goong_map_web.json?api_key='+MTK : 'https://tiles.openfreemap.org/styles/liberty';
+    map=new maplibregl.Map({container:'map',style:style,center:[106.700,10.776],zoom:11,attributionControl:true});
     map.addControl(new maplibregl.NavigationControl({showCompass:false}),'bottom-right');
     map.on('load', loadPlaces);
     map.on('click', function(e){ if(!addMode) return; setPick(e.lngLat.lat,e.lngLat.lng,false); });
