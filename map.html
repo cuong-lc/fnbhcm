@@ -14,8 +14,14 @@
 <script src="auth.js"></script>
 <style>
   #howto{max-width:1180px;margin:0 auto 16px;padding:0 16px}
-  #howto .ht-title{font-size:13px;font-weight:800;color:var(--poly);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px}
-  #howto .ht-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  #howto>.ht-title{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;
+      background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 15px;
+      font-size:13.5px;font-weight:800;color:var(--poly);letter-spacing:.3px;user-select:none}
+  #howto>.ht-title::-webkit-details-marker{display:none}
+  #howto .ht-cv{font-size:12px;color:var(--gold1);transition:transform .15s}
+  #howto[open]>.ht-title{border-bottom-left-radius:0;border-bottom-right-radius:0}
+  #howto[open] .ht-cv{transform:rotate(180deg)}
+  #howto .ht-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
   @media(max-width:820px){#howto .ht-grid{grid-template-columns:1fr}}
   #howto .ht-step{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 15px;display:flex;gap:11px;align-items:flex-start}
   #howto .ht-n{width:26px;height:26px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#17130D;background:linear-gradient(135deg,var(--gold1),var(--gold2))}
@@ -110,21 +116,21 @@
   <div class="wrap">
     <div class="eyebrow">Công cụ bán hàng</div>
     <h1>🗺️ Bản đồ khách hàng</h1>
-    <p>Toàn bộ khách hàng tiêu biểu của trung tâm trên một bản đồ sống. Mỗi ghim là một quán đã đồng hành cùng trung tâm — nhìn một cái là biết họ ở đâu, thuộc lĩnh vực nào, quy mô ra sao và ai đang phụ trách. Sale đi triển khai check-in ngay tại điểm luôn hoặc thêm khi ký thành công nhé.</p>
+    <p>Tất cả khách hàng tiêu biểu của trung tâm trên một bản đồ sống — ai ở đâu, lĩnh vực, quy mô, ai phụ trách.</p>
   </div>
 </header>
 
 <main class="wrap">
   <section class="section" style="padding-top:22px">
-    <div id="howto">
-      <div class="ht-title">Dùng nhanh trong 30 giây</div>
+    <details id="howto">
+      <summary class="ht-title"><span>📖 Hướng dẫn dùng nhanh</span><span class="ht-cv">▾</span></summary>
       <div class="ht-grid">
         <div class="ht-step"><span class="ht-n">1</span><div><b>Thêm điểm</b><p>Đang đứng tại quán → bấm <b>📍 Check-in tại đây</b> để lấy đúng vị trí GPS. Ở nơi khác → bấm <b>➕ Thêm điểm</b> rồi gõ địa chỉ vào ô <b>Tìm</b>, hoặc chạm thẳng lên bản đồ để đặt ghim.</p></div></div>
         <div class="ht-step"><span class="ht-n">2</span><div><b>Điền thông tin</b><p>Tên quán, <b>lĩnh vực</b> (màu ghim đổi theo lĩnh vực), <b>quy mô</b>, ghi chú và ảnh nếu có. Lưu là ghim hiện ngay trên bản đồ, cả team thấy chung.</p></div></div>
         <div class="ht-step"><span class="ht-n">3</span><div><b>Xem &amp; lọc</b><p>Chạm 1 ghim để xem chi tiết. Dùng bảng <b>Phụ trách</b> góc phải để lọc theo người, hoặc chọn <b>⭐ Tôi</b> để chỉ xem quán mình phụ trách.</p></div></div>
       </div>
       <div class="ht-note">💡 Mỗi quán 1 ghim. Khách rời đi thì ghi chú lại — hệ thống tự chuyển thành <b>TTFNB</b> (trả về trung tâm) để bạn khác nhận.</div>
-    </div>
+    </details>
     <div id="mapwrap">
       <div id="mapbox">
         <div id="map"></div>
