@@ -56,6 +56,14 @@
       document.addEventListener("click", (e) => { if (!nav.contains(e.target) && e.target !== tg) nav.classList.remove("open"); });
     }
     [].forEach.call(nav.querySelectorAll("a"), (a) => a.addEventListener("click", () => nav.classList.remove("open")));
+    // 🔔 Chuông đề xuất chờ duyệt cho GĐTT (hiện ở mọi trang)
+    if (isGD && window.SB) {
+      window.SB.from("badge_requests").select("id", { count: "exact", head: true }).eq("status", "pending").then((r) => {
+        const n = (r && r.count) || 0; if (!n) return;
+        const a = nav.querySelector('a[href="badges.html"]');
+        if (a) a.innerHTML = '🏛️ Phong Thần <span style="background:#E5484D;color:#fff;border-radius:20px;padding:0 7px;font-size:11px;font-weight:800;margin-left:2px">' + n + '</span>';
+      }, () => {});
+    }
   }
   function buildFoot() {
     const f = byId("foot");

@@ -51,6 +51,35 @@
   #bh .toast.show{opacity:1}
   #bh .loading{padding:40px;text-align:center;color:#5B6472}
   #bh .empty{color:#9aa3b2;font-size:13px}
+  #bh .curval{font-size:12.5px;color:#8a6a1e;font-weight:700;margin-top:6px}
+  #bh .propbtn{margin-top:10px;display:inline-flex;align-items:center;gap:6px;background:#fff;border:1.5px solid #D4A94C;color:#8a6a1e;font-weight:700;font-size:13px;padding:7px 13px;border-radius:9px;cursor:pointer;font-family:inherit}
+  #bh .propbtn:hover{background:#FBF3E2}
+  #bh .propform{margin-top:10px;background:#FBF7EE;border:1px solid #ECE4D5;border-radius:10px;padding:12px;display:none}
+  #bh .propform.on{display:block}
+  #bh .propform label{display:block;font-size:12px;font-weight:600;color:#17130D;margin:6px 0 3px}
+  #bh .propform input,#bh .propform textarea{width:100%;box-sizing:border-box;border:1.5px solid #cdd5e0;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit}
+  #bh .propform textarea{min-height:46px;resize:vertical}
+  #bh .propform .fa{display:flex;gap:8px;margin-top:10px}
+  #bh .btn-send{background:linear-gradient(135deg,#C8912E,#E7C877);border:none;color:#17130D;font-weight:700;font-size:13px;padding:9px 16px;border-radius:9px;cursor:pointer;font-family:inherit}
+  #bh .btn-cancel{background:#fff;border:1px solid #cdd5e0;color:#5B6472;font-size:13px;padding:9px 14px;border-radius:9px;cursor:pointer;font-family:inherit}
+  #bh .mystatus{font-size:12px;margin-top:8px;padding:6px 10px;border-radius:8px}
+  #bh .mystatus.pend{background:#FFF7E6;color:#9a6a00}
+  #bh .mystatus.appr{background:#E7F8EE;color:#1a8f4c}
+  #bh .mystatus.rej{background:#FDECEC;color:#C0392B}
+  #bh .rqpanel{background:#fff;border:1px solid #ECE4D5;border-left:4px solid #D4A94C;border-radius:12px;padding:14px 16px;margin:14px 0}
+  #bh .rqpanel h3{margin:0 0 4px;font-size:16px;color:#17130D;display:flex;align-items:center;gap:8px}
+  #bh .rqcount{background:#E5484D;color:#fff;font-size:12px;font-weight:800;border-radius:20px;padding:1px 9px}
+  #bh .rqitem{border-top:1px solid #eef1f6;padding:11px 0;display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap}
+  #bh .rqitem:first-of-type{border-top:none}
+  #bh .rqinfo{flex:1;min-width:200px}
+  #bh .rqwho{font-weight:700;color:#17130D;font-size:14px}
+  #bh .rqmeta{font-size:12.5px;color:#5B6472;margin-top:2px}
+  #bh .rqval{color:#8a6a1e;font-weight:800}
+  #bh .rqnote{font-size:12.5px;color:#2A2318;margin-top:3px}
+  #bh .rqact{display:flex;gap:8px}
+  #bh .btn-ok{background:#16D865;border:none;color:#fff;font-weight:700;font-size:13px;padding:8px 14px;border-radius:9px;cursor:pointer;font-family:inherit}
+  #bh .btn-no{background:#fff;border:1px solid #E5484D;color:#E5484D;font-weight:700;font-size:13px;padding:8px 14px;border-radius:9px;cursor:pointer;font-family:inherit}
+  #bh .prooflink{color:#2563EB;font-size:12.5px;text-decoration:none;word-break:break-all}
 </style>
 </head>
 <body data-page="badges">
@@ -68,37 +97,97 @@
 <script>
 (function(){
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
-  function toast(m){ var t=document.getElementById('bh-toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},1800); }
-  var TYPES=[], AW={}, PEOPLE=[], curEmail=null, isOwner=false;
+  function toast(m){ var t=document.getElementById('bh-toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},2200); }
+  var TYPES=[], AW={}, AVAL={}, PEOPLE=[], NAME={}, REQS=[], curEmail=null, isOwner=false, myEmail='';
+  var MONEY={doanhso:1,kinhngu:1};
 
   function iconHtml(bt){ return bt.image ? '<img class="gicon" src="'+esc(bt.image)+'" alt="'+esc(bt.name)+'">' : '<span class="chalic">'+bt.icon+'</span>'; }
   function tiersOf(bt){ try{ return Array.isArray(bt.tiers)?bt.tiers:JSON.parse(bt.tiers||'[]'); }catch(e){ return []; } }
   function tierOf(email,code){ var e=(email||'').toLowerCase(); return (AW[e]&&AW[e][code])||0; }
+  function valOf(email,code){ var e=(email||'').toLowerCase(); return (AVAL[e]&&AVAL[e][code]!=null)?AVAL[e][code]:null; }
+  function fmtM(v){ var m=v/1e6; var s=Math.round(m*10)/10; return (s%1===0?s.toFixed(0):s.toFixed(1).replace('.',','))+'M'; }
+  function fmtVal(code,unit,v){ if(v==null||v==='') return ''; v=Number(v);
+    if(MONEY[code]) return fmtM(v);
+    if(code==='minhtinh'){ if(v>=1e6) return (Math.round(v/1e5)/10).toString().replace('.',',')+'tr'; if(v>=1000) return (Math.round(v/100)/10).toString().replace('.',',')+'k'; return String(v); }
+    return v.toLocaleString('vi-VN')+(unit||''); }
+  function inputHint(code){ if(MONEY[code]) return ['Số tiền (triệu đồng)','VD: 520 nghĩa là 520 triệu']; if(code==='minhtinh') return ['Số người theo dõi TikTok','VD: 12000']; if(code==='minhchu') return ['Số CTV đã phát triển','VD: 8']; if(code==='hocba') return ['Số khóa đã hoàn thành','VD: 5']; if(code==='bachdia') return ['Số điểm đã gắn cờ','VD: 20']; return ['Số mới','']; }
+  function toRaw(code,x){ var n=parseFloat(String(x).replace(/[^0-9.,]/g,'').replace(',','.')); if(isNaN(n)) return null; return MONEY[code]? Math.round(n*1e6): n; }
 
-  function badgeCard(bt, tier, editable){
-    var tiers=tiersOf(bt), single=(bt.kind==='single');
-    var label = tier>0 ? (single?'Đạt':(tiers[tier-1]+(bt.unit||''))) : '';
-    var badge = tier>0 ? '<span class="chalbadge">'+bt.icon+' '+esc(label)+'</span>' : '<span class="chalbadge off">chưa đạt</span>';
+  // ===== STAFF: thẻ danh hiệu + nút đề xuất =====
+  function myReqFor(code){ var a=REQS.filter(function(x){return x.code===code && x.email.toLowerCase()===myEmail;}).sort(function(a,b){return (b.created_at||'').localeCompare(a.created_at||'');}); return a[0]; }
+  function staffCard(bt){
+    var cur=valOf(myEmail,bt.code);
+    var curHtml=cur!=null? '<div class="curval">Đang ghi nhận: '+esc(fmtVal(bt.code,bt.unit,cur))+'</div>' : '<div class="curval" style="color:#9aa3b2">Chưa có số liệu</div>';
+    var mr=myReqFor(bt.code), st='';
+    if(mr){ if(mr.status==='pending') st='<div class="mystatus pend">⏳ Đã gửi đề xuất '+esc(fmtVal(bt.code,bt.unit,mr.value))+' — đang chờ GĐTT duyệt</div>';
+      else if(mr.status==='approved') st='<div class="mystatus appr">✅ Đề xuất '+esc(fmtVal(bt.code,bt.unit,mr.value))+' đã được duyệt</div>';
+      else if(mr.status==='rejected') st='<div class="mystatus rej">❌ Đề xuất '+esc(fmtVal(bt.code,bt.unit,mr.value))+' bị từ chối</div>'; }
+    var hint=inputHint(bt.code);
+    var form='<div class="propform" id="pf_'+esc(bt.code)+'">'
+      +'<label>'+esc(hint[0])+'</label><input type="text" inputmode="decimal" id="pv_'+esc(bt.code)+'" placeholder="'+esc(hint[1])+'">'
+      +'<label>Ghi chú (tuỳ chọn)</label><textarea id="pn_'+esc(bt.code)+'" placeholder="VD: vừa ký quán ABC"></textarea>'
+      +'<label>Link bằng chứng (tuỳ chọn)</label><input type="text" id="pp_'+esc(bt.code)+'" placeholder="Link ảnh/clip/HĐ...">'
+      +'<div class="fa"><button class="btn-send" data-code="'+esc(bt.code)+'">Gửi đề xuất</button><button class="btn-cancel" data-code="'+esc(bt.code)+'">Huỷ</button></div></div>';
+    return '<div class="card"><div class="chalhd">'+iconHtml(bt)+'<div><div class="chalname">'+esc(bt.name)+'</div><div class="chaldesc">'+esc(bt.descr||'')+'</div></div></div>'
+      +curHtml+st
+      +'<button class="propbtn" data-code="'+esc(bt.code)+'">➕ Đề xuất cập nhật</button>'+form+'</div>';
+  }
+  function renderStaff(root){
+    root.innerHTML=
+      '<div class="head"><h2>🏛️ BẢNG PHONG THẦN · Danh hiệu của bạn</h2><div class="accent2"></div>'
+      +'<p class="sub">Đạt thành tích mới (deal lớn, follow TikTok, CTV, khoá học...) → bấm <b>Đề xuất cập nhật</b>, GĐTT duyệt là bạn lên hạng ngay. <span class="viewbadge">Tự đề xuất</span></p></div>'
+      +'<div class="bgrid">'+TYPES.map(staffCard).join('')+'</div>';
+    // toggle form
+    root.querySelectorAll('.propbtn').forEach(function(b){ b.onclick=function(){ var f=document.getElementById('pf_'+b.getAttribute('data-code')); if(f) f.classList.toggle('on'); }; });
+    root.querySelectorAll('.btn-cancel').forEach(function(b){ b.onclick=function(){ var f=document.getElementById('pf_'+b.getAttribute('data-code')); if(f) f.classList.remove('on'); }; });
+    root.querySelectorAll('.btn-send').forEach(function(b){ b.onclick=function(){
+      var code=b.getAttribute('data-code');
+      var raw=toRaw(code, (document.getElementById('pv_'+code)||{}).value||'');
+      if(raw==null||raw<0){ toast('Nhập số hợp lệ nhé'); return; }
+      var note=(document.getElementById('pn_'+code)||{}).value||'';
+      var proof=(document.getElementById('pp_'+code)||{}).value||'';
+      b.disabled=true; b.textContent='Đang gửi...';
+      SB.rpc('submit_badge_request',{p_code:code,p_value:raw,p_note:note,p_proof:proof}).then(function(r){
+        if(r.error){ toast('Lỗi: '+r.error.message); b.disabled=false; b.textContent='Gửi đề xuất'; return; }
+        toast('Đã gửi đề xuất — chờ GĐTT duyệt'); run();
+      });
+    }; });
+  }
+
+  // ===== GĐTT: panel duyệt đề xuất + chỉnh tay =====
+  function reqPanel(){
+    var pend=REQS.filter(function(x){return x.status==='pending';}).sort(function(a,b){return (a.created_at||'').localeCompare(b.created_at||'');});
+    var tmap={}; TYPES.forEach(function(t){tmap[t.code]=t;});
+    var items=pend.map(function(q){
+      var t=tmap[q.code]||{icon:'🏅',name:q.code,unit:''};
+      var nm=NAME[q.email.toLowerCase()]||q.email;
+      var proof=q.proof?'<a class="prooflink" href="'+esc(q.proof)+'" target="_blank" rel="noopener">🔗 Bằng chứng</a>':'';
+      var note=q.note?'<div class="rqnote">“'+esc(q.note)+'”</div>':'';
+      return '<div class="rqitem"><div class="rqinfo"><div class="rqwho">'+esc(nm)+'</div>'
+        +'<div class="rqmeta">'+(t.image?'<img src="'+esc(t.image)+'" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:4px">':t.icon+' ')+esc(t.name)+' → <span class="rqval">'+esc(fmtVal(q.code,t.unit,q.value))+'</span></div>'
+        +note+proof+'</div>'
+        +'<div class="rqact"><button class="btn-ok" data-id="'+esc(q.id)+'">✅ Duyệt</button><button class="btn-no" data-id="'+esc(q.id)+'">❌ Từ chối</button></div></div>';
+    }).join('');
+    return '<div class="rqpanel"><h3>🔔 Đề xuất chờ duyệt '+(pend.length?'<span class="rqcount">'+pend.length+'</span>':'')+'</h3>'
+      +(pend.length? items : '<div class="empty" style="padding:6px 0">Không có đề xuất nào đang chờ. 🎉</div>')+'</div>';
+  }
+  function badgeCardEdit(bt){
+    var tiers=tiersOf(bt), single=(bt.kind==='single'), tier=tierOf(curEmail,bt.code);
+    var val=valOf(curEmail,bt.code);
+    var cur=val!=null?'<div class="curval">Số hiện tại: '+esc(fmtVal(bt.code,bt.unit,val))+'</div>':'';
     var boxes;
-    if(single){
-      boxes='<div class="box single'+(tier>=1?' on':'')+(editable?' edit':'')+'" data-code="'+esc(bt.code)+'" data-i="1">'+(tier>=1?'✓ Đã đạt':'Đánh dấu đạt')+'</div>';
-    } else {
-      boxes=tiers.map(function(v,idx){var i=idx+1; return '<div class="box'+(i<=tier?' on':'')+(editable?' edit':'')+'" data-code="'+esc(bt.code)+'" data-i="'+i+'">'+esc(v)+'</div>';}).join('');
-    }
-    return '<div class="card"><div class="chalhd">'+iconHtml(bt)+'<div><div class="chalname">'+esc(bt.name)+'</div><div class="chaldesc">'+esc(bt.descr||'')+'</div></div>'+badge+'</div><div class="row">'+boxes+'</div>'+(editable?'<div class="hint">Bấm mốc để trao • bấm lại mốc cao nhất để hạ xuống</div>':'')+'</div>';
+    if(single){ boxes='<div class="box single'+(tier>=1?' on':'')+' edit" data-code="'+esc(bt.code)+'" data-i="1">'+(tier>=1?'✓ Đã đạt':'Đánh dấu đạt')+'</div>'; }
+    else { boxes=tiers.map(function(v,idx){var i=idx+1; return '<div class="box'+(i<=tier?' on':'')+' edit" data-code="'+esc(bt.code)+'" data-i="'+i+'">'+esc(v)+(bt.unit||'')+'</div>';}).join(''); }
+    return '<div class="card"><div class="chalhd">'+iconHtml(bt)+'<div><div class="chalname">'+esc(bt.name)+'</div><div class="chaldesc">'+esc(bt.descr||'')+'</div></div></div>'+cur+'<div class="row" style="margin-top:8px">'+boxes+'</div><div class="hint">Chỉnh tay mốc (không bắt buộc) — thường chỉ cần Duyệt đề xuất phía trên.</div></div>';
   }
-
-  function renderBadgesFor(email, editable){
-    return '<div class="bgrid">'+TYPES.map(function(bt){ return badgeCard(bt, tierOf(email,bt.code), editable); }).join('')+'</div>';
-  }
-
-  function attachEdit(container){
-    container.querySelectorAll('.box.edit').forEach(function(b){
-      b.onclick=function(){
-        if(!curEmail) return;
+  function renderOwnerBody(){
+    var box=document.getElementById('bh-editor'); if(!box) return;
+    var p=PEOPLE.filter(function(x){return x.email===curEmail;})[0];
+    box.innerHTML='<div style="font-size:13px;color:#5B6472;margin:2px 0 8px">Chỉnh tay cho <b style="color:#17130D">'+esc(p?p.full_name:curEmail)+'</b>'+(p&&p.dept?' · '+esc(p.dept):'')+'</div><div class="bgrid">'+TYPES.map(badgeCardEdit).join('')+'</div>';
+    box.querySelectorAll('.box.edit').forEach(function(b){
+      b.onclick=function(){ if(!curEmail) return;
         var code=b.getAttribute('data-code'), i=parseInt(b.getAttribute('data-i'),10);
-        var cur=tierOf(curEmail,code);
-        var target=(cur===i)?i-1:i;
+        var curt=tierOf(curEmail,code), target=(curt===i)?i-1:i;
         b.style.opacity=.5;
         SB.rpc('set_badge_award',{p_email:curEmail,p_code:code,p_tier:target}).then(function(r){
           if(r.error){ toast('Lỗi: '+r.error.message); b.style.opacity=1; return; }
@@ -108,54 +197,57 @@
       };
     });
   }
-
-  function renderOwnerBody(){
-    var box=document.getElementById('bh-editor'); if(!box) return;
-    var p=PEOPLE.filter(function(x){return x.email===curEmail;})[0];
-    box.innerHTML='<div style="font-size:13px;color:#5B6472;margin:2px 0 4px">Đang chỉnh huy hiệu cho <b style="color:#17130D">'+esc(p?p.full_name:curEmail)+'</b>'+(p&&p.dept?' · '+esc(p.dept):'')+'</div>'+renderBadgesFor(curEmail,true);
-    attachEdit(box);
+  function bindReqActions(root){
+    root.querySelectorAll('.btn-ok').forEach(function(b){ b.onclick=function(){
+      b.disabled=true; b.textContent='...';
+      SB.rpc('approve_badge_request',{p_id:b.getAttribute('data-id')}).then(function(r){
+        if(r.error){ toast('Lỗi: '+r.error.message); b.disabled=false; b.textContent='✅ Duyệt'; return; }
+        toast('Đã duyệt — bảng đã cập nhật'); run();
+      });
+    }; });
+    root.querySelectorAll('.btn-no').forEach(function(b){ b.onclick=function(){
+      b.disabled=true;
+      SB.rpc('reject_badge_request',{p_id:b.getAttribute('data-id')}).then(function(r){
+        if(r.error){ toast('Lỗi: '+r.error.message); b.disabled=false; return; }
+        toast('Đã từ chối'); run();
+      });
+    }; });
   }
-
   function renderOwner(root){
     var opts=PEOPLE.map(function(p){ return '<option value="'+esc(p.email)+'">'+esc(p.full_name||p.email)+' · '+esc((p.dept||'').replace('Phòng ','').replace(' HCM',''))+'</option>'; }).join('');
     root.innerHTML=
       '<div class="head"><h2>🏛️ BẢNG PHONG THẦN</h2><div class="accent2"></div>'
-      +'<p class="sub">Không chỉ ghi nhận thành tích, mà lưu danh những người tạo nên lịch sử. Phong danh hiệu cho từng chiến binh — chỉ Giám đốc Trung tâm chỉnh sửa; danh hiệu hiện ở Bảng Phong Thần trang chủ.</p></div>'
-      +'<div class="picker"><label>Chọn nhân viên:</label><select id="bh-sel">'+opts+'</select>'
+      +'<p class="sub">Không chỉ ghi nhận thành tích, mà lưu danh những người tạo nên lịch sử. Duyệt đề xuất của sale hoặc chỉnh tay.</p></div>'
+      +reqPanel()
+      +'<div class="picker"><label>Chỉnh tay cho nhân viên:</label><select id="bh-sel">'+opts+'</select>'
       +'<span class="who"><span class="adminbadge">Quyền: Giám đốc Trung tâm</span></span></div>'
       +'<div id="bh-editor"></div>';
+    bindReqActions(root);
     var sel=document.getElementById('bh-sel');
     curEmail=PEOPLE.length?PEOPLE[0].email:null;
-    sel.value=curEmail;
-    sel.onchange=function(){ curEmail=sel.value; renderOwnerBody(); };
+    if(sel){ sel.value=curEmail; sel.onchange=function(){ curEmail=sel.value; renderOwnerBody(); }; }
     renderOwnerBody();
-  }
-
-  function renderStaff(root){
-    var email=(window.CLF_USER&&CLF_USER.email||'').toLowerCase();
-    var any=TYPES.some(function(bt){return tierOf(email,bt.code)>0;});
-    root.innerHTML=
-      '<div class="head"><h2>🏛️ BẢNG PHONG THẦN · Danh hiệu của bạn</h2><div class="accent2"></div>'
-      +'<p class="sub">Những danh hiệu bạn đã được phong — ghi nhận bởi Giám đốc Trung tâm. <span class="viewbadge">Chỉ xem</span></p></div>'
-      +(any?'':'<p class="empty" style="margin:10px 0">Bạn chưa được phong danh hiệu nào — lên đường thôi! ⚡</p>')
-      +renderBadgesFor(email,false);
   }
 
   function run(){
     if(!window.SB){ document.getElementById('bh').innerHTML='<div class="loading">Chưa cấu hình hệ thống.</div>'; return; }
     var prof=window.CLF_PROFILE||{};
     isOwner=(prof.level==='c4');
+    myEmail=(window.CLF_USER&&CLF_USER.email||'').toLowerCase();
     var q=[ SB.from('badge_types').select('*').eq('active',true).order('sort'),
-            SB.from('badge_awards').select('email,code,tier_index') ];
+            SB.from('badge_awards').select('email,code,tier_index,value'),
+            SB.from('badge_requests').select('id,email,code,value,note,proof,status,created_at').order('created_at',{ascending:false}) ];
     if(isOwner) q.push(SB.from('role_assignments').select('email,full_name,dept,level'));
     Promise.all(q).then(function(r){
-      if(r[0].error){ document.getElementById('bh').innerHTML='<div class="loading">Không tải được loại huy hiệu.</div>'; return; }
+      if(r[0].error){ document.getElementById('bh').innerHTML='<div class="loading">Không tải được danh hiệu.</div>'; return; }
       TYPES=r[0].data||[];
-      AW={};
-      (r[1].data||[]).forEach(function(a){ var e=(a.email||'').toLowerCase(); (AW[e]=AW[e]||{})[a.code]=a.tier_index; });
+      AW={}; AVAL={};
+      (r[1].data||[]).forEach(function(a){ var e=(a.email||'').toLowerCase(); (AW[e]=AW[e]||{})[a.code]=a.tier_index; (AVAL[e]=AVAL[e]||{})[a.code]=a.value; });
+      REQS=r[2].data||[];
       var root=document.getElementById('bh');
       if(isOwner){
-        PEOPLE=(r[2]&&r[2].data||[]).slice().sort(function(a,b){ return (a.dept||'').localeCompare(b.dept||'')||(a.full_name||'').localeCompare(b.full_name||''); });
+        PEOPLE=(r[3]&&r[3].data||[]).slice().sort(function(a,b){ return (a.dept||'').localeCompare(b.dept||'')||(a.full_name||'').localeCompare(b.full_name||''); });
+        NAME={}; PEOPLE.forEach(function(p){ NAME[(p.email||'').toLowerCase()]=p.full_name||p.email; });
         renderOwner(root);
       } else {
         renderStaff(root);

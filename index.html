@@ -223,13 +223,18 @@
     function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
     function tval(c,idx){ if(c.kind==='single') return 'Đạt'; return (c.tiers[idx-1]!=null?c.tiers[idx-1]:idx)+(c.unit||''); }
     function fmtM(v){ var m=v/1e6; var s=Math.round(m*10)/10; return (s%1===0? s.toFixed(0): s.toFixed(1).replace('.',','))+'M'; }
+    var MONEY={doanhso:1,kinhngu:1};
+    function fmtVal(code,unit,v){ if(v==null) return ''; v=Number(v);
+      if(MONEY[code]) return fmtM(v);
+      if(code==='minhtinh'){ if(v>=1e6) return (Math.round(v/1e5)/10).toString().replace('.',',')+'tr'; if(v>=1000) return (Math.round(v/100)/10).toString().replace('.',',')+'k'; return String(v); }
+      return v.toLocaleString('vi-VN')+(unit||''); }
     var PGSIZE=10, DATA={}, PAGE={};
     function cardHtml(c){
       var arr=DATA[c.code]||[]; var total=arr.length;
       var pages=Math.max(1,Math.ceil(total/PGSIZE));
       var pg=Math.min(Math.max(0,PAGE[c.code]||0),pages-1); PAGE[c.code]=pg;
       var slice=arr.slice(pg*PGSIZE, pg*PGSIZE+PGSIZE);
-      var list=slice.length? slice.map(function(x,i){ var rank=pg*PGSIZE+i+1; var disp=(x.val!=null)?fmtM(x.val):esc(tval(c,x.idx)); return '<div class="bch"><span class="bnm">'+rank+'. '+esc(x.nm)+'</span><span class="bval">'+c.icon+' '+disp+'</span></div>'; }).join('') : '<div style="color:#9aa3b2;font-size:13px;padding:6px 0">Chưa ai đạt — hãy là người đầu tiên!</div>';
+      var list=slice.length? slice.map(function(x,i){ var rank=pg*PGSIZE+i+1; var disp=(x.val!=null)?fmtVal(c.code,c.unit,x.val):esc(tval(c,x.idx)); return '<div class="bch"><span class="bnm">'+rank+'. '+esc(x.nm)+'</span><span class="bval">'+c.icon+' '+disp+'</span></div>'; }).join('') : '<div style="color:#9aa3b2;font-size:13px;padding:6px 0">Chưa ai đạt — hãy là người đầu tiên!</div>';
       var ic=c.image?'<img src="'+esc(c.image)+'" style="width:30px;height:30px;object-fit:contain;vertical-align:middle;margin-right:7px">':c.icon+' ';
       var dsc=c.descr?'<div style="font-size:12px;color:#8a7a55;line-height:1.45;margin:4px 0 2px">'+esc(c.descr)+'</div>':'';
       var cnt=total+' người đạt';
