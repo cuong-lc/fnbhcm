@@ -233,6 +233,7 @@
     if(!window.SB){ document.getElementById('bh').innerHTML='<div class="loading">Chưa cấu hình hệ thống.</div>'; return; }
     var prof=window.CLF_PROFILE||{};
     isOwner=(prof.level==='c4');
+    if(!isOwner){ location.replace('index.html'); return; }
     myEmail=(window.CLF_USER&&CLF_USER.email||'').toLowerCase();
     var q=[ SB.from('badge_types').select('*').eq('active',true).order('sort'),
             SB.from('badge_awards').select('email,code,tier_index,value'),
