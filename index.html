@@ -210,6 +210,10 @@
     <style>
       #badgeboard .bch{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-top:1px solid #eef1f6;font-size:13px}
       #badgeboard .bnm{color:#1F2533} #badgeboard .bval{font-weight:800;color:#FF7A00;white-space:nowrap}
+      #badgeboard .bpg{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;font-size:12px;color:#5B6472}
+      #badgeboard .bpb{border:1px solid #ECE4D5;background:#fff;color:#17130D;border-radius:8px;width:30px;height:28px;font-size:13px;cursor:pointer;font-family:inherit}
+      #badgeboard .bpb:disabled{opacity:.35;cursor:default}
+      #badgeboard .bpb:not(:disabled):hover{border-color:#C8912E}
     </style>
     <div id="badgeboard" class="kpis"><div class="kpi"><div class="val" style="font-size:14px;color:#5B6472">Đang tải…</div></div></div>
   </section>
@@ -219,20 +223,30 @@
     function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
     function tval(c,idx){ if(c.kind==='single') return 'Đạt'; return (c.tiers[idx-1]!=null?c.tiers[idx-1]:idx)+(c.unit||''); }
     function fmtM(v){ var m=v/1e6; var s=Math.round(m*10)/10; return (s%1===0? s.toFixed(0): s.toFixed(1).replace('.',','))+'M'; }
-    var TOPN=10;
+    var PGSIZE=10, DATA={}, PAGE={};
+    function cardHtml(c){
+      var arr=DATA[c.code]||[]; var total=arr.length;
+      var pages=Math.max(1,Math.ceil(total/PGSIZE));
+      var pg=Math.min(Math.max(0,PAGE[c.code]||0),pages-1); PAGE[c.code]=pg;
+      var slice=arr.slice(pg*PGSIZE, pg*PGSIZE+PGSIZE);
+      var list=slice.length? slice.map(function(x,i){ var rank=pg*PGSIZE+i+1; var disp=(x.val!=null)?fmtM(x.val):esc(tval(c,x.idx)); return '<div class="bch"><span class="bnm">'+rank+'. '+esc(x.nm)+'</span><span class="bval">'+c.icon+' '+disp+'</span></div>'; }).join('') : '<div style="color:#9aa3b2;font-size:13px;padding:6px 0">Chưa ai đạt — hãy là người đầu tiên!</div>';
+      var ic=c.image?'<img src="'+esc(c.image)+'" style="width:30px;height:30px;object-fit:contain;vertical-align:middle;margin-right:7px">':c.icon+' ';
+      var dsc=c.descr?'<div style="font-size:12px;color:#8a7a55;line-height:1.45;margin:4px 0 2px">'+esc(c.descr)+'</div>':'';
+      var cnt=total+' người đạt';
+      var pager=pages>1?('<div class="bpg"><button class="bpb" data-code="'+esc(c.code)+'" data-d="-1"'+(pg===0?' disabled':'')+'>◀</button><span>Trang '+(pg+1)+'/'+pages+'</span><button class="bpb" data-code="'+esc(c.code)+'" data-d="1"'+(pg>=pages-1?' disabled':'')+'>▶</button></div>'):'';
+      return '<div class="kpi" style="min-width:240px"><div class="lab" style="font-size:15px;font-weight:700;color:#17130D;display:flex;align-items:center">'+ic+'<span>'+esc(c.name)+'</span></div>'+dsc+'<div style="font-size:12px;color:#5B6472;margin:2px 0 10px">'+cnt+'</div>'+list+pager+'</div>';
+    }
+    function renderCards(){
+      document.getElementById('badgeboard').innerHTML=CHAL.map(cardHtml).join('');
+      Array.prototype.forEach.call(document.querySelectorAll('#badgeboard .bpb'),function(b){
+        b.onclick=function(){ var cd=b.getAttribute('data-code'); PAGE[cd]=(PAGE[cd]||0)+parseInt(b.getAttribute('data-d'),10); renderCards(); };
+      });
+    }
     function render(rows){
       var byCode={}; CHAL.forEach(function(c){byCode[c.code]={};});
       (rows||[]).forEach(function(r){ var p=String(r.item_key||'').split('_'); if(p[0]!=='chal'||!byCode[p[1]])return; var code=p[1], idx=parseInt(p[2],10)||0, nm=r.full_name||'?'; var cur=byCode[code][nm]; if(!cur||idx>cur.idx) byCode[code][nm]={idx:idx,val:(r.val!=null?Number(r.val):null)}; });
-      var html=CHAL.map(function(c){
-        var arr=Object.keys(byCode[c.code]).map(function(nm){var e=byCode[c.code][nm];return {nm:nm,idx:e.idx,val:e.val};}).sort(function(a,b){ var ka=(a.val!=null?a.val:a.idx), kb=(b.val!=null?b.val:b.idx); return kb-ka; });
-        var total=arr.length; var top=arr.slice(0,TOPN);
-        var list=top.length? top.map(function(x){ var disp=(x.val!=null)?fmtM(x.val):esc(tval(c,x.idx)); return '<div class="bch"><span class="bnm">'+esc(x.nm)+'</span><span class="bval">'+c.icon+' '+disp+'</span></div>'; }).join('') : '<div style="color:#9aa3b2;font-size:13px;padding:6px 0">Chưa ai đạt — hãy là người đầu tiên!</div>';
-        var ic=c.image?'<img src="'+esc(c.image)+'" style="width:30px;height:30px;object-fit:contain;vertical-align:middle;margin-right:7px">':c.icon+' ';
-        var dsc=c.descr?'<div style="font-size:12px;color:#8a7a55;line-height:1.45;margin:4px 0 2px">'+esc(c.descr)+'</div>':'';
-        var cnt=total>TOPN?('Top '+TOPN+' / '+total+' người đạt'):(total+' người đạt');
-        return '<div class="kpi" style="min-width:240px"><div class="lab" style="font-size:15px;font-weight:700;color:#17130D;display:flex;align-items:center">'+ic+'<span>'+esc(c.name)+'</span></div>'+dsc+'<div style="font-size:12px;color:#5B6472;margin:2px 0 10px">'+cnt+'</div>'+list+'</div>';
-      }).join('');
-      document.getElementById('badgeboard').innerHTML=html;
+      CHAL.forEach(function(c){ DATA[c.code]=Object.keys(byCode[c.code]).map(function(nm){var e=byCode[c.code][nm];return {nm:nm,idx:e.idx,val:e.val};}).sort(function(a,b){ var ka=(a.val!=null?a.val:a.idx), kb=(b.val!=null?b.val:b.idx); return kb-ka; }); });
+      renderCards();
     }
     function load(){ if(!window.SB) return;
       SB.from('badge_types').select('code,icon,name,unit,tiers,kind,sort,image,descr').eq('active',true).order('sort').then(function(bt){
