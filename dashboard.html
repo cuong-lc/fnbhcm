@@ -355,6 +355,22 @@
     }; });
   }
 
+  function fillRanks2(email){
+    var el=document.getElementById('ranks2'); if(!el) return;
+    function rb(p,c){ p=Math.max(0,Math.min(100,Math.round(p))); return '<div style="height:11px;background:#F6EFDE;border-radius:7px;overflow:hidden"><div style="height:100%;width:'+p+'%;background:'+c+'"></div></div>'; }
+    sb.rpc('profile_ranks',{p_email:email}).then(function(r){
+      var x=(r.data&&r.data[0]); if(!x||!x.period){ el.innerHTML=''; return; }
+      var m=Number(x.mine)||0, mon='T'+parseInt(String(x.period).split('-')[1],10)+'/'+String(x.period).split('-')[0], none=m<=0;
+      var dPct=Number(x.dept_total)?m/Number(x.dept_total)*100:0, tPct=Number(x.tt_total)?m/Number(x.tt_total)*100:0;
+      var big=function(n,of,c){ return '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px"><span style="font-size:30px;font-weight:800;color:'+c+'">#'+n+'</span><span class="muted">/ '+of+'</span></div>'; };
+      var dCard= x.dept ? '<div class="card"><h3>🏢 Xếp hạng trong phòng</h3><div class="muted" style="font-size:12px;margin-bottom:6px">'+esc(x.dept)+' · '+mon+' · '+x.dept_n+' sale</div>'
+        +(none?'<div class="muted">Chưa có doanh thu '+mon+'.</div>':big(x.dept_rnk,x.dept_n,'#B8872F')+rb(dPct,'#B8872F')+'<div class="muted" style="margin-top:5px">'+short(m)+' / '+short(x.dept_total)+' = <b>'+Math.round(dPct)+'%</b> doanh thu phòng</div>')+'</div>' : '';
+      var tCard='<div class="card"><h3>🏆 Xếp hạng toàn Trung tâm</h3><div class="muted" style="font-size:12px;margin-bottom:6px">Trung tâm FNB 1 HCM · '+mon+' · '+x.tt_n+' sale</div>'
+        +(none?'<div class="muted">Chưa có doanh thu '+mon+'.</div>':big(x.tt_rnk,x.tt_n,'#D4A94C')+rb(tPct,'linear-gradient(90deg,#C8912E,#E7C877)')+'<div class="muted" style="margin-top:5px">'+short(m)+' / '+short(x.tt_total)+' = <b>'+(tPct<1?tPct.toFixed(1):Math.round(tPct))+'%</b> doanh thu trung tâm</div>'
+          +(x.tt_rnk>1?'<div style="font-size:13px;margin-top:6px">Còn <b>'+short(x.tt_gap)+'</b> nữa là lên hạng <b>#'+(x.tt_rnk-1)+'</b>.</div>':'<div style="font-size:13px;margin-top:6px;color:#0a8a3a">🔥 Đang dẫn đầu trung tâm!</div>'))+'</div>';
+      el.innerHTML='<div class="grid" style="margin-top:16px">'+dCard+tCard+'</div>';
+    });
+  }
   // ---------- TAB CÁ NHÂN ----------
   function renderCaNhan(el, email){
     var ms=months(); var rev=revOf(email); var rdata=ms.map(function(m){return rev[m]||0;});
@@ -372,7 +388,7 @@
       +'</div>'
       + secH('Kinh doanh')
       +'<div class="card"><h3>Tăng trưởng doanh thu theo tháng</h3><div class="muted" style="margin:-6px 0 6px;font-size:12px">Đường đỏ nét đứt = chuẩn cá nhân (60tr/tháng nếu trên 1 năm, 35tr nếu dưới 1 năm)</div><div style="height:250px"><canvas id="c1"></canvas></div></div>'
-      + (S.bocTach||'') + (S.chatLuong||'') + (S.dongGop||'') + (S.rank||'')
+      + (S.bocTach||'') + (S.chatLuong||'') + '<div id="ranks2"></div>'
       + secH('Năng lực')
       +'<div class="card" style="margin-top:16px"><h3>Tổng quan năng lực (5 mảng)</h3><div class="muted" style="margin-bottom:6px">Đạt chuẩn Nhân viên = 80%, Chuyên gia 90%, Trưởng phòng 95%, GĐ 100%. Tick chuẩn ở các trang cấp là tự cập nhật.</div><div style="height:300px"><canvas id="cradar"></canvas></div></div>'
       +'<div class="card" style="margin-top:16px"><h3>Chi tiết theo mảng</h3>'
@@ -381,6 +397,7 @@
       + (S.manhYeu||'')
       + secH('Lộ trình thăng tiến')
       + (S.tienDo||'');
+    fillRanks2(email);
     targetChart(document.getElementById('c1'),'line', ms, rdata, ms.map(function(m){return chuanOf(email,m);}), 'Doanh thu','#D4A94C','Chuẩn cá nhân');
     var clabels=ds.map(function(x){return x.domain;}), cdata=ds.map(function(x){return x.pct;});
     charts.push(new Chart(document.getElementById('cradar'),{type:'radar',data:{labels:clabels,datasets:[{label:'%',data:cdata,fill:true,backgroundColor:'rgba(212,169,76,.16)',borderColor:'#D4A94C',pointBackgroundColor:'#16D865',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{min:0,max:100,ticks:{stepSize:25,backdropColor:'transparent'},pointLabels:{font:{size:9}}}},plugins:{legend:{display:false}}}}));
