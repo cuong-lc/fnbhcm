@@ -61,14 +61,25 @@
     [].forEach.call(nav.querySelectorAll("a"), (a) => a.addEventListener("click", () => nav.classList.remove("open")));
     // 🔔 Chuông nhắc việc (mọi trang, sau khi đã có hồ sơ)
     if (window.CLF_READY && window.SB && wrap && !byId("navbell")) {
-      const bell = document.createElement("a");
-      bell.id = "navbell"; bell.className = "navbell"; bell.href = "index.html#todo";
+      const bell = document.createElement("button");
+      bell.type = "button"; bell.id = "navbell"; bell.className = "navbell";
       bell.title = "Việc của bạn"; bell.innerHTML = "🔔";
+      wrap.style.position = "relative";
       wrap.appendChild(bell);
+      const pop = document.createElement("div");
+      pop.className = "bellpop"; pop.id = "bellpop";
+      pop.innerHTML = '<div class="bp-h">📋 Việc của bạn hôm nay</div><div class="bp-b">Đang tải…</div>';
+      wrap.appendChild(pop);
+      const escH = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+      bell.addEventListener("click", (e) => { e.stopPropagation(); pop.classList.toggle("on"); });
+      document.addEventListener("click", (e) => { if (!pop.contains(e.target)) pop.classList.remove("on"); });
       window.hubTodo().then((items) => {
         const n = items.filter((x) => x.act).length;
         if (n) bell.innerHTML = '🔔<span class="nb">' + n + "</span>";
-      }, () => {});
+        pop.querySelector(".bp-b").innerHTML = items.length
+          ? items.map((x) => '<a class="todo-item' + (x.act ? " act" : "") + '" href="' + escH(x.href || "#") + '"><span class="ti">' + x.icon + '</span><span class="tt">' + escH(x.text) + '</span><span class="tgo">' + (x.act ? "Làm →" : "") + "</span></a>").join("")
+          : '<div class="hubmuted">Không có việc tồn — tuyệt vời! 🎉</div>';
+      }, () => { pop.querySelector(".bp-b").innerHTML = '<div class="hubmuted">Chưa tải được.</div>'; });
     }
   }
 
