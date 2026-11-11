@@ -222,6 +222,11 @@
       +'<div class="kpi"><div class="lab"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#378ADD;margin-right:5px"></span>Cứng</div><div class="val">'+short(bc)+'</div><div class="sub">'+pc(bc)+'%</div></div>'
       +'<div class="kpi"><div class="lab"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#EF9F27;margin-right:5px"></span>Khác</div><div class="val">'+short(bk)+'</div><div class="sub">'+pc(bk)+'%</div></div>'
       +'</div></div>';
+    function mk(lab,val,sub,dot){ return '<div style="background:#FFFCF5;border:1px solid #F1E7D2;border-radius:10px;padding:8px 10px;min-width:0"><div style="font-size:11.5px;color:var(--gray);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(dot?'<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:'+dot+';margin-right:4px"></span>':'')+lab+'</div><div style="font-size:18px;font-weight:800;color:#B8872F;line-height:1.3">'+val+'</div>'+(sub?'<div style="font-size:11px;color:var(--gray)">'+sub+'</div>':'')+'</div>'; }
+    var row3='display:grid;grid-template-columns:repeat(3,1fr);gap:8px';
+    S.kpiRev='<div style="font-size:12.5px;font-weight:700;color:#17130D;margin-bottom:6px">Doanh thu bóc tách · luỹ kế '+n+' tháng</div>'
+      +'<div style="display:flex;height:8px;border-radius:5px;overflow:hidden;margin-bottom:8px;background:#F6EFDE"><div style="width:'+(bt+bc+bk?pc(bt):0)+'%;background:#1D9E75"></div><div style="width:'+(bt+bc+bk?pc(bc):0)+'%;background:#378ADD"></div><div style="width:'+(bt+bc+bk?pc(bk):0)+'%;background:#EF9F27"></div></div>'
+      +'<div style="'+row3+'">'+mk('Mềm',short(bt),pc(bt)+'%','#1D9E75')+mk('Cứng',short(bc),pc(bc)+'%','#378ADD')+mk('Khác',short(bk),pc(bk)+'%','#EF9F27')+'</div>';
     // ---- Thứ hạng doanh thu toàn trung tâm ----
     var rk=(email.toLowerCase()===ME.email.toLowerCase())?DATA.myRank:null;
     if(rk && rk.n){
@@ -276,6 +281,8 @@
       +'<div class="kpi"><div class="lab">Doanh thu / khách</div><div class="val">'+tr1(avgKH)+'</div></div>'
       +'<div class="kpi"><div class="lab">Doanh thu mềm / khách</div><div class="val">'+tr1(softKH)+'</div></div>'
       +'</div></div>';
+    S.kpiQual='<div style="font-size:12.5px;font-weight:700;color:#17130D;margin:14px 0 6px">Chất lượng đơn &amp; khách hàng <span style="font-weight:400;color:var(--gray);font-size:11.5px">· đã trừ gia hạn</span></div>'
+      +'<div style="'+row3+'">'+mk('Số KH chinh phục',Math.round(cum.merch),'tháng gần nhất +'+Math.round(lastMerch))+mk('Doanh thu / khách',tr1(avgKH),'')+mk('DT mềm / khách',tr1(softKH),'')+'</div>';
     // ---- Dashboard 7: đóng góp vào phòng ----
     var isMe=(email.toLowerCase()===ME.email.toLowerCase());
     var c=isMe?DATA.myContrib:null, dept=deptOf(email);
@@ -397,8 +404,10 @@
       +'<div class="kpi"><div class="lab">Cấp sao</div><div class="val"><span class="stars">'+(myStars?'★'.repeat(myStars):'')+'</span>'+(myStars?'':'<span class="muted">chưa có</span>')+'</div><div class="sub">'+myStars+'/5 sao</div></div>'
       +'</div>'
       + secH('Kinh doanh')
-      +'<div class="card"><h3>Tăng trưởng doanh thu theo tháng</h3><div class="muted" style="margin:-6px 0 6px;font-size:12px">Đường đỏ nét đứt = chuẩn cá nhân (60tr/tháng nếu trên 1 năm, 35tr nếu dưới 1 năm)</div><div style="height:250px"><canvas id="c1"></canvas></div></div>'
-      + (S.bocTach||'') + (S.chatLuong||'') + '<div id="ranks2"></div>'
+      +'<div class="card"><h3>Doanh thu &amp; chất lượng đơn</h3>'
+      +'<div class="grid" style="margin-top:4px;align-items:start"><div><div style="font-size:12.5px;font-weight:700;color:#17130D">Tiến độ doanh thu theo tháng</div><div class="muted" style="margin:2px 0 6px;font-size:11.5px">Đường đỏ nét đứt = chuẩn cá nhân (60tr/tháng nếu trên 1 năm, 35tr nếu dưới 1 năm)</div><div style="height:260px"><canvas id="c1"></canvas></div></div>'
+      +'<div>'+(S.kpiRev||'')+(S.kpiQual||'')+'</div></div></div>'
+      + '<div id="ranks2"></div>'
       + secH('Năng lực')
       +'<div class="card" style="margin-top:16px"><h3>Tổng quan năng lực (5 mảng)</h3><div class="muted" style="margin-bottom:6px">Đạt chuẩn Nhân viên = 80%, Chuyên gia 90%, Trưởng phòng 95%, GĐ 100%. Tick chuẩn ở các trang cấp là tự cập nhật.</div>'
       +'<div class="grid" style="margin-top:4px;align-items:center"><div style="height:280px"><canvas id="cradar"></canvas></div><div>'
