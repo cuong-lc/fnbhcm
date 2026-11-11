@@ -400,10 +400,10 @@
       +'<div class="card"><h3>Tăng trưởng doanh thu theo tháng</h3><div class="muted" style="margin:-6px 0 6px;font-size:12px">Đường đỏ nét đứt = chuẩn cá nhân (60tr/tháng nếu trên 1 năm, 35tr nếu dưới 1 năm)</div><div style="height:250px"><canvas id="c1"></canvas></div></div>'
       + (S.bocTach||'') + (S.chatLuong||'') + '<div id="ranks2"></div>'
       + secH('Năng lực')
-      +'<div class="card" style="margin-top:16px"><h3>Tổng quan năng lực (5 mảng)</h3><div class="muted" style="margin-bottom:6px">Đạt chuẩn Nhân viên = 80%, Chuyên gia 90%, Trưởng phòng 95%, GĐ 100%. Tick chuẩn ở các trang cấp là tự cập nhật.</div><div style="height:300px"><canvas id="cradar"></canvas></div></div>'
-      +'<div class="card" style="margin-top:16px"><h3>Chi tiết theo mảng</h3>'
-      + ds.map(function(x){ return '<div style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><b>'+esc(x.domain)+'</b><span class="muted">'+x.pct+'%</span></div><div class="track"><div class="fill" style="width:'+x.pct+'%"></div></div></div>'; }).join('')
-      +'</div>'
+      +'<div class="card" style="margin-top:16px"><h3>Tổng quan năng lực (5 mảng)</h3><div class="muted" style="margin-bottom:6px">Đạt chuẩn Nhân viên = 80%, Chuyên gia 90%, Trưởng phòng 95%, GĐ 100%. Tick chuẩn ở các trang cấp là tự cập nhật.</div>'
+      +'<div class="grid" style="margin-top:4px;align-items:center"><div style="height:280px"><canvas id="cradar"></canvas></div><div>'
+      + ds.map(function(x){ return '<div style="margin:12px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><b>'+esc(x.domain)+'</b><span class="muted">'+x.pct+'%</span></div><div class="track"><div class="fill" style="width:'+x.pct+'%"></div></div></div>'; }).join('')
+      +'</div></div></div>'
       + (S.manhYeu||'')
       + secH('Lộ trình thăng tiến')
       + (S.tienDo||'');
