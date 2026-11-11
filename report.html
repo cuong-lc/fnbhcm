@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<title>Báo cáo tuần · FNBHCM HUB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="auth.js"></script>
+<style>
+  .rp-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  @media(max-width:820px){.rp-kpis{grid-template-columns:1fr 1fr}}
+  .rp-k{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .rp-k .l{font-size:12px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+  .rp-k .v{font-size:22px;font-weight:800;color:#17130D;margin-top:2px}
+  .rp-k .s{font-size:12px;color:var(--gray)}
+  .hs-row{display:grid;grid-template-columns:1.6fr 1fr 1.3fr .9fr .7fr .7fr 2fr;gap:10px;align-items:center;padding:8px 0;border-top:1px solid #f1ece0;font-size:13px}
+  .hs-row.head{font-size:11.5px;font-weight:700;color:var(--gray);text-transform:uppercase;border-top:none}
+  .hs-sc{display:flex;align-items:center;gap:6px}
+  .hs-sc .b{flex:1;height:8px;background:#F3EEE2;border-radius:6px;overflow:hidden}
+  .hs-sc .b span{display:block;height:100%}
+  .hs-sc .n{width:28px;text-align:right;font-weight:800}
+  .flag{display:inline-block;font-size:11px;background:#FDECEC;color:#C0392B;border-radius:20px;padding:1px 8px;margin:1px 3px 1px 0}
+  .flag.new{background:#EAF2FF;color:#0057C7}
+  @media(max-width:820px){ .hs-row{grid-template-columns:1fr 70px;} .hs-row>*:nth-child(n+3){grid-column:1/-1} .hs-row.head{display:none} }
+  .rp-list .it{display:flex;gap:10px;padding:7px 0;border-top:1px solid #f1ece0;font-size:13.5px}
+  .rp-list .it:first-child{border-top:none}
+</style>
+</head>
+<body data-page="report">
+<div class="topbar"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> FNBHCM HUB</a>
+  <nav class="nav" id="nav"></nav>
+</div></div>
+<header class="hero">
+  <span class="box1"></span><span class="box2"></span>
+  <div class="wrap">
+    <div class="eyebrow">Dành cho Giám đốc Trung tâm</div>
+    <h1>📊 Báo cáo tuần &amp; sức khoẻ đội ngũ</h1>
+    <p id="rp-sub">Ai đang bứt phá, ai cần nhắc — cập nhật trực tiếp. Bản tóm tắt được gửi vào email anh mỗi thứ 6.</p>
+  </div>
+</header>
+<main class="wrap">
+  <section class="section" style="padding-top:14px" id="rp-root"><div class="hubmuted">Đang tải…</div></section>
+</main>
+<footer class="foot" id="foot"></footer>
+<script src="framework-data.js"></script>
+<script src="app.js"></script>
+<script>
+(function(){
+  function $(id){return document.getElementById(id);}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function sm(n){ n=Number(n)||0; if(n>=1e9) return (Math.round(n/1e7)/100+'').replace('.',',')+' tỷ'; return Math.round(n/1e6)+'tr'; }
+  function col(sc){ return sc>=70?'#16D865':sc>=45?'#FFAE06':'#E5484D'; }
+  var H=[], DEPT='';
+  function run(){
+    if(((window.CLF_PROFILE||{}).level)!=='c4'){ location.replace('index.html'); return; }
+    var wk=new Date(Date.now()-7*864e5).toISOString();
+    Promise.all([
+      SB.rpc('health_scores'),
+      SB.rpc('center_progress'),
+      SB.from('places').select('owner_email,created_at').gte('created_at',wk),
+      SB.from('feed_events').select('*').gte('created_at',wk).in('kind',['rank','star','award','script']).order('created_at',{ascending:false}),
+      SB.from('role_assignments').select('email,full_name')
+    ]).then(function(r){
+      if(r[0].error){ $('rp-root').innerHTML='<div class="hubmuted">Lỗi: '+esc(r[0].error.message)+'</div>'; return; }
+      H=r[0].data||[]; var c=(r[1].data||[])[0]||{}, pins=r[2].data||[], ev=r[3].data||[];
+      var NM={}; (r[4].data||[]).forEach(function(x){NM[(x.email||'').toLowerCase()]=x.full_name;});
+      var d0=new Date(Date.now()-6*864e5), d1=new Date();
+      $('rp-sub').textContent='Tuần '+d0.getDate()+'/'+(d0.getMonth()+1)+' – '+d1.getDate()+'/'+(d1.getMonth()+1)+' · Doanh thu tính theo tháng gần nhất đã nhập (T'+(c.period?parseInt(c.period.split('-')[1],10):'?')+'). Bản tóm tắt gửi email anh mỗi thứ 6.';
+      var below=H.filter(function(x){return Number(x.last_rev)<Number(x.chuan);}).length;
+      var pc={}; pins.forEach(function(p){ var e=(p.owner_email||'').toLowerCase(); if(NM[e]) pc[e]=(pc[e]||0)+1; });
+      var pinTop=Object.keys(pc).sort(function(a,b){return pc[b]-pc[a];}).slice(0,5);
+      var revTop=H.slice().sort(function(a,b){return b.last_rev-a.last_rev;}).slice(0,5);
+      var watch=H.filter(function(x){return x.score<45;}).slice(0,10);
+      var isNew=function(x){ return x.joined && (Date.now()-Date.parse(x.joined))<60*864e5; };
+      var depts={}; H.forEach(function(x){depts[x.dept]=1;});
+      var h='<div class="rp-kpis">'
+        +'<div class="rp-k"><div class="l">Trung tâm T'+(c.period?parseInt(c.period.split('-')[1],10):'')+'</div><div class="v">'+sm(c.rev)+'</div><div class="s">'+(c.target?Math.round(c.rev/c.target*100):0)+'% chuẩn '+sm(c.target)+'</div></div>'
+        +'<div class="rp-k"><div class="l">Sale dưới chuẩn</div><div class="v">'+below+'<span style="font-size:14px;color:var(--gray)"> / '+H.length+'</span></div><div class="s">chuẩn 60tr (≥1 năm) · 35tr (&lt;1 năm)</div></div>'
+        +'<div class="rp-k"><div class="l">Cờ mới 7 ngày</div><div class="v">'+Object.keys(pc).reduce(function(a,k){return a+pc[k];},0)+'</div><div class="s">'+Object.keys(pc).length+' người gắn cờ</div></div>'
+        +'<div class="rp-k"><div class="l">Thăng hạng tuần</div><div class="v">'+ev.filter(function(e){return e.kind==='rank'||e.kind==='star';}).length+'</div><div class="s">lên Top 3 / lên sao</div></div>'
+        +'</div>';
+      h+='<div class="hubgrid2">'
+        +'<div class="hubcard"><h3>🔔 Cần chú ý<span class="hs">điểm &lt; 45</span></h3><div class="rp-list">'
+        +(watch.length? watch.map(function(x){ return '<div class="it"><span style="font-weight:800;color:'+col(x.score)+';width:28px">'+x.score+'</span><span style="flex:1"><a href="profile.html?email='+encodeURIComponent(x.email)+'" style="font-weight:700;color:#17130D">'+esc(x.full_name)+'</a> <span class="hubmuted">· '+esc((x.dept||'').replace('Phòng ','').replace(' HCM',''))+'</span><br>'+(isNew(x)?'<span class="flag new">🆕 mới vào</span>':'')+(x.flags||[]).map(function(f){return '<span class="flag">'+esc(f)+'</span>';}).join('')+'</span></div>'; }).join('') : '<div class="hubmuted">Không ai dưới ngưỡng 🎉</div>')
+        +'</div></div>'
+        +'<div class="hubcard"><h3>⭐ Nổi bật</h3><div class="rp-list">'
+        +'<div class="it" style="font-weight:700">💰 Top doanh thu T'+(c.period?parseInt(c.period.split('-')[1],10):'')+'</div>'
+        +revTop.map(function(x,i){return '<div class="it"><span style="width:20px">'+(i+1)+'.</span><span style="flex:1">'+esc(x.full_name)+'</span><b>'+sm(x.last_rev)+'</b></div>';}).join('')
+        +'<div class="it" style="font-weight:700;margin-top:6px">🗺️ Gắn cờ nhiều nhất 7 ngày</div>'
+        +(pinTop.length? pinTop.map(function(e,i){return '<div class="it"><span style="width:20px">'+(i+1)+'.</span><span style="flex:1">'+esc(NM[e]||e)+'</span><b>'+pc[e]+' cờ</b></div>';}).join('') : '<div class="it hubmuted">Chưa có cờ mới tuần này</div>')
+        +(ev.length? '<div class="it" style="font-weight:700;margin-top:6px">🏆 Sự kiện tuần</div>'+ev.slice(0,8).map(function(e){return '<div class="it"><span>'+(e.icon||'✨')+'</span><span style="flex:1">'+esc(e.title)+'</span></div>';}).join('') : '')
+        +'</div></div></div>';
+      h+='<div class="hubcard" style="margin-top:14px"><h3>❤️ Điểm sức khoẻ toàn đội<span class="hs"><select id="rp-dept" style="padding:5px 8px;border:1px solid #ddd3bf;border-radius:8px;font-family:inherit;font-size:12.5px"><option value="">Tất cả phòng</option>'
+        +Object.keys(depts).sort().map(function(d){return '<option value="'+esc(d)+'">'+esc(d)+'</option>';}).join('')+'</select></span></h3>'
+        +'<div class="hubmuted" style="margin-bottom:6px">Điểm 0–100 = Doanh thu so chuẩn 45% · Xu hướng so tháng trước 20% · Gắn cờ 30 ngày 15% · Checklist năng lực 20%. Sắp xếp từ thấp lên cao để nhắc trước.</div>'
+        +'<div id="rp-table"></div></div>';
+      $('rp-root').innerHTML=h;
+      $('rp-dept').onchange=function(){ DEPT=this.value; table(); };
+      table();
+    });
+  }
+  function table(){
+    var isNew=function(x){ return x.joined && (Date.now()-Date.parse(x.joined))<60*864e5; };
+    var rows=H.filter(function(x){return !DEPT||x.dept===DEPT;});
+    $('rp-table').innerHTML='<div class="hs-row head"><span>Nhân sự</span><span>Phòng</span><span>Điểm</span><span>DT / chuẩn</span><span>Cờ 30n</span><span>Checklist</span><span>Lưu ý</span></div>'
+      +rows.map(function(x){ return '<div class="hs-row"><span><a href="profile.html?email='+encodeURIComponent(x.email)+'" style="font-weight:700;color:#17130D">'+esc(x.full_name)+'</a></span>'
+        +'<span class="hubmuted">'+esc((x.dept||'').replace('Phòng ','').replace(' HCM',''))+'</span>'
+        +'<span class="hs-sc"><span class="b"><span style="width:'+x.score+'%;background:'+col(x.score)+'"></span></span><span class="n" style="color:'+col(x.score)+'">'+x.score+'</span></span>'
+        +'<span>'+sm(x.last_rev)+' / '+sm(x.chuan)+'</span><span>'+x.pins30+'</span><span>'+(x.level==='c3'?'—':x.ck_pct+'%')+'</span>'
+        +'<span>'+(isNew(x)?'<span class="flag new">🆕 mới vào</span>':'')+(x.flags||[]).map(function(f){return '<span class="flag">'+esc(f)+'</span>';}).join('')+'</span></div>'; }).join('');
+  }
+  if(window.CLF_READY) run(); else document.addEventListener('clf-ready', run);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<title>Kịch bản chốt · FNBHCM HUB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="auth.js"></script>
+<style>
+  .kb-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:4px 0 10px}
+  .kb-tools input{flex:1;min-width:200px;border:1.5px solid #ddd3bf;border-radius:10px;padding:9px 12px;font-size:14px;font-family:inherit;background:#fff}
+  .kb-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .kb-chips button{border:1px solid var(--line);background:#fff;border-radius:20px;padding:5px 12px;font-size:12.5px;font-weight:600;color:var(--gray);cursor:pointer;font-family:inherit}
+  .kb-chips button.on{background:linear-gradient(135deg,var(--gold1),var(--gold2));color:#17130D;border-color:transparent}
+  .kb-list{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:820px){.kb-list{grid-template-columns:1fr}}
+  .kb{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column}
+  .kb.pend{border-style:dashed;border-color:#E7C877;background:#FFFCF5}
+  .kb-tag{align-self:flex-start;font-size:11px;font-weight:800;color:#8a6a1e;background:#FBF3E2;border-radius:20px;padding:2px 9px;margin-bottom:6px}
+  .kb-q{font-weight:800;color:#17130D;font-size:14.5px;margin-bottom:6px}
+  .kb-a{font-size:13.5px;color:var(--dark);line-height:1.55;white-space:pre-wrap;flex:1}
+  .kb-f{display:flex;align-items:center;gap:6px;margin-top:10px;flex-wrap:wrap;font-size:12px;color:var(--gray)}
+  .kb-f .sp{flex:1}
+  .kb-f button{border:1px solid var(--line);background:#fff;border-radius:20px;padding:3px 10px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--dark)}
+  .kb-f button.on{background:#FBF3E2;border-color:#D4A94C;font-weight:700}
+  .kb-f .ok{background:#16D865;color:#fff;border-color:#16D865;font-weight:700}
+  .kb-f .no{color:#E5484D;border-color:#E5484D}
+  .kb-sec{font-weight:800;color:#17130D;margin:14px 0 8px;font-size:15px}
+  #kbform{display:none;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+  #kbform.on{display:block}
+  #kbform label{display:block;font-size:12.5px;font-weight:700;color:#17130D;margin:8px 0 4px}
+  #kbform select,#kbform textarea{width:100%;border:1.5px solid #ddd3bf;border-radius:9px;padding:8px 10px;font-size:13.5px;font-family:inherit}
+  #kbform textarea{min-height:70px;resize:vertical}
+</style>
+</head>
+<body data-page="kichban">
+<div class="topbar"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> FNBHCM HUB</a>
+  <nav class="nav" id="nav"></nav>
+</div></div>
+
+<header class="hero">
+  <span class="box1"></span><span class="box2"></span>
+  <div class="wrap">
+    <div class="eyebrow">Công cụ bán hàng</div>
+    <h1>💬 Kịch bản chốt khách</h1>
+    <p>Câu trả lời hay cho những lời từ chối hay gặp — cùng góp, cùng chốt. Câu nào dùng được thì bấm 👍 để đồng đội biết.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="section" style="padding-top:14px">
+    <div class="kb-tools">
+      <input id="kbq" placeholder="Tìm: đắt, đang dùng bên khác, để sau…">
+      <button class="hubbtn" id="kbadd">➕ Đóng góp kịch bản</button>
+    </div>
+    <div id="kbform">
+      <label>Nhóm tình huống</label>
+      <select id="kbcat"></select>
+      <label>Khách nói gì? (lời từ chối)</label>
+      <textarea id="kbobj" placeholder="VD: “Để anh/chị suy nghĩ thêm đã.”"></textarea>
+      <label>Bạn trả lời thế nào?</label>
+      <textarea id="kbresp" placeholder="Viết đúng như bạn nói với khách…" style="min-height:110px"></textarea>
+      <div style="margin-top:10px;display:flex;gap:8px"><button class="hubbtn" id="kbsend">Gửi</button><button class="hubbtn ghost" id="kbcancel">Huỷ</button>
+      <span class="hubmuted" id="kbnote" style="align-self:center"></span></div>
+    </div>
+    <div class="kb-chips" id="kbchips"></div>
+    <div id="kbroot"><div class="hubmuted">Đang tải…</div></div>
+  </section>
+</main>
+
+<footer class="foot" id="foot"></footer>
+<script src="framework-data.js"></script>
+<script src="app.js"></script>
+<script>
+(function(){
+  var CATS=['Giá','Đối thủ','Thói quen','Thời điểm','Niềm tin','Quyết định','Tính năng','Khác'];
+  var ROWS=[], LIKED={}, CAT='', ME='', GD=false;
+  function $(id){return document.getElementById(id);}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function toast(m){ var t=$('hub-toast'); if(!t){t=document.createElement('div');t.id='hub-toast';t.className='hub-toast';document.body.appendChild(t);} t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},2600); }
+  $('kbcat').innerHTML=CATS.map(function(c){return '<option>'+c+'</option>';}).join('');
+  $('kbadd').onclick=function(){ $('kbform').classList.toggle('on'); };
+  $('kbcancel').onclick=function(){ $('kbform').classList.remove('on'); };
+  $('kbq').oninput=draw;
+
+  function load(){
+    Promise.all([
+      SB.from('sales_scripts').select('*').order('likes',{ascending:false}).order('created_at',{ascending:false}),
+      SB.from('script_likes').select('script_id').eq('email',ME)
+    ]).then(function(r){
+      ROWS=r[0].data||[]; LIKED={}; (r[1].data||[]).forEach(function(x){LIKED[x.script_id]=1;});
+      var used={}; ROWS.forEach(function(x){ if(x.status==='approved') used[x.category]=1; });
+      var chips=[''].concat(CATS.filter(function(c){return used[c];}));
+      $('kbchips').innerHTML=chips.map(function(c){return '<button data-c="'+esc(c)+'" class="'+(c===CAT?'on':'')+'">'+(c||'Tất cả')+'</button>';}).join('');
+      [].forEach.call($('kbchips').querySelectorAll('button'),function(b){ b.onclick=function(){ CAT=b.getAttribute('data-c'); load(); }; });
+      draw();
+    });
+  }
+  function card(x){
+    var pend=x.status!=='approved';
+    var foot = pend
+      ? (GD ? '<span class="sp">Gửi bởi <b>'+esc(x.author_name||'')+'</b></span><button class="ok" data-a="approve" data-id="'+x.id+'">✅ Duyệt</button><button class="no" data-a="delete" data-id="'+x.id+'">Xoá</button>'
+            : '<span class="sp">⏳ Đang chờ GĐTT duyệt</span>')
+      : '<span class="sp">✍️ '+esc(x.author_name||'')+'</span><button class="cp" data-id="'+x.id+'">📋 Chép</button><button class="lk'+(LIKED[x.id]?' on':'')+'" data-id="'+x.id+'">👍 Hữu ích '+(x.likes||'')+'</button>'
+        +(GD?'<button class="no" data-a="delete" data-id="'+x.id+'">Xoá</button>':'');
+    return '<div class="kb'+(pend?' pend':'')+'"><span class="kb-tag">'+esc(x.category)+'</span><div class="kb-q">'+esc(x.objection)+'</div><div class="kb-a">'+esc(x.response)+'</div><div class="kb-f">'+foot+'</div></div>';
+  }
+  function draw(){
+    var q=($('kbq').value||'').toLowerCase().trim();
+    var match=function(x){ return (!CAT||x.category===CAT) && (!q || (x.objection+' '+x.response+' '+x.category).toLowerCase().indexOf(q)>=0); };
+    var pend=ROWS.filter(function(x){return x.status!=='approved' && match(x);});
+    var ok=ROWS.filter(function(x){return x.status==='approved' && match(x);});
+    var h='';
+    if(pend.length) h+='<div class="kb-sec">'+(GD?'🔔 Chờ duyệt ('+pend.length+')':'Kịch bản bạn đã gửi')+'</div><div class="kb-list">'+pend.map(card).join('')+'</div>';
+    h+='<div class="kb-sec">📚 Thư viện ('+ok.length+')</div>'+(ok.length?'<div class="kb-list">'+ok.map(card).join('')+'</div>':'<div class="hubmuted">Không có kịch bản phù hợp.</div>');
+    $('kbroot').innerHTML=h;
+    [].forEach.call($('kbroot').querySelectorAll('[data-a]'),function(b){ b.onclick=function(){
+      var a=b.getAttribute('data-a'); if(a==='delete' && !confirm('Xoá kịch bản này?')) return;
+      SB.rpc('review_script',{p_id:+b.getAttribute('data-id'),p_action:a}).then(function(r){ if(r.error){toast('Lỗi: '+r.error.message);return;} toast(a==='approve'?'Đã duyệt — đăng lên bảng tin':'Đã xoá'); load(); });
+    }; });
+    [].forEach.call($('kbroot').querySelectorAll('.lk'),function(b){ b.onclick=function(){
+      SB.rpc('toggle_script_like',{p_id:+b.getAttribute('data-id')}).then(function(r){ if(r.error){toast('Lỗi: '+r.error.message);return;} load(); });
+    }; });
+    [].forEach.call($('kbroot').querySelectorAll('.cp'),function(b){ b.onclick=function(){
+      var x=ROWS.filter(function(r){return r.id===+b.getAttribute('data-id');})[0]; if(!x) return;
+      var t=x.response; (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){ b.textContent='✓ Đã chép'; },function(){ prompt('Sao chép:',t); });
+    }; });
+  }
+  $('kbsend').onclick=function(){
+    var o=$('kbobj').value.trim(), r=$('kbresp').value.trim(); if(!o||!r){ toast('Điền đủ 2 ô nhé'); return; }
+    this.disabled=true; var btn=this;
+    SB.rpc('submit_script',{p_cat:$('kbcat').value,p_obj:o,p_resp:r}).then(function(res){
+      btn.disabled=false; if(res.error){ toast('Lỗi: '+res.error.message); return; }
+      $('kbobj').value=''; $('kbresp').value=''; $('kbform').classList.remove('on');
+      toast(GD?'Đã đăng vào thư viện':'Đã gửi — chờ GĐTT duyệt'); load();
+    });
+  };
+  function start(){ if(!window.SB) return; ME=((window.CLF_USER||{}).email||'').toLowerCase(); GD=((window.CLF_PROFILE||{}).level==='c4'); load(); }
+  if(window.CLF_READY) start(); else document.addEventListener('clf-ready', start);
+})();
+</script>
+</body>
+</html>
