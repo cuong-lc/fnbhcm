@@ -61,7 +61,7 @@
           var doneN = rows.filter(function (x) { return x.value >= c.target; }).length;
           var top = rows.slice(0, 5).map(function (x) {
             var p = Math.min(100, Math.round(x.value / c.target * 100));
-            return '<div class="ch-row' + (x.value >= c.target ? " done" : "") + '"><span class="cn">' + esc(x.full_name || x.email) + '</span><span class="cb"><span style="width:' + p + '%"></span></span><span class="cv">' + x.value + "/" + c.target + "</span></div>";
+            return '<div class="ch-row' + (x.value >= c.target ? " done" : "") + '"><span class="cn">' + esc(x.full_name || x.email) + '</span><span class="cb"><span style="width:' + p + '%"></span></span><span class="chv">' + x.value + "/" + c.target + "</span></div>";
           }).join("") || '<div class="hubmuted">Chưa ai ghi điểm — vào bản đồ gắn cờ ngay!</div>';
           var mine = rows.find(function (x) { return x.email === ME; });
           var me = ISGD ? "" : '<div class="ch-me">Bạn: ' + (mine ? mine.value : 0) + "/" + c.target + ((mine && mine.value >= c.target) ? " — đã đạt 🎉" : "") + "</div>";

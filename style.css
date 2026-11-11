@@ -324,7 +324,7 @@ table.rubric tr:nth-child(even) td:not(.rb-c){background:#fafcff}
 .ch-row .cb{flex:1;height:8px;background:#F3EEE2;border-radius:6px;overflow:hidden}
 .ch-row .cb span{display:block;height:100%;background:linear-gradient(90deg,#C8912E,#E7C877)}
 .ch-row.done .cb span{background:linear-gradient(90deg,#16D865,#7BE8A6)}
-.ch-row .cv{width:44px;text-align:right;font-weight:700}
+.ch-row .chv{width:44px;text-align:right;font-weight:700}
 .ch-me{margin-top:6px;font-size:13px;font-weight:700;color:#8a6a1e}
 .hubform{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .hubform input,.hubform select,.hubform textarea{width:100%;border:1.5px solid #ddd3bf;border-radius:8px;padding:7px 9px;font-size:13px;font-family:inherit;background:#fff}
