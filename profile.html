@@ -192,18 +192,11 @@
       +'<div class="grid" style="margin-top:0"><div style="background:#FFFCF5;border-radius:10px;padding:12px"><div class="muted">Số KH đã chinh phục</div><div class="big" style="font-size:24px">'+Math.round(cum.merch)+'</div></div>'
       +'<div style="background:#FFFCF5;border-radius:10px;padding:12px"><div class="muted">DT / khách · DT mềm / khách</div><div style="font-weight:700;font-size:18px;color:#B8872F">'+tr1(avgKH)+' · '+tr1(softKH)+'</div></div></div></div>';
     // đóng góp phòng
-    if(prof.dept && /^Phòng/.test(prof.dept)){
-      var pr=peers.filter(function(r){return r.period===lpr;}), phongTot=0, myAmt=0;
-      pr.forEach(function(r){ phongTot+=Number(r.amount)||0; }); revs.forEach(function(r){ if(r.period===lpr) myAmt=Number(r.amount)||0; });
-      var pct7=phongTot?myAmt/phongTot*100:0, rk=1; pr.forEach(function(r){ if((Number(r.amount)||0)>myAmt) rk++; });
-      html+='<div class="card" style="margin-top:16px"><h3>Đóng góp vào phòng · tháng '+esc(lpr||'')+'</h3>'
-        +'<div class="muted" style="font-size:12px;margin-bottom:5px">'+esc(prof.dept)+' · '+pr.length+' người</div>'+pbar(pct7,'#B8872F')
-        +'<div class="muted" style="margin:4px 0 8px">'+short(myAmt)+' / '+short(phongTot)+' = <b>'+Math.round(pct7)+'%</b> doanh thu phòng</div>'
-        +'<div style="font-size:13px">Xếp thứ <b>'+rk+'</b> / '+pr.length+' trong phòng</div></div>';
-    }
+    html+='<div id="ranks"></div>';
 
     document.getElementById('root').innerHTML=html;
     fillHonor(email);
+    fillRanks(email);
 
     var ctx=document.getElementById('radar');
     new Chart(ctx,{type:'radar',data:{labels:labels,datasets:[{label:'% thành thạo',data:data,fill:true,backgroundColor:'rgba(184,135,47,.18)',borderColor:'#B8872F',pointBackgroundColor:'#16D865',borderWidth:2}]},
@@ -223,6 +216,30 @@
     return url ? '<img class="avatar" src="'+esc(url)+'" referrerpolicy="no-referrer" style="object-fit:cover" alt="">' : '<div class="avatar">'+esc(initials)+'</div>';
   }
   function agoP(t){ var s=(Date.now()-Date.parse(t))/1000; if(s<3600) return Math.max(1,Math.floor(s/60))+' phút trước'; if(s<86400) return Math.floor(s/3600)+' giờ trước'; if(s<7*86400) return Math.floor(s/86400)+' ngày trước'; var d=new Date(t); return d.getDate()+'/'+(d.getMonth()+1); }
+  function fillRanks(email){
+    var el=document.getElementById('ranks'); if(!el) return;
+    function bar(p,c){ p=Math.max(0,Math.min(100,Math.round(p))); return '<div style="height:11px;background:#F6EFDE;border-radius:7px;overflow:hidden"><div style="height:100%;width:'+p+'%;background:'+c+'"></div></div>'; }
+    sb.rpc('profile_ranks',{p_email:email}).then(function(r){
+      var x=(r.data&&r.data[0]); if(!x||!x.period) return;
+      var m=Number(x.mine)||0, mon='T'+parseInt(String(x.period).split('-')[1],10)+'/'+String(x.period).split('-')[0];
+      var none=m<=0;
+      var dPct=Number(x.dept_total)?m/Number(x.dept_total)*100:0, tPct=Number(x.tt_total)?m/Number(x.tt_total)*100:0;
+      var dCard= x.dept ? '<div class="card"><h3>🏢 Xếp hạng trong phòng</h3>'
+        +'<div class="muted" style="font-size:12px;margin-bottom:6px">'+esc(x.dept)+' · '+mon+' · '+x.dept_n+' sale</div>'
+        +(none?'<div class="muted">Chưa có doanh thu '+mon+'.</div>'
+          :'<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px"><span style="font-size:30px;font-weight:800;color:#B8872F">#'+x.dept_rnk+'</span><span class="muted">/ '+x.dept_n+'</span></div>'
+          +bar(dPct,'#B8872F')+'<div class="muted" style="margin-top:5px">'+short(m)+' / '+short(x.dept_total)+' = <b>'+Math.round(dPct)+'%</b> doanh thu phòng</div>')
+        +'</div>' : '';
+      var tCard='<div class="card"><h3>🏆 Xếp hạng toàn Trung tâm</h3>'
+        +'<div class="muted" style="font-size:12px;margin-bottom:6px">Trung tâm FNB 1 HCM · '+mon+' · '+x.tt_n+' sale</div>'
+        +(none?'<div class="muted">Chưa có doanh thu '+mon+'.</div>'
+          :'<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px"><span style="font-size:30px;font-weight:800;color:#D4A94C">#'+x.tt_rnk+'</span><span class="muted">/ '+x.tt_n+'</span></div>'
+          +bar(tPct,'linear-gradient(90deg,#C8912E,#E7C877)')+'<div class="muted" style="margin-top:5px">'+short(m)+' / '+short(x.tt_total)+' = <b>'+(tPct<1?tPct.toFixed(1):Math.round(tPct))+'%</b> doanh thu trung tâm</div>'
+          +(x.tt_rnk>1?'<div style="font-size:13px;margin-top:6px">Còn <b>'+short(x.tt_gap)+'</b> nữa là lên hạng <b>#'+(x.tt_rnk-1)+'</b>.</div>':'<div style="font-size:13px;margin-top:6px;color:#0a8a3a">🔥 Đang dẫn đầu trung tâm!</div>'))
+        +'</div>';
+      el.innerHTML='<div class="grid" style="margin-top:16px">'+dCard+tCard+'</div>';
+    });
+  }
   function fillHonor(email){
     var box=document.getElementById('honor'); if(!box) return;
     Promise.all([
