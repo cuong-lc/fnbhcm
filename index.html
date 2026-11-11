@@ -214,6 +214,10 @@
       #badgeboard .bpb{border:1px solid #ECE4D5;background:#fff;color:#17130D;border-radius:8px;width:30px;height:28px;font-size:13px;cursor:pointer;font-family:inherit}
       #badgeboard .bpb:disabled{opacity:.35;cursor:default}
       #badgeboard .bpb:not(:disabled):hover{border-color:#C8912E}
+      #badgeboard .btt{font-size:10px;font-weight:800;padding:1px 7px;border-radius:20px;margin-left:6px;vertical-align:middle;color:#17130D;white-space:nowrap}
+      #badgeboard .btt.t1{background:linear-gradient(135deg,#F7C948,#FFE08A)}
+      #badgeboard .btt.t2{background:linear-gradient(135deg,#C9CDD3,#EBEEF2)}
+      #badgeboard .btt.t3{background:linear-gradient(135deg,#E8B07A,#F3D0A8)}
     </style>
     <div id="badgeboard" class="kpis"><div class="kpi"><div class="val" style="font-size:14px;color:#5B6472">Đang tải…</div></div></div>
   </section>
@@ -234,7 +238,8 @@
       var pages=Math.max(1,Math.ceil(total/PGSIZE));
       var pg=Math.min(Math.max(0,PAGE[c.code]||0),pages-1); PAGE[c.code]=pg;
       var slice=arr.slice(pg*PGSIZE, pg*PGSIZE+PGSIZE);
-      var list=slice.length? slice.map(function(x,i){ var rank=pg*PGSIZE+i+1; var disp=(x.val!=null)?fmtVal(c.code,c.unit,x.val):esc(tval(c,x.idx)); return '<div class="bch"><span class="bnm">'+rank+'. '+esc(x.nm)+'</span><span class="bval">'+c.icon+' '+disp+'</span></div>'; }).join('') : '<div style="color:#9aa3b2;font-size:13px;padding:6px 0">Chưa ai đạt — hãy là người đầu tiên!</div>';
+      var TT=['Chí Tôn','Á Tôn','Quý Tôn'];
+      var list=slice.length? slice.map(function(x,i){ var rank=pg*PGSIZE+i+1; var disp=(x.val!=null)?fmtVal(c.code,c.unit,x.val):esc(tval(c,x.idx)); var tt=rank<=3?'<span class="btt t'+rank+'">'+TT[rank-1]+'</span>':''; return '<div class="bch"><span class="bnm">'+rank+'. '+esc(x.nm)+tt+'</span><span class="bval">'+c.icon+' '+disp+'</span></div>'; }).join('') : '<div style="color:#9aa3b2;font-size:13px;padding:6px 0">Chưa ai đạt — hãy là người đầu tiên!</div>';
       var ic=c.image?'<img src="'+esc(c.image)+'" style="width:30px;height:30px;object-fit:contain;vertical-align:middle;margin-right:7px">':c.icon+' ';
       var dsc=c.descr?'<div style="font-size:12px;color:#8a7a55;line-height:1.45;margin:4px 0 2px">'+esc(c.descr)+'</div>':'';
       var cnt=total+' người đạt';
