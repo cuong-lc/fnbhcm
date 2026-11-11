@@ -31,6 +31,22 @@
     #howto{margin-bottom:10px}
   }
   #howto{max-width:1180px;margin:0 auto 14px;padding:0 16px}
+  #simpanel{position:absolute;z-index:8;top:58px;left:12px;width:340px;max-width:calc(100% - 24px);max-height:calc(100% - 80px);overflow:auto;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 26px rgba(0,0,0,.18);padding:12px 14px;display:none}
+  #simpanel.on{display:block}
+  #simpanel .sp-h{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:#17130D}
+  #simpanel .sp-sub{font-size:12px;color:#6B6150;margin:4px 0 8px;line-height:1.45}
+  #simpanel .sp-row{display:flex;gap:6px}
+  #simpanel select{flex:1;min-width:0;border:1.5px solid #ddd3bf;border-radius:9px;padding:7px;font-family:inherit;font-size:13px}
+  #simpanel .sp-item{border-top:1px solid #f1ece0;padding:9px 0}
+  #simpanel .sp-top{display:flex;justify-content:space-between;gap:8px}
+  #simpanel .sp-n{font-weight:700;color:#17130D;font-size:13.5px}
+  #simpanel .sp-d{font-weight:800;color:#8a6a1e;font-size:12.5px;white-space:nowrap}
+  #simpanel .sp-m{font-size:12.5px;color:#5B6150;margin:2px 0 5px}
+  #simpanel .sp-a{display:flex;gap:6px;flex-wrap:wrap}
+  #simpanel .sp-a button,#simpanel .sp-a a{border:1px solid #ECE4D5;background:#FFFCF5;border-radius:8px;padding:4px 9px;font-size:12px;color:#17130D;cursor:pointer;text-decoration:none;font-family:inherit}
+  #simpanel .sp-note{font-size:12px;color:#9a6a00;background:#FFF7E6;border-radius:8px;padding:6px 9px;margin-top:8px}
+  #simpanel .sp-empty{font-size:12.5px;color:#9aa3b2;padding:10px 0}
+  @media(max-width:720px){ #simpanel{top:auto;bottom:12px;left:12px;right:12px;width:auto;max-height:60%} }
   #howto>.ht-title{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;
       background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 15px;
       font-size:13.5px;font-weight:800;color:var(--poly);letter-spacing:.3px;user-select:none}
@@ -154,6 +170,7 @@
           <button class="mbtn primary" id="btnAdd">➕ Thêm điểm</button>
           <button class="mbtn" id="btnCheckin">📍 Check-in tại đây</button>
           <button class="mbtn" id="btnMe">🧭 Vị trí của tôi</button>
+          <button class="mbtn" id="btnSimilar">🔎 Quán tương tự</button>
           <div class="msearch">
             <input id="q" placeholder="Bay tới địa chỉ/khu vực…">
             <button id="btnSearch">Tìm</button>
@@ -162,6 +179,12 @@
         <div class="mhint" id="hint">Chạm lên bản đồ để đặt ghim · kéo ghim xám để chỉnh đúng vị trí</div>
         <button class="mbtn primary" id="donebar" style="position:absolute;z-index:7;bottom:14px;left:50%;transform:translateX(-50%);display:none;font-size:14px;padding:11px 20px">✓ Dùng vị trí này</button>
         <div class="mcount" id="count">Đang tải…</div>
+        <div id="simpanel">
+          <div class="sp-h"><b>🔎 Quán tương tự gần đây</b><span id="spclose" style="cursor:pointer;color:#8a6a1e">✕</span></div>
+          <div class="sp-sub">Chọn lĩnh vực của khách đang gặp → lấy 5 quán cùng lĩnh vực gần bạn nhất để làm bằng chứng uy tín.</div>
+          <div class="sp-row"><select id="splv"></select><button class="mbtn primary" id="spgo">Tìm quanh tôi</button></div>
+          <div id="spres"></div>
+        </div>
         <div id="ptpanel">
           <div class="ph" id="pthead"><span>👤 Phụ trách <span class="cv">▾</span></span><span id="ptclear" style="font-weight:600;color:#8a6a1e;font-size:11.5px;display:none">Bỏ lọc ✕</span></div>
           <div class="pl" id="ptlist"></div>
@@ -339,6 +362,35 @@
       if(openAfter) openForm(null,false);
     },function(){ if(openAfter)b.textContent='📍 Check-in tại đây'; alert('Không lấy được vị trí. Hãy cho phép truy cập định vị.'); },{enableHighAccuracy:true,timeout:10000});
   }
+  // ===== Quán tương tự gần đây =====
+  function hav(a,b,c,d){ var R=6371e3,t=Math.PI/180,x=(c-a)*t,y=(d-b)*t,h=Math.sin(x/2)*Math.sin(x/2)+Math.cos(a*t)*Math.cos(c*t)*Math.sin(y/2)*Math.sin(y/2); return 2*R*Math.asin(Math.sqrt(h)); }
+  function fmtD(m){ return m<1000? Math.round(m/10)*10+' m' : (Math.round(m/100)/10+'').replace('.',',')+' km'; }
+  function fillSimLv(){ var c={}; DATA.forEach(function(p){ if(p.linhvuc) c[p.linhvuc]=(c[p.linhvuc]||0)+1; }); var ks=Object.keys(c).sort(function(a,b){return c[b]-c[a];}); var cur=$('splv').value; $('splv').innerHTML=ks.map(function(k){return '<option value="'+esc(k)+'">'+esc(k)+' ('+c[k]+')</option>';}).join(''); if(cur) $('splv').value=cur; }
+  $('btnSimilar').onclick=function(){ fillSimLv(); $('simpanel').classList.toggle('on'); };
+  $('spclose').onclick=function(){ $('simpanel').classList.remove('on'); };
+  function showSimilar(la,ln,note){
+    var lv=$('splv').value;
+    var arr=DATA.filter(function(p){return p.linhvuc===lv && p.lat!=null;}).map(function(p){return {p:p,d:hav(la,ln,p.lat,p.lng)};}).sort(function(a,b){return a.d-b.d;}).slice(0,5);
+    if(!arr.length){ $('spres').innerHTML='<div class="sp-empty">Chưa có quán nào thuộc lĩnh vực này.</div>'; return; }
+    $('spres').innerHTML=(note?'<div class="sp-note">'+note+'</div>':'')+arr.map(function(x,i){ var p=x.p;
+      var addr=p.address||'';
+      return '<div class="sp-item"><div class="sp-top"><span class="sp-n">'+(i+1)+'. '+esc(p.name)+'</span><span class="sp-d">'+fmtD(x.d)+'</span></div>'
+        +'<div class="sp-m">'+(p.quymo?esc(p.quymo)+' · ':'')+(addr?esc(addr):'<i>chưa có địa chỉ</i>')+'</div>'
+        +'<div class="sp-a"><button data-id="'+p.id+'" class="sp-view">📍 Xem</button><a href="https://www.google.com/maps/dir/?api=1&destination='+p.lat+','+p.lng+'" target="_blank" rel="noopener">🧭 Chỉ đường</a>'
+        +(addr?'<button data-addr="'+esc(addr)+'" class="sp-copy">📋 Chép địa chỉ</button>':'')+'</div></div>'; }).join('');
+    if(meMarker)meMarker.remove(); var el=document.createElement('div'); el.className='pin me'; meMarker=new maplibregl.Marker({element:el}).setLngLat([ln,la]).addTo(map);
+    var bb=new maplibregl.LngLatBounds(); bb.extend([ln,la]); arr.forEach(function(x){bb.extend([x.p.lng,x.p.lat]);}); try{map.fitBounds(bb,{padding:80,maxZoom:16,duration:600});}catch(e){}
+    [].forEach.call($('spres').querySelectorAll('.sp-view'),function(b){ b.onclick=function(){ var p=window.__places[b.getAttribute('data-id')]; if(!p)return; map.flyTo({center:[p.lng,p.lat],zoom:16}); openPopup(p); if(window.innerWidth<=720) $('simpanel').classList.remove('on'); }; });
+    [].forEach.call($('spres').querySelectorAll('.sp-copy'),function(b){ b.onclick=function(){ var t=b.getAttribute('data-addr'); (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){ b.textContent='✓ Đã chép'; },function(){ prompt('Sao chép địa chỉ:',t); }); }; });
+  }
+  $('spgo').onclick=function(){
+    var b=$('spgo'); b.textContent='Đang định vị…';
+    var done=function(){ b.textContent='Tìm quanh tôi'; };
+    if(!navigator.geolocation){ var c=map.getCenter(); done(); showSimilar(c.lat,c.lng,'Không định vị được — đang tính theo tâm bản đồ.'); return; }
+    navigator.geolocation.getCurrentPosition(function(pos){ done(); showSimilar(pos.coords.latitude,pos.coords.longitude,''); },
+      function(){ var c=map.getCenter(); done(); showSimilar(c.lat,c.lng,'Không lấy được GPS — đang tính theo tâm bản đồ (kéo bản đồ tới khu vực rồi bấm lại).'); },{enableHighAccuracy:true,timeout:8000});
+  };
+
   $('btnMe').onclick=function(){
     if(!navigator.geolocation){alert('Thiết bị không hỗ trợ định vị');return;}
     navigator.geolocation.getCurrentPosition(function(pos){ var la=pos.coords.latitude,ln=pos.coords.longitude; if(meMarker)meMarker.remove(); var el=document.createElement('div'); el.className='pin me'; meMarker=new maplibregl.Marker({element:el}).setLngLat([ln,la]).addTo(map); map.flyTo({center:[ln,la],zoom:15}); },function(){alert('Không lấy được vị trí.');},{enableHighAccuracy:true,timeout:10000});

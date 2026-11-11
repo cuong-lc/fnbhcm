@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hồ sơ năng lực </title>
+<title>Hồ sơ · FNBHCM HUB</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{--blue:#B8872F;--green:#16D865;--berkeley:#17130D;--offblue:#FFFCF5;--gray:#5B6472;--line:#ECE4D5}
@@ -65,7 +66,7 @@
     var s=r.data.session;
     if(!s){ notAllowed('Bạn chưa đăng nhập. Hãy đăng nhập ở trang chính rồi quay lại.'); return; }
     ME=s.user;
-    document.getElementById('me').innerHTML='<a class="back" href="dashboard.html">← Dashboard</a> · <b style="color:#fff">'+esc(ME.email)+'</b> · <a id="lo">Đăng xuất</a>';
+    document.getElementById('me').innerHTML='<a class="back" href="index.html">← Trang chủ</a> · <b style="color:#fff">'+esc(ME.email)+'</b> · <a id="lo">Đăng xuất</a>';
     document.getElementById('lo').onclick=function(){ sb.auth.signOut().then(function(){ location.replace('login.html'); }); };
     var target=(param('email')||ME.email).toLowerCase();
     loadProfile(target);
@@ -77,7 +78,7 @@
     sb.from('role_assignments').select('email,full_name,role,level,dept').eq('email',email).maybeSingle().then(function(pr){
       if(pr.error){ notAllowed('Lỗi: '+pr.error.message); return; }
       var prof = pr.data;
-      if(!prof){ notAllowed('Bạn không có quyền xem hồ sơ này, hoặc email không có trong danh sách.'); return; }
+      if(!prof){ renderPublic(email); return; }
       var lvl = prof.level || 'c1';
       Promise.all([
         sb.from('checklist_items').select('id,part,sort').eq('level',lvl).order('sort'),
@@ -117,13 +118,14 @@
 
     var initials=(prof.full_name||prof.email||'?').trim().split(/\s+/).slice(-1)[0].charAt(0).toUpperCase();
     var html=''
-      +'<div class="hero"><div class="avatar">'+esc(initials)+'</div>'
+      +'<div class="hero">'+avatarHtml(email, initials)
       +'<div><h1>'+esc(prof.full_name||prof.email)+'</h1>'
       +'<div class="sub">'+esc(prof.email)+'</div>'
       +'<div style="margin-top:8px"><span class="pill">'+esc(LV[prof.level]||prof.level||'—')+'</span>'
       +'<span class="pill">'+esc(prof.dept||'—')+'</span>'
       +'<span class="pill">Thành thạo '+pctAll+'%</span></div></div></div>';
 
+    html+='<div id="honor"></div>';
     html+='<div class="grid">'
       +'<div class="card"><h3>Kiến thức kỹ năng (checklist)</h3><canvas id="radar" height="240"></canvas>'
       + order.map(function(p,i){ return '<div class="barrow"><span class="lab">'+esc(p)+'</span><div class="mini"><div class="minif" style="width:'+data[i]+'%"></div></div><span class="v">'+data[i]+'%</span></div>'; }).join('')
@@ -201,6 +203,7 @@
     }
 
     document.getElementById('root').innerHTML=html;
+    fillHonor(email);
 
     var ctx=document.getElementById('radar');
     new Chart(ctx,{type:'radar',data:{labels:labels,datasets:[{label:'% thành thạo',data:data,fill:true,backgroundColor:'rgba(184,135,47,.18)',borderColor:'#B8872F',pointBackgroundColor:'#16D865',borderWidth:2}]},
@@ -209,6 +212,59 @@
     var clabels=_ds.map(function(x){return x.domain;}), cdata=_ds.map(function(x){return x.pct;});
     new Chart(document.getElementById('radar2'),{type:'radar',data:{labels:clabels,datasets:[{label:'%',data:cdata,fill:true,backgroundColor:'rgba(184,135,47,.16)',borderColor:'#B8872F',pointBackgroundColor:'#16D865',borderWidth:2}]},
       options:{responsive:true,scales:{r:{min:0,max:100,ticks:{stepSize:25,backdropColor:'transparent'},pointLabels:{font:{size:9}}}},plugins:{legend:{display:false}}}});
+  }
+
+
+  // ===== Hồ sơ: danh hiệu, thành tích, hoạt động =====
+  var TT=['Chí Tôn','Á Tôn','Quý Tôn'], MONEYC={doanhso:1,kinhngu:1};
+  function fmtV(code,v){ v=Number(v)||0; if(MONEYC[code]) return short(v); if(code==='minhtinh'){ if(v>=1e6) return (Math.round(v/1e5)/10+'').replace('.',',')+'tr'; if(v>=1000) return (Math.round(v/100)/10+'').replace('.',',')+'k'; } if(code==='bachdia') return v+' cờ'; return v.toLocaleString('vi-VN'); }
+  function avatarHtml(email, initials){
+    var url = (ME && ME.email && ME.email.toLowerCase()===email && ME.user_metadata) ? (ME.user_metadata.avatar_url||ME.user_metadata.picture||'') : '';
+    return url ? '<img class="avatar" src="'+esc(url)+'" referrerpolicy="no-referrer" style="object-fit:cover" alt="">' : '<div class="avatar">'+esc(initials)+'</div>';
+  }
+  function agoP(t){ var s=(Date.now()-Date.parse(t))/1000; if(s<3600) return Math.max(1,Math.floor(s/60))+' phút trước'; if(s<86400) return Math.floor(s/3600)+' giờ trước'; if(s<7*86400) return Math.floor(s/86400)+' ngày trước'; var d=new Date(t); return d.getDate()+'/'+(d.getMonth()+1); }
+  function fillHonor(email){
+    var box=document.getElementById('honor'); if(!box) return;
+    Promise.all([
+      sb.rpc('center_badges'),
+      sb.from('badge_types').select('code,name,icon,image').eq('active',true).order('sort'),
+      sb.rpc('public_profile',{p_email:email}),
+      sb.from('feed_events').select('*').eq('email',email).order('created_at',{ascending:false}).limit(8)
+    ]).then(function(r){
+      var cb=r[0].data||[], types=r[1].data||[], pp=(r[2].data||[])[0]||{}, feed=r[3].data||[];
+      var chips=types.map(function(t){
+        var rows={}; cb.forEach(function(x){ if(String(x.item_key).split('_')[1]!==t.code) return; var v=(x.val!=null?Number(x.val):Number(String(x.item_key).split('_')[2])); var k=x.full_name; if(!rows[k]||v>rows[k].v) rows[k]={v:v,e:x.email}; });
+        var arr=Object.keys(rows).map(function(k){return {n:k,v:rows[k].v,e:rows[k].e};}).sort(function(a,b){return b.v-a.v;});
+        var i=arr.findIndex(function(x){return x.e===email;}); if(i<0) return '';
+        var tt=i<3?'<span style="margin-left:6px;font-size:11px;font-weight:800;padding:1px 8px;border-radius:20px;'+(i===0?'background:linear-gradient(90deg,#ff3d00,#ff9100,#ffd54a);color:#fff':i===1?'background:#e6e9ee;color:#17130D':'background:#f0c28a;color:#17130D')+'">'+(i===0?'🔥 ':'')+TT[i]+'</span>':'';
+        var ic=t.image?'<img src="'+esc(t.image)+'" style="width:40px;height:40px;object-fit:contain">':'<span style="font-size:26px">'+(t.icon||'🏅')+'</span>';
+        return '<div style="display:flex;align-items:center;gap:10px;background:#FFFCF5;border:1px solid #ECE4D5;border-radius:12px;padding:9px 11px">'+ic+'<div style="min-width:0"><div style="font-weight:700;color:#17130D;font-size:13.5px">'+esc(t.name)+tt+'</div><div class="muted">Hạng <b>#'+(i+1)+'</b>/'+arr.length+' · '+esc(fmtV(t.code,arr[i].v))+'</div></div></div>';
+      }).filter(Boolean).join('');
+      var yrs = pp.joined ? Math.max(0,(Date.now()-Date.parse(pp.joined))/(365.25*864e5)) : null;
+      var stat=function(lab,val){ return '<div style="background:#FFFCF5;border-radius:10px;padding:10px 12px;flex:1;min-width:110px"><div class="muted">'+lab+'</div><div style="font-weight:800;font-size:18px;color:#B8872F">'+val+'</div></div>'; };
+      var act=feed.map(function(ev){ return '<div style="display:flex;gap:9px;padding:7px 0;border-top:1px solid #f1ece0;font-size:13.5px"><span>'+(ev.icon||'✨')+'</span><span style="flex:1">'+esc(ev.title)+'</span><span class="muted" style="white-space:nowrap">'+agoP(ev.created_at)+'</span></div>'; }).join('');
+      box.innerHTML='<div class="card" style="margin-top:16px"><h3>🏅 Danh hiệu &amp; thành tích</h3>'
+        +'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">'
+        +stat('Cấp sao', pp.stars? '<span style="color:#FFAE06">'+'★'.repeat(pp.stars)+'</span>':'—')
+        +stat('Cờ trên bản đồ', (pp.pins||0)+' cờ')
+        +stat('Thâm niên', yrs==null?'—':(yrs>=1? (Math.floor(yrs*10)/10+'').replace('.',',')+' năm' : Math.max(1,Math.round(yrs*12))+' tháng'))
+        +'</div>'
+        +(chips?'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px">'+chips+'</div>':'<div class="muted">Chưa có mặt trên Bảng Phong Thần — chiến tiếp nhé! ⚡</div>')
+        +(act?'<div style="margin-top:14px;font-weight:700;font-size:14px;color:#17130D">Hoạt động gần đây</div>'+act:'')
+        +'</div>';
+    });
+  }
+  function renderPublic(email){
+    sb.rpc('public_profile',{p_email:email}).then(function(r){
+      var p=(r.data||[])[0];
+      if(!p){ notAllowed('Không tìm thấy hồ sơ này.'); return; }
+      var LV={c0:'Thử việc',c1:'Nhân viên',c2:'Chuyên gia',c3:'Trưởng phòng',c4:'Giám đốc Trung tâm'};
+      var initials=(p.full_name||p.email||'?').trim().split(/\s+/).slice(-1)[0].charAt(0).toUpperCase();
+      document.getElementById('root').innerHTML='<div class="hero">'+avatarHtml(email,initials)+'<div><h1>'+esc(p.full_name||p.email)+'</h1>'
+        +'<div style="margin-top:8px"><span class="pill">'+esc(LV[p.level]||p.level||'—')+'</span><span class="pill">'+esc(p.dept||'—')+'</span></div></div></div>'
+        +'<div id="honor"></div><p class="muted" style="margin-top:12px">Chi tiết doanh thu &amp; năng lực chỉ hiển thị với chính chủ và quản lý.</p>';
+      fillHonor(email);
+    });
   }
 
   if(!window.SUPA || SUPA.URL.indexOf('YOUR-PROJECT')>=0){ notAllowed('Chưa cấu hình config.js'); }
