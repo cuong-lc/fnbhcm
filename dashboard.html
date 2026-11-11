@@ -91,7 +91,7 @@
   function boot(){
     var lvl='c1';
     Promise.all([
-      sb.from('role_assignments').select('email,full_name,level,dept'),
+      sb.from('role_assignments').select('email,full_name,level,dept,joined'),
       sb.from('progress').select('email,item_key,done'),
       sb.from('revenues').select('email,period,amount,soft,hard,other,merchants,dept,renew'),
       sb.from('checklist_items').select('id,part').eq('level',lvl).order('sort'),
@@ -148,6 +148,16 @@
   }
   function deptMembers(dept){ return DATA.people.filter(function(p){return (p.dept||'')===dept;}); }
   function lineChart(canvas,labels,data,label,color){ charts.push(new Chart(canvas,{type:'line',data:{labels:labels,datasets:[{label:label,data:data,borderColor:color||'#D4A94C',backgroundColor:'rgba(212,169,76,.12)',fill:true,tension:.3,pointRadius:4,pointBackgroundColor:color||'#D4A94C'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:function(v){return short(v);}}}}}})); }
+  function chuanOf(email, period){ var p=DATA.people.filter(function(x){return x.email.toLowerCase()===(email||'').toLowerCase();})[0]; if(!p||!p.joined||!period) return 60000000;
+    var end=new Date(period+'-01T00:00:00'); end.setMonth(end.getMonth()+1); end.setDate(0); var lim=new Date(end); lim.setFullYear(lim.getFullYear()-1);
+    return (new Date(p.joined+'T00:00:00') > lim) ? 35000000 : 60000000; }
+  function arrow(cur,prev){ if(!prev) return ''; var g=Math.round((cur-prev)/prev*100); return '<span style="color:'+(g>=0?'#0a8a3a':'#C0392B')+';font-weight:700">'+(g>=0?'▲ +':'▼ ')+g+'%</span> so tháng trước'; }
+  function targetChart(canvas,type,labels,data,target,label,color,tlabel){
+    charts.push(new Chart(canvas,{data:{labels:labels,datasets:[
+      {type:type,label:label,data:data,borderColor:color,backgroundColor:type==='bar'?color:'rgba(212,169,76,.12)',fill:type!=='bar',tension:.3,pointRadius:4,pointBackgroundColor:color,borderRadius:6,order:2},
+      {type:'line',label:tlabel||'Chuẩn',data:target,borderColor:'#C0392B',borderDash:[6,5],borderWidth:2,pointRadius:0,fill:false,tension:0,order:1}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+short(c.parsed.y);}}}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return short(v);}}}}}}));
+  }
   function barChart(canvas,labels,data,label,colors){ charts.push(new Chart(canvas,{type:'bar',data:{labels:labels,datasets:[{label:label,data:data,backgroundColor:colors||'#D4A94C',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:function(v){return short(v);}}}}}})); }
 
   // ---- điểm năng lực 5 domain (trọng số: NV 80% · CG +10 · TP +5 · GĐ +5) ----
@@ -292,7 +302,9 @@
     document.getElementById('root').innerHTML=html;
     var btns=document.querySelectorAll('.tab');
     btns.forEach(function(b){ b.onclick=function(){ btns.forEach(function(x){x.classList.remove('active');}); b.classList.add('active'); show(b.getAttribute('data-t')); }; });
-    show(tabs[0][0]);
+    var def=MYLEVEL==='c4'?'tt':(MYLEVEL==='c3'?'phong':'ca');
+    btns.forEach(function(x){ x.classList.toggle('active', x.getAttribute('data-t')===def); });
+    show(def);
   }
   function show(t){ clearCharts(); var el=document.getElementById('tabbody');
     if(t==='ca') return renderCaNhan(el, ME.email);
@@ -353,13 +365,13 @@
     var S=saleExtras(email);
     el.innerHTML=''
       +'<div class="kpis">'
-      +'<div class="kpi"><div class="lab">Doanh thu tháng gần nhất</div><div class="val">'+short(rdata[rdata.length-1]||0)+'</div><div class="sub">'+(growth!=null?(growth>=0?'▲ +':'▼ ')+growth+'% so tháng trước':'')+'</div></div>'
+      +'<div class="kpi"><div class="lab">Doanh thu tháng gần nhất</div><div class="val">'+short(rdata[rdata.length-1]||0)+'</div><div class="sub">'+arrow(rdata[rdata.length-1]||0, rdata[rdata.length-2]||0)+'<br>'+(function(){ var c=chuanOf(email, ms[ms.length-1]); var v=rdata[rdata.length-1]||0; return 'Chuẩn '+short(c)+' · <b style="color:'+(v>=c?'#0a8a3a':'#9a6a00')+'">'+Math.round(v/c*100)+'%</b>'; })()+'</div></div>'
       +'<div class="kpi"><div class="lab">Tổng doanh thu '+ms.length+' tháng</div><div class="val">'+short(totalRev)+'</div></div>'
       +'<div class="kpi"><div class="lab">Năng lực tổng quan</div><div class="val">'+overallComp(email)+'%</div><div class="sub">checklist '+ckPct+'%</div></div>'
       +'<div class="kpi"><div class="lab">Cấp sao</div><div class="val"><span class="stars">'+(myStars?'★'.repeat(myStars):'')+'</span>'+(myStars?'':'<span class="muted">chưa có</span>')+'</div><div class="sub">'+myStars+'/5 sao</div></div>'
       +'</div>'
       + secH('Kinh doanh')
-      +'<div class="card"><h3>Tăng trưởng doanh thu theo tháng</h3><div style="height:240px"><canvas id="c1"></canvas></div></div>'
+      +'<div class="card"><h3>Tăng trưởng doanh thu theo tháng</h3><div class="muted" style="margin:-6px 0 6px;font-size:12px">Đường đỏ nét đứt = chuẩn cá nhân (60tr/tháng nếu trên 1 năm, 35tr nếu dưới 1 năm)</div><div style="height:250px"><canvas id="c1"></canvas></div></div>'
       + (S.bocTach||'') + (S.chatLuong||'') + (S.dongGop||'') + (S.rank||'')
       + secH('Năng lực')
       +'<div class="card" style="margin-top:16px"><h3>Tổng quan năng lực (5 mảng)</h3><div class="muted" style="margin-bottom:6px">Đạt chuẩn Nhân viên = 80%, Chuyên gia 90%, Trưởng phòng 95%, GĐ 100%. Tick chuẩn ở các trang cấp là tự cập nhật.</div><div style="height:300px"><canvas id="cradar"></canvas></div></div>'
@@ -369,7 +381,7 @@
       + (S.manhYeu||'')
       + secH('Lộ trình thăng tiến')
       + (S.tienDo||'');
-    lineChart(document.getElementById('c1'), ms, rdata, 'Doanh thu','#D4A94C');
+    targetChart(document.getElementById('c1'),'line', ms, rdata, ms.map(function(m){return chuanOf(email,m);}), 'Doanh thu','#D4A94C','Chuẩn cá nhân');
     var clabels=ds.map(function(x){return x.domain;}), cdata=ds.map(function(x){return x.pct;});
     charts.push(new Chart(document.getElementById('cradar'),{type:'radar',data:{labels:clabels,datasets:[{label:'%',data:cdata,fill:true,backgroundColor:'rgba(212,169,76,.16)',borderColor:'#D4A94C',pointBackgroundColor:'#16D865',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{min:0,max:100,ticks:{stepSize:25,backdropColor:'transparent'},pointLabels:{font:{size:9}}}},plugins:{legend:{display:false}}}}));
   }
@@ -393,7 +405,7 @@
       +deptSelector(dept)
       +'<div class="kpis">'
       +'<div class="kpi"><div class="lab">Phòng</div><div class="val" style="font-size:17px">'+esc(dept)+'</div><div class="sub">'+mem.length+' người</div></div>'
-      +'<div class="kpi"><div class="lab">Doanh thu tháng gần nhất</div><div class="val">'+short(latest)+'</div></div>'
+      +'<div class="kpi"><div class="lab">Doanh thu tháng gần nhất</div><div class="val">'+short(latest)+'</div><div class="sub">'+arrow(latest,prev)+'</div></div>'
       +'<div class="kpi"><div class="lab">Tháng trước</div><div class="val">'+short(prev)+'</div></div>'
       +'</div>'
       +'<div class="grid">'
@@ -416,7 +428,7 @@
             +'<td class="r">'+pc+'%</td><td class="r">'+short(rv[lm]||0)+'</td></tr>';
         }).join('')
       +'</table></div>';
-    barChart(document.getElementById('cp'), ms, rdata, 'Doanh thu phòng', ms.map(function(){return '#D4A94C';}));
+    targetChart(document.getElementById('cp'),'bar', ms, rdata, ms.map(function(){return PHONG_TARGET;}), 'Doanh thu phòng','#D4A94C','Chuẩn phòng 500tr');
     var dsel=document.getElementById('deptsel'); if(dsel) dsel.onchange=function(e){ clearCharts(); renderPhong(el, e.target.value); };
   }
 
@@ -426,11 +438,13 @@
     var depts={}; DATA.people.forEach(function(p){ if(p.dept) depts[p.dept]=1; });
     var dlist=Object.keys(depts).sort();
     var centerM=ms.map(function(m){ var s=0; DATA.revenues.forEach(function(r){ if(r.period===m) s+=Number(r.amount)||0; }); return s; });
+    var sales=DATA.people.filter(function(p){return /^Phòng/.test(p.dept||'');});
+    var centerT=ms.map(function(m){ return sales.reduce(function(a,p){return a+chuanOf(p.email,m);},0); });
     var lm=ms[ms.length-1];
     var byDeptLatest=dlist.map(function(d){ var em=deptMembers(d).map(function(x){return x.email.toLowerCase();}); var s=0; DATA.revenues.forEach(function(r){ if(r.period===lm && em.indexOf(r.email.toLowerCase())>=0) s+=Number(r.amount)||0; }); return s; });
     el.innerHTML=''
       +'<div class="kpis">'
-      +'<div class="kpi"><div class="lab">Doanh thu trung tâm (tháng gần nhất)</div><div class="val">'+short(centerM[centerM.length-1]||0)+'</div></div>'
+      +'<div class="kpi"><div class="lab">Doanh thu trung tâm (tháng gần nhất)</div><div class="val">'+short(centerM[centerM.length-1]||0)+'</div><div class="sub">'+arrow(centerM[centerM.length-1]||0, centerM[centerM.length-2]||0)+'<br>Chuẩn '+short(centerT[centerT.length-1]||0)+' · <b>'+(centerT[centerT.length-1]?Math.round((centerM[centerM.length-1]||0)/centerT[centerT.length-1]*100):0)+'%</b></div></div>'
       +'<div class="kpi"><div class="lab">Số phòng</div><div class="val">'+dlist.length+'</div></div>'
       +'<div class="kpi"><div class="lab">Tổng nhân sự</div><div class="val">'+DATA.people.length+'</div></div>'
       +'</div>'
@@ -443,7 +457,7 @@
       + dlist.map(function(d,i){ var n=deptMembers(d).length; var rv=byDeptLatest[i]; var pc=Math.round(rv/PHONG_TARGET*100);
           return '<tr><td>'+esc(d)+'</td><td class="r">'+n+'</td><td class="r">'+short(rv)+'</td><td class="r"><b style="color:'+(pc>=100?'#0a8a3a':'#9a6a00')+'">'+pc+'%</b></td></tr>'; }).join('')
       +'</table></div>';
-    lineChart(document.getElementById('ctt'), ms, centerM, 'Trung tâm','#16D865');
+    targetChart(document.getElementById('ctt'),'line', ms, centerM, centerT, 'Trung tâm','#16D865','Chuẩn trung tâm (cộng chuẩn từng sale)');
     barChart(document.getElementById('cdept'), dlist.map(function(d){return d.replace('Phòng ','').replace(' HCM','');}), byDeptLatest, 'Theo phòng', dlist.map(function(){return '#D4A94C';}));
   }
 

@@ -38,12 +38,13 @@
     const isLeader = isGD || (window.CLF_PROFILE && window.CLF_PROFILE.level === "c3");
     const staff = isStaffView();
     const items = [["index.html", "Trang chủ"]].concat(
-      isGD ? [["badges.html", "🏛️ Phong Thần"]] : []
-    ).concat([["map.html", "🗺️ Bản đồ KH"]]).concat(
+      isGD ? [["badges.html", "🏛️ Phong Thần"], ["report.html", "📊 Báo cáo tuần"]] : []
+    ).concat([["map.html", "🗺️ Bản đồ KH"], ["kichban.html", "💬 Kịch bản chốt"]]).concat(
       isLeader ? [["camnangleader.html", "📘 Cẩm nang Leader"]] : []
     ).concat(
       LEVELS.filter(canSeeLevel).filter((l) => !(staff && l.id === "c3")).map((l) => [l.file, l.short])
-    ).concat(staff ? [] : [["rubric.html", "Rubric"]]).concat(isGD ? [["people.html", "🔒 Hồ sơ NS"]] : []);
+    ).concat(staff ? [] : [["rubric.html", "Rubric"]]).concat(isGD ? [["people.html", "🔒 Hồ sơ NS"]] : [])
+     .concat(window.CLF_READY ? [["profile.html", "👤 Hồ sơ của tôi"]] : []);
     nav.innerHTML = items.map(([f, t]) =>
       `<a href="${f}" class="${f === activeFile ? "active" : ""}">${t}</a>`).join("");
     // Nút ☰ cho mobile
@@ -58,15 +59,83 @@
       document.addEventListener("click", (e) => { if (!nav.contains(e.target) && e.target !== tg) nav.classList.remove("open"); });
     }
     [].forEach.call(nav.querySelectorAll("a"), (a) => a.addEventListener("click", () => nav.classList.remove("open")));
-    // 🔔 Chuông đề xuất chờ duyệt cho GĐTT (hiện ở mọi trang)
-    if (isGD && window.SB) {
-      window.SB.from("badge_requests").select("id", { count: "exact", head: true }).eq("status", "pending").then((r) => {
-        const n = (r && r.count) || 0; if (!n) return;
-        const a = nav.querySelector('a[href="badges.html"]');
-        if (a) a.innerHTML = '🏛️ Phong Thần <span style="background:#E5484D;color:#fff;border-radius:20px;padding:0 7px;font-size:11px;font-weight:800;margin-left:2px">' + n + '</span>';
+    // 🔔 Chuông nhắc việc (mọi trang, sau khi đã có hồ sơ)
+    if (window.CLF_READY && window.SB && wrap && !byId("navbell")) {
+      const bell = document.createElement("a");
+      bell.id = "navbell"; bell.className = "navbell"; bell.href = "index.html#todo";
+      bell.title = "Việc của bạn"; bell.innerHTML = "🔔";
+      wrap.appendChild(bell);
+      window.hubTodo().then((items) => {
+        const n = items.filter((x) => x.act).length;
+        if (n) bell.innerHTML = '🔔<span class="nb">' + n + "</span>";
       }, () => {});
     }
   }
+
+  // ===== Việc của bạn hôm nay (dùng chung cho chuông + trang chủ) =====
+  let _todoP = null;
+  window.hubTodo = function () {
+    if (_todoP) return _todoP;
+    const SB = window.SB, U = window.CLF_USER || {}, P = window.CLF_PROFILE || {};
+    const me = (U.email || "").toLowerCase(), lv = P.level || "";
+    const isGD = lv === "c4";
+    const sm = (n) => { n = Number(n) || 0; return n >= 1e9 ? (Math.round(n / 1e8) / 10).toString().replace(".", ",") + " tỷ" : Math.round(n / 1e6) + "tr"; };
+    const T = ["Chí Tôn", "Á Tôn", "Quý Tôn"];
+    _todoP = Promise.all([
+      SB.from("places").select("created_at").ilike("owner_email", me),
+      SB.rpc("center_badges"),
+      SB.from("revenues").select("period,amount").ilike("email", me),
+      SB.rpc("my_chuan"),
+      SB.from("progress").select("item_key").eq("user_id", U.id).eq("done", true).like("item_key", "clf_c1_ck_%"),
+      SB.from("challenges").select("id,title,target,end_date,metric").eq("active", true),
+      isGD ? SB.from("badge_requests").select("id", { count: "exact", head: true }).eq("status", "pending") : Promise.resolve({}),
+      isGD ? SB.from("sales_scripts").select("id", { count: "exact", head: true }).eq("status", "pending") : Promise.resolve({})
+    ]).then(async (r) => {
+      const items = [];
+      const pins = r[0].data || [], wk = Date.now() - 7 * 864e5;
+      const pins7 = pins.filter((p) => Date.parse(p.created_at) > wk).length;
+      const isSale = /^Phòng/.test(P.dept || "") || ["c0", "c1", "c2", "c3"].indexOf(lv) >= 0;
+      if (isSale && !isGD) {
+        if (!pins7) items.push({ act: 1, icon: "📍", text: "Tuần này bạn chưa gắn cờ quán nào — check-in 1 quán nhé", href: "map.html" });
+        else items.push({ icon: "📍", text: "Tuần này bạn đã gắn " + pins7 + " cờ 👍", href: "map.html" });
+      }
+      // Bách Địa
+      const cb = (r[1].data || []).filter((x) => String(x.item_key).indexOf("chal_bachdia_") === 0).sort((a, b) => b.val - a.val);
+      const myIdx = cb.findIndex((x) => (x.email || "") === me);
+      if (myIdx >= 0 && myIdx < 3) items.push({ icon: "🔥", text: "Bạn đang là " + T[myIdx] + " · Bách Địa Đại Sư (" + cb[myIdx].val + " cờ)", href: "index.html" });
+      else if (myIdx >= 3 && cb[2]) { const need = cb[2].val - cb[myIdx].val + 1; items.push({ act: 1, icon: "🗺️", text: "Thêm " + need + " cờ là vào Top 3 Bách Địa (đang hạng " + (myIdx + 1) + ")", href: "map.html" }); }
+      // Doanh thu vs chuẩn
+      const mc = (r[3].data || [])[0];
+      if (mc && mc.period && isSale && !isGD) {
+        const rv = (r[2].data || []).find((x) => x.period === mc.period);
+        const L = rv ? Number(rv.amount) || 0 : 0, C = Number(mc.chuan) || 0, mn = parseInt(mc.period.split("-")[1], 10);
+        if (L < C) items.push({ act: 1, icon: "💰", text: "Tháng " + mn + ": " + sm(L) + " / chuẩn " + sm(C) + " — còn thiếu " + sm(C - L), href: "dashboard.html" });
+        else items.push({ icon: "💰", text: "Tháng " + mn + " vượt chuẩn: " + sm(L) + " / " + sm(C) + " (" + Math.round(L / C * 100) + "%) 👏", href: "dashboard.html" });
+      }
+      // Checklist Cấp 1
+      if (lv === "c0" || lv === "c1") {
+        const done = (r[4].data || []).length, left = Math.max(0, 71 - done);
+        if (left) items.push({ act: 1, icon: "✅", text: "Còn " + left + " mục checklist Cấp 1 chưa tích", href: "cap-1-nhan-vien.html" });
+      }
+      // Thử thách
+      for (const c of (r[5].data || [])) {
+        const pr = await SB.rpc("challenge_progress", { p_id: c.id });
+        const mine = (pr.data || []).find((x) => x.email === me);
+        const v = mine ? Number(mine.value) : 0;
+        const days = Math.max(0, Math.ceil((Date.parse(c.end_date + "T23:59:59+07:00") - Date.now()) / 864e5));
+        if (isGD) items.push({ icon: "🎯", text: "Thử thách “" + c.title + "”: " + (pr.data || []).filter((x) => x.value >= c.target).length + " người đã đạt — còn " + days + " ngày", href: "index.html#hub-challenge" });
+        else items.push({ act: v < c.target ? 1 : 0, icon: "🎯", text: "Thử thách “" + c.title + "”: bạn " + v + "/" + c.target + (v >= c.target ? " — đã đạt 🎉" : " — còn " + days + " ngày"), href: "index.html#hub-challenge" });
+      }
+      if (isGD) {
+        const br = r[6].count || 0, sp = r[7].count || 0;
+        if (br) items.push({ act: 1, icon: "🏛️", text: br + " đề xuất danh hiệu chờ duyệt", href: "badges.html" });
+        if (sp) items.push({ act: 1, icon: "💬", text: sp + " kịch bản chốt chờ duyệt", href: "kichban.html" });
+        items.push({ icon: "📊", text: "Xem báo cáo tuần & điểm sức khoẻ đội ngũ", href: "report.html" });
+      }
+      return items;
+    });
+    return _todoP;
+  };
   function buildFoot() {
     const f = byId("foot");
     if (f) f.innerHTML = `<div class="wrap"><span>Khung năng lực đội ngũ Kinh doanh</span><span>Bản nháp để duyệt — nội dung có thể điều chỉnh</span></div>`;
