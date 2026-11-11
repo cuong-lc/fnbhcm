@@ -229,6 +229,15 @@
       #badgeboard .btt.t2{background-image:linear-gradient(90deg,#aeb4bd,#eef1f5,#ffffff,#eef1f5,#aeb4bd);animation:bttflow 3s linear infinite,bttglowS 1.7s ease-in-out infinite}
       #badgeboard .btt.t3{background-image:linear-gradient(90deg,#c67e3e,#f0c28a,#ffe0b8,#f0c28a,#c67e3e);animation:bttflow 3s linear infinite,bttglowB 1.7s ease-in-out infinite}
       @media(prefers-reduced-motion:reduce){#badgeboard .btt{animation:none!important}}
+      @keyframes rowfire{0%,100%{box-shadow:0 0 6px rgba(255,120,0,.3)}50%{box-shadow:0 0 15px rgba(255,150,0,.6)}}
+      #badgeboard .bch.r1,#badgeboard .bch.r2,#badgeboard .bch.r3{border-top:none;border-radius:10px;padding:8px 11px;margin:5px 0;background-size:200% 100%;align-items:center}
+      #badgeboard .bch.r1{background-image:linear-gradient(90deg,rgba(255,61,0,.16),rgba(255,145,0,.16),rgba(255,213,74,.18),rgba(255,145,0,.16),rgba(255,61,0,.16));border:1.5px solid rgba(255,120,0,.5);animation:bttflow 2.4s linear infinite,rowfire 1.5s ease-in-out infinite}
+      #badgeboard .bch.r1 .bnm{font-weight:800;color:#17130D}
+      #badgeboard .bch.r2{background-image:linear-gradient(90deg,rgba(174,180,189,.18),rgba(238,241,245,.26),rgba(174,180,189,.18));border:1.5px solid rgba(180,190,200,.6);animation:bttflow 3.2s linear infinite}
+      #badgeboard .bch.r2 .bnm{font-weight:700}
+      #badgeboard .bch.r3{background-image:linear-gradient(90deg,rgba(198,126,62,.18),rgba(240,194,138,.26),rgba(198,126,62,.18));border:1.5px solid rgba(200,140,80,.6);animation:bttflow 3.2s linear infinite}
+      #badgeboard .bch.r3 .bnm{font-weight:700}
+      @media(prefers-reduced-motion:reduce){#badgeboard .bch.r1,#badgeboard .bch.r2,#badgeboard .bch.r3{animation:none!important}}
     </style>
     <div id="badgeboard" class="kpis"><div class="kpi"><div class="val" style="font-size:14px;color:#5B6472">Đang tải…</div></div></div>
   </section>
@@ -250,7 +259,7 @@
       var pg=Math.min(Math.max(0,PAGE[c.code]||0),pages-1); PAGE[c.code]=pg;
       var slice=arr.slice(pg*PGSIZE, pg*PGSIZE+PGSIZE);
       var TT=['🔥 Chí Tôn','Á Tôn','Quý Tôn'];
-      var list=slice.length? slice.map(function(x,i){ var rank=pg*PGSIZE+i+1; var disp=(x.val!=null)?fmtVal(c.code,c.unit,x.val):esc(tval(c,x.idx)); var tt=rank<=3?'<span class="btt t'+rank+'">'+TT[rank-1]+'</span>':''; return '<div class="bch"><span class="bnm">'+rank+'. '+esc(x.nm)+tt+'</span><span class="bval">'+c.icon+' '+disp+'</span></div>'; }).join('') : '<div style="color:#9aa3b2;font-size:13px;padding:6px 0">Chưa ai đạt — hãy là người đầu tiên!</div>';
+      var list=slice.length? slice.map(function(x,i){ var rank=pg*PGSIZE+i+1; var disp=(x.val!=null)?fmtVal(c.code,c.unit,x.val):esc(tval(c,x.idx)); var tt=rank<=3?'<span class="btt t'+rank+'">'+TT[rank-1]+'</span>':''; return '<div class="bch'+(rank<=3?' r'+rank:'')+'"><span class="bnm">'+rank+'. '+esc(x.nm)+tt+'</span><span class="bval">'+c.icon+' '+disp+'</span></div>'; }).join('') : '<div style="color:#9aa3b2;font-size:13px;padding:6px 0">Chưa ai đạt — hãy là người đầu tiên!</div>';
       var ic=c.image?'<img src="'+esc(c.image)+'" style="width:30px;height:30px;object-fit:contain;vertical-align:middle;margin-right:7px">':c.icon+' ';
       var dsc=c.descr?'<div style="font-size:12px;color:#8a7a55;line-height:1.45;margin:4px 0 2px">'+esc(c.descr)+'</div>':'';
       var cnt=total+' người đạt';
