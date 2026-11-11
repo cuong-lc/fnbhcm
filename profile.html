@@ -161,13 +161,25 @@
       +'<div style="background:#FFFCF5;border-radius:10px;padding:10px"><div class="muted"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#378ADD;margin-right:5px"></span>Cứng</div><div style="font-weight:700">'+short(cum.hard)+' · '+_pc(cum.hard)+'%</div></div>'
       +'<div style="background:#FFFCF5;border-radius:10px;padding:10px"><div class="muted"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#EF9F27;margin-right:5px"></span>Khác</div><div style="font-weight:700">'+short(cum.other)+' · '+_pc(cum.other)+'%</div></div></div></div>';
     // mạnh/yếu + việc nên làm
-    var _sorted=_ds.slice().sort(function(a,b){return a.pct-b.pct;}), weak=_sorted[0], strong=_sorted[_sorted.length-1], acts=[];
-    if(weak){ if(weak.domain===_D1){ var CK=(window.CLF&&CLF.CHECKLISTS&&CLF.CHECKLISTS.c1)||null; if(CK){ for(var pi=0;pi<CK.length&&acts.length<3;pi++){ var pp=CK[pi]; for(var ci=0;ci<pp.categories.length&&acts.length<3;ci++){ var cat=pp.categories[ci]; for(var ii=0;ii<cat.items.length&&acts.length<3;ii++){ if(!_done['clf_c1_ck_'+pi+'_'+ci+'_'+ii]) acts.push(cat.items[ii].n); } } } } } else { var cmps=(comps||[]).filter(function(c){return c.domain===weak.domain;}); for(var i=0;i<cmps.length&&acts.length<3;i++){ if(!_done['clf_c1_comp_'+cmps[i].id]) acts.push(cmps[i].name); } } }
+    var _sorted=_ds.slice().sort(function(a,b){return a.pct-b.pct;}), weak=_sorted[0], strong=_sorted[_sorted.length-1];
+    var _LVN={c1:'Nhân viên',c2:'Chuyên gia',c3:'Trưởng phòng',c4:'GĐTT'};
+    function _itemsFor(dom){
+      var acts=[];
+      if(dom===_D1){ var CK=(window.CLF&&CLF.CHECKLISTS&&CLF.CHECKLISTS.c1)||null; if(CK){ for(var pi=0;pi<CK.length&&acts.length<3;pi++){ var pp=CK[pi]; for(var ci=0;ci<pp.categories.length&&acts.length<3;ci++){ var cat=pp.categories[ci]; for(var ii=0;ii<cat.items.length&&acts.length<3;ii++){ if(!_done['clf_c1_ck_'+pi+'_'+ci+'_'+ii]) acts.push(cat.items[ii].n); } } } } }
+      var cmps=(comps||[]).filter(function(c){return c.domain===dom;});
+      ['c1','c2','c3','c4'].forEach(function(lv){ if(dom===_D1&&lv==='c1') return; for(var i=0;i<cmps.length&&acts.length<3;i++){ if(!_done['clf_'+lv+'_comp_'+cmps[i].id]) acts.push(cmps[i].name+(lv!=='c1'?' · chuẩn '+_LVN[lv]:'')); } });
+      return acts;
+    }
+    function _nx(acts,title,doneMsg,col){
+      if(!acts.length) return '<div style="margin-top:10px;font-size:13px;color:'+col+';font-weight:600">'+doneMsg+'</div>';
+      return '<div style="margin-top:10px;font-size:12.5px;font-weight:700;color:#17130D">'+title+'</div>'+acts.map(function(a,i){ return '<div style="display:flex;gap:8px;align-items:flex-start;margin-top:6px"><span style="flex:none;width:20px;height:20px;border-radius:50%;background:'+col+';color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center">'+(i+1)+'</span><span style="font-size:13.5px">'+esc(a)+'</span></div>'; }).join('');
+    }
+    var _same=strong&&weak&&strong===weak;
     html+='<div class="card" style="margin-top:16px"><h3>Điểm mạnh · điểm cần cải thiện</h3>'
-      +'<div class="grid" style="margin-top:0"><div style="background:#EAF7EE;border-radius:10px;padding:12px"><div class="muted">Mạnh nhất</div><div style="font-weight:700;color:#0a8a3a">'+(strong?esc(strong.domain)+' · '+strong.pct+'%':'—')+'</div></div>'
-      +'<div style="background:#FFF3E6;border-radius:10px;padding:12px"><div class="muted">Cần cải thiện</div><div style="font-weight:700;color:#9a6a00">'+(weak?esc(weak.domain)+' · '+weak.pct+'%':'—')+'</div></div></div>'
-      +'<div style="margin-top:12px;font-weight:600;font-size:13px">3 việc nên làm tiếp'+(weak?' ('+esc(weak.domain)+')':'')+'</div>'
-      +(acts.length? '<ul style="margin:6px 0 0;padding-left:18px">'+acts.map(function(a){return '<li style="margin:3px 0">'+esc(a)+'</li>';}).join('')+'</ul>' : '<div class="muted">Đã hoàn thành mảng này 🎉</div>')
+      +'<div class="grid" style="margin-top:0"><div style="background:#EAF7EE;border-radius:10px;padding:12px"><div class="muted">💪 Mạnh nhất</div><div style="font-weight:700;color:#0a8a3a">'+(strong?esc(strong.domain)+' · '+strong.pct+'%':'—')+'</div>'
+        +(_same||!strong?'':_nx(_itemsFor(strong.domain),'Tiếp tục phát huy — việc tiếp theo:','🏆 Đã tick hết mảng này — hãy kèm cặp 1 đồng đội để lan toả thế mạnh.','#16A34A'))+'</div>'
+      +'<div style="background:#FFF3E6;border-radius:10px;padding:12px"><div class="muted">🎯 Cần cải thiện</div><div style="font-weight:700;color:#9a6a00">'+(weak?esc(weak.domain)+' · '+weak.pct+'%':'—')+'</div>'
+        +(weak?_nx(_itemsFor(weak.domain),'3 việc nên làm để cải thiện:','🎉 Mảng yếu nhất cũng đã tick hết — đã hoàn thành toàn bộ khung năng lực!','#D97706'):'')+'</div></div>'
       +'</div>';
     // tiến độ lên cấp
     var dtmStd=50000000*nM, dtmPct=dtmStd?cum.soft/dtmStd*100:0;

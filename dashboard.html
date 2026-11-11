@@ -191,17 +191,22 @@
   function nextActions(email, ds){
     var d=doneOf(email);
     var sorted=ds.slice().sort(function(a,b){return a.pct-b.pct;});
-    var weak=sorted[0], strong=sorted[sorted.length-1], items=[];
-    if(weak){
-      if(weak.domain===DATA.D1){
+    var weak=sorted[0], strong=sorted[sorted.length-1];
+    var LVN={c1:'Nhân viên',c2:'Chuyên gia',c3:'Trưởng phòng',c4:'GĐTT'};
+    function itemsFor(dom){
+      var items=[];
+      if(dom===DATA.D1){
         var CK=(window.CLF&&CLF.CHECKLISTS&&CLF.CHECKLISTS.c1)||null;
         if(CK){ for(var pi=0;pi<CK.length&&items.length<3;pi++){ var p=CK[pi]; for(var ci=0;ci<p.categories.length&&items.length<3;ci++){ var cat=p.categories[ci]; for(var ii=0;ii<cat.items.length&&items.length<3;ii++){ if(!d['clf_c1_ck_'+pi+'_'+ci+'_'+ii]) items.push({name:cat.items[ii].n, pb:cat.cat}); } } } }
-      } else {
-        var comps=(DATA.comps||[]).filter(function(c){return c.domain===weak.domain;});
-        for(var i=0;i<comps.length&&items.length<3;i++){ var c=comps[i]; if(!d['clf_c1_comp_'+c.id]){ var pb=''; if(window.CLF&&CLF.COMPETENCIES){ var cc=CLF.COMPETENCIES.filter(function(x){return x.id===c.id;})[0]; if(cc&&cc.playbook) pb=cc.playbook.c1||''; } items.push({name:c.name, pb:pb}); } }
       }
+      var comps=(DATA.comps||[]).filter(function(c){return c.domain===dom;});
+      ['c1','c2','c3','c4'].forEach(function(lv){
+        if(dom===DATA.D1 && lv==='c1') return;
+        for(var i=0;i<comps.length&&items.length<3;i++){ var c=comps[i]; if(!d['clf_'+lv+'_comp_'+c.id]){ var pb=''; if(window.CLF&&CLF.COMPETENCIES){ var cc=CLF.COMPETENCIES.filter(function(x){return x.id===c.id;})[0]; if(cc&&cc.playbook) pb=cc.playbook[lv]||''; } items.push({name:c.name+(lv!=='c1'?' · chuẩn '+LVN[lv]:''), pb:pb}); } }
+      });
+      return items;
     }
-    return {weak:weak, strong:strong, items:items};
+    return {weak:weak, strong:strong, items:weak?itemsFor(weak.domain):[], strongItems:(strong&&strong!==weak)?itemsFor(strong.domain):[]};
   }
   function saleExtras(email){
     var ms=months(), lp=ms[ms.length-1], n=ms.length, cum=cumOf(email);
@@ -229,13 +234,18 @@
     }
     // ---- Dashboard 6: mạnh / yếu + việc nên làm ----
     var ds=domainScores(email), na=nextActions(email,ds);
+    function nxList(items, title, doneMsg, col){
+      if(!items.length) return '<div style="margin-top:10px;font-size:13px;color:'+col+';font-weight:600">'+doneMsg+'</div>';
+      return '<div style="margin-top:10px;font-size:12.5px;font-weight:700;color:#17130D">'+title+'</div>'
+        + items.map(function(it,i){ return '<div style="display:flex;gap:8px;align-items:flex-start;margin-top:7px"><span style="flex:none;width:20px;height:20px;border-radius:50%;background:'+col+';color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center">'+(i+1)+'</span><div><div style="font-size:13.5px;color:#17130D">'+esc(it.name)+'</div>'+(it.pb?'<div class="muted" style="font-size:12px">'+esc(it.pb)+'</div>':'')+'</div></div>'; }).join('');
+    }
+    var sameDom = na.strong && na.weak && na.strong===na.weak;
     S.manhYeu='<div class="card" style="margin-top:16px"><h3>Điểm mạnh · điểm cần cải thiện</h3><div class="grid" style="margin-top:0">'
-      +'<div class="kpi" style="background:#EAF7EE"><div class="lab">Mạnh nhất</div><div class="val" style="font-size:16px;color:#0a8a3a">'+(na.strong?esc(na.strong.domain):'—')+'</div><div class="sub">'+(na.strong?na.strong.pct+'%':'')+'</div></div>'
-      +'<div class="kpi" style="background:#FFF3E6"><div class="lab">Cần cải thiện</div><div class="val" style="font-size:16px;color:#9a6a00">'+(na.weak?esc(na.weak.domain):'—')+'</div><div class="sub">'+(na.weak?na.weak.pct+'%':'')+'</div></div>'
-      +'</div>'
-      +'<div style="margin-top:12px;font-size:13px;font-weight:600">3 việc nên làm tiếp'+(na.weak?' ('+esc(na.weak.domain)+')':'')+'</div>'
-      +(na.items.length? na.items.map(function(it){ return '<div class="chk" style="align-items:flex-start"><span class="b no" style="margin-top:2px">→</span><div><div>'+esc(it.name)+'</div>'+(it.pb?'<div class="muted" style="font-size:12px">'+esc(it.pb)+'</div>':'')+'</div></div>'; }).join('') : '<div class="muted">Đã hoàn thành mảng này 🎉</div>')
-      +'</div>';
+      +'<div class="kpi" style="background:#EAF7EE;text-align:left"><div class="lab">💪 Mạnh nhất</div><div class="val" style="font-size:16px;color:#0a8a3a">'+(na.strong?esc(na.strong.domain):'—')+'</div><div class="sub">'+(na.strong?na.strong.pct+'%':'')+'</div>'
+        +(sameDom?'':nxList(na.strongItems,'Tiếp tục phát huy — việc tiếp theo:','🏆 Đã tick hết mảng này — hãy kèm cặp 1 đồng đội để lan toả thế mạnh.','#16A34A'))+'</div>'
+      +'<div class="kpi" style="background:#FFF3E6;text-align:left"><div class="lab">🎯 Cần cải thiện</div><div class="val" style="font-size:16px;color:#9a6a00">'+(na.weak?esc(na.weak.domain):'—')+'</div><div class="sub">'+(na.weak?na.weak.pct+'%':'')+'</div>'
+        +nxList(na.items,'3 việc nên làm để cải thiện:','🎉 Mảng yếu nhất cũng đã tick hết — bạn đã hoàn thành toàn bộ khung năng lực!','#D97706')+'</div>'
+      +'</div></div>';
     // ---- Dashboard 2: tiến độ lên cấp ----
     var dtmStd=50000000*n, dtmPct=dtmStd?cum.soft/dtmStd*100:0;
     var lpNum=parseInt((lp||'').split('-')[1],10)||0, half=lpNum<=6?1:2;
