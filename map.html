@@ -37,6 +37,10 @@
   #simpanel .sp-sub{font-size:12px;color:#6B6150;margin:4px 0 8px;line-height:1.45}
   #simpanel .sp-row{display:flex;gap:6px}
   #simpanel select{flex:1;min-width:0;border:1.5px solid #ddd3bf;border-radius:9px;padding:7px;font-family:inherit;font-size:13px}
+  #simpanel .sp-tabs{display:flex;gap:4px;background:#F6EFDE;border-radius:10px;padding:3px;margin-bottom:8px}
+  #simpanel .sp-tabs button{flex:1;border:0;background:transparent;border-radius:8px;padding:6px 4px;font-size:12px;font-weight:700;color:#6B6150;cursor:pointer;font-family:inherit}
+  #simpanel .sp-tabs button.on{background:#fff;color:#17130D;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+  #simpanel input#spaddr{flex:1;min-width:0;border:1.5px solid #ddd3bf;border-radius:9px;padding:7px 9px;font-family:inherit;font-size:13px}
   #simpanel .sp-item{border-top:1px solid #f1ece0;padding:9px 0}
   #simpanel .sp-top{display:flex;justify-content:space-between;gap:8px}
   #simpanel .sp-n{font-weight:700;color:#17130D;font-size:13.5px}
@@ -181,8 +185,14 @@
         <div class="mcount" id="count">Đang tải…</div>
         <div id="simpanel">
           <div class="sp-h"><b>🔎 Quán tương tự gần đây</b><span id="spclose" style="cursor:pointer;color:#8a6a1e">✕</span></div>
-          <div class="sp-sub">Chọn lĩnh vực của khách đang gặp → lấy 5 quán cùng lĩnh vực gần bạn nhất để làm bằng chứng uy tín.</div>
-          <div class="sp-row"><select id="splv"></select><button class="mbtn primary" id="spgo">Tìm quanh tôi</button></div>
+          <div class="sp-sub">Chọn lĩnh vực của khách → lấy 5 quán cùng lĩnh vực gần nhất để làm bằng chứng uy tín.</div>
+          <div class="sp-row" style="margin-bottom:8px"><select id="splv"></select></div>
+          <div class="sp-tabs"><button id="spt1" class="on">📍 Vị trí hiện tại</button><button id="spt2">⌨️ Nhập địa chỉ khách</button></div>
+          <div id="spm1"><button class="mbtn primary" id="spgo" style="width:100%">Tìm quanh tôi</button></div>
+          <div id="spm2" style="display:none;position:relative">
+            <div class="sp-row"><input id="spaddr" placeholder="Địa chỉ khách, VD: 146 Nguyễn Thị Nhỏ, Q.11" autocomplete="off"><button class="mbtn primary" id="spgo2">Tìm</button></div>
+            <div id="spac" class="acbox"></div>
+          </div>
           <div id="spres"></div>
         </div>
         <div id="ptpanel">
@@ -389,6 +399,28 @@
     if(!navigator.geolocation){ var c=map.getCenter(); done(); showSimilar(c.lat,c.lng,'Không định vị được — đang tính theo tâm bản đồ.'); return; }
     navigator.geolocation.getCurrentPosition(function(pos){ done(); showSimilar(pos.coords.latitude,pos.coords.longitude,''); },
       function(){ var c=map.getCenter(); done(); showSimilar(c.lat,c.lng,'Không lấy được GPS — đang tính theo tâm bản đồ (kéo bản đồ tới khu vực rồi bấm lại).'); },{enableHighAccuracy:true,timeout:8000});
+  };
+  // 2 chế độ: vị trí hiện tại / nhập địa chỉ khách (chốt online)
+  function spMode(m){ $('spt1').classList.toggle('on',m===1); $('spt2').classList.toggle('on',m===2); $('spm1').style.display=m===1?'':'none'; $('spm2').style.display=m===2?'':'none'; if(m===2) setTimeout(function(){$('spaddr').focus();},50); }
+  $('spt1').onclick=function(){ spMode(1); }; $('spt2').onclick=function(){ spMode(2); };
+  function spAt(lat,lng,label){ $('spac').style.display='none'; showSimilar(lat,lng,'📍 Quanh địa chỉ khách: '+esc(label||'')); }
+  var spTimer=null;
+  $('spaddr').addEventListener('input',function(){
+    var v=$('spaddr').value.trim(); clearTimeout(spTimer); if(!GK||v.length<3){ $('spac').style.display='none'; return; }
+    spTimer=setTimeout(function(){ gAC(v).then(function(list){
+      if(!list.length){ $('spac').style.display='none'; return; }
+      $('spac').innerHTML=list.slice(0,6).map(function(p){ var sf=p.structured_formatting||{}; return '<div class="acitem" data-pid="'+esc(p.place_id)+'" data-label="'+esc(p.description||'')+'"><div class="main">'+esc(sf.main_text||p.description||'')+'</div>'+(sf.secondary_text?'<div class="sub">'+esc(sf.secondary_text)+'</div>':'')+'</div>'; }).join('');
+      $('spac').style.display='block';
+      [].forEach.call($('spac').querySelectorAll('.acitem'),function(it){ it.onmousedown=function(e){ e.preventDefault(); var lb=it.getAttribute('data-label'); $('spaddr').value=lb; gDetail(it.getAttribute('data-pid')).then(function(r){ if(r) spAt(r.lat,r.lng,lb); else $('spgo2').click(); }); }; });
+    }); },300);
+  });
+  $('spaddr').addEventListener('blur',function(){ setTimeout(function(){ $('spac').style.display='none'; },180); });
+  $('spaddr').addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); $('spgo2').click(); } });
+  $('spgo2').onclick=function(){
+    var q=$('spaddr').value.trim(); if(!q){ $('spaddr').focus(); return; }
+    var b=$('spgo2'); b.textContent='…';
+    (GK? gGeocode(q) : Promise.resolve(null)).then(function(r){ return r || geocode(q).then(function(g){ return g&&g.lat!=null?{lat:+g.lat,lng:+(g.lng!=null?g.lng:g.lon),label:g.label||q}:null; }).catch(function(){return null;}); })
+      .then(function(r){ b.textContent='Tìm'; if(!r){ $('spres').innerHTML='<div class="sp-empty">Không tìm thấy địa chỉ này — thử ghi rõ hơn (số nhà, đường, quận).</div>'; return; } spAt(r.lat,r.lng,q); });
   };
 
   $('btnMe').onclick=function(){
