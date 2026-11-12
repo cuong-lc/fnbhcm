@@ -39,7 +39,7 @@
     const staff = isStaffView();
     const items = [["index.html", "Trang chủ"]].concat(
       isGD ? [["badges.html", "🏛️ Phong Thần"], ["report.html", "📊 Báo cáo tuần"]] : []
-    ).concat([["map.html", "🗺️ Bản đồ KH"], ["kichban.html", "💬 Kịch bản chốt"]]).concat(
+    ).concat([["map.html", "🗺️ Bản đồ KH"], ["kichban.html", '💬 Kịch bản chốt <span class="soon">Coming soon</span>']]).concat(
       isLeader ? [["camnangleader.html", "📘 Cẩm nang Leader"]] : []
     ).concat(
       LEVELS.filter(canSeeLevel).filter((l) => !(staff && l.id === "c3")).map((l) => [l.file, l.short])
