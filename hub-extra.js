@@ -60,14 +60,14 @@
     ".lb-row b{white-space:nowrap;color:#B8872F;text-align:right}.lb-row b small{display:block;font-size:10.5px;color:#9a8f78;font-weight:500}",
     "@keyframes lbflow{0%{background-position:0% 50%}100%{background-position:200% 50%}}",
     "@keyframes lbfire{0%,100%{box-shadow:0 0 6px rgba(255,110,0,.45),0 0 14px rgba(255,60,0,.25)}50%{box-shadow:0 0 14px rgba(255,170,0,.95),0 0 26px rgba(255,80,0,.55)}}",
-    "@keyframes lbglowS{0%,100%{box-shadow:0 0 4px rgba(180,190,205,.5)}50%{box-shadow:0 0 12px rgba(215,225,240,.95)}}",
+    "@keyframes lbglowS{0%,100%{box-shadow:0 0 5px rgba(70,120,200,.45)}50%{box-shadow:0 0 14px rgba(90,150,235,.85)}}",
     "@keyframes lbglowB{0%,100%{box-shadow:0 0 4px rgba(205,130,60,.5)}50%{box-shadow:0 0 12px rgba(235,170,105,.95)}}",
     "@keyframes lbshine{0%{left:-60%}60%,100%{left:130%}}",
     "@keyframes lbtw{0%,100%{opacity:0;transform:scale(.4) rotate(0)}50%{opacity:1;transform:scale(1.15) rotate(90deg)}}",
     "@keyframes lbflick{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-2px) scale(1.12)}}",
     ".lb-row.r1,.lb-row.r2,.lb-row.r3{position:relative;overflow:hidden;border-top:0!important;border-radius:10px;padding:7px 10px;margin:4px 0;background-size:200% 100%}",
     ".lb-row.r1{background-image:linear-gradient(90deg,rgba(255,61,0,.16),rgba(255,150,0,.2),rgba(255,215,80,.26),rgba(255,150,0,.2),rgba(255,61,0,.16));border:1.5px solid rgba(255,120,0,.55);animation:lbflow 2.4s linear infinite,lbfire 1.4s ease-in-out infinite}",
-    ".lb-row.r2{background-image:linear-gradient(90deg,rgba(170,180,195,.14),rgba(230,236,245,.32),rgba(170,180,195,.14));border:1.5px solid rgba(160,170,185,.55);animation:lbflow 3s linear infinite,lbglowS 1.8s ease-in-out infinite}",
+    ".lb-row.r2{background-image:linear-gradient(90deg,rgba(62,111,181,.12),rgba(170,200,240,.34),rgba(62,111,181,.12));border:1.5px solid rgba(62,111,181,.55);animation:lbflow 3s linear infinite,lbglowS 1.8s ease-in-out infinite}",
     ".lb-row.r3{background-image:linear-gradient(90deg,rgba(185,114,63,.13),rgba(240,180,120,.3),rgba(185,114,63,.13));border:1.5px solid rgba(185,114,63,.5);animation:lbflow 3s linear infinite,lbglowB 1.8s ease-in-out infinite}",
     ".lb-row.r1::after,.lb-row.r2::after,.lb-row.r3::after{content:'';position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);animation:lbshine 2.8s ease-in-out infinite;pointer-events:none;z-index:1}",
     ".lb-row.r1>span,.lb-row.r1>b,.lb-row.r2>span,.lb-row.r2>b,.lb-row.r3>span,.lb-row.r3>b{position:relative;z-index:2}.lb-row.r1 b small,.lb-row.r2 b small,.lb-row.r3 b small{color:inherit;opacity:.75}",
@@ -76,7 +76,7 @@
     ".lb-row.r1 .lb-nm::after{content:' 🔥';display:inline-block;animation:lbflick .9s ease-in-out infinite}",
     ".lb-sp{position:absolute;font-style:normal;pointer-events:none;color:#FFD54A;font-size:11px;text-shadow:0 0 6px #fff;animation:lbtw 1.8s ease-in-out infinite}",
     ".lb-sp.s1{top:2px;left:30%}.lb-sp.s2{bottom:1px;right:34%;animation-delay:.9s;font-size:9px}",
-    ".lb-row.r2 .lb-sp{color:#E6ECF5}.lb-row.r3 .lb-sp{color:#F2B27A}",
+    ".lb-row.r2 .lb-sp{color:#7FA8E0}.lb-row.r3 .lb-sp{color:#F2B27A}",
     "@media(prefers-reduced-motion:reduce){.lb-row.r1,.lb-row.r2,.lb-row.r3,.lb-row::after,.lb-sp,.lb-n,.lb-nm::after{animation:none!important}}",
     ".q-adm button{border:1px solid #ECE4D5;background:#fff;border-radius:7px;font-size:11px;padding:2px 7px;cursor:pointer;margin-left:3px}"
   ].join("\n");
@@ -296,7 +296,7 @@
   function renderLB() {
     var el = $("hub-lb"); if (!el) return;
     function m1(v) { v = Number(v) || 0; return (Math.round(v / 1e5) / 10).toString().replace(".", ",") + "M"; }
-    var MED = ["🥇", "🥈", "🥉"], COL = ["#C2410C", "#4B5563", "#9A4E1C"];
+    var MED = ["🥇", "🥈", "🥉"], COL = ["#C2410C", "#24467A", "#9A4E1C"];
     SB.from("leaderboard_daily").select("snap_date").order("snap_date", { ascending: false }).limit(1).then(function (r) {
       var d = r.data && r.data[0] && r.data[0].snap_date;
       if (!d) { el.innerHTML = '<div class="hubcard" style="margin-top:12px"><div class="hubmuted">🏆 Bảng Danh Vọng sẽ tự cập nhật lên đây mỗi sáng (Thứ 2–Thứ 7).</div></div>'; return; }
