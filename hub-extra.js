@@ -78,6 +78,9 @@
     ".lb-sp.s1{top:2px;left:30%}.lb-sp.s2{bottom:1px;right:34%;animation-delay:.9s;font-size:9px}",
     ".lb-row.r2 .lb-sp{color:#7FA8E0}.lb-row.r3 .lb-sp{color:#F2B27A}",
     "@media(prefers-reduced-motion:reduce){.lb-row.r1,.lb-row.r2,.lb-row.r3,.lb-row::after,.lb-sp,.lb-n,.lb-nm::after{animation:none!important}}",
+    ".lb-card{display:flex;flex-direction:column}.lb-cnt{font-size:11px;font-weight:600;color:#9a8f78;margin-left:4px}",
+    ".lb-pg{margin-top:auto;padding-top:10px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:12.5px;color:#6B6150}",
+    ".lb-pg button{width:32px;height:30px;border-radius:9px;border:1px solid #ECE4D5;background:#fff;cursor:pointer;font-size:12px;color:#17130D}.lb-pg button:disabled{opacity:.35;cursor:default}.lb-pg button:not(:disabled):hover{background:#F6EFDE}",
     ".q-adm button{border:1px solid #ECE4D5;background:#fff;border-radius:7px;font-size:11px;padding:2px 7px;cursor:pointer;margin-left:3px}"
   ].join("\n");
   document.head.appendChild(css);
@@ -301,20 +304,29 @@
       var d = r.data && r.data[0] && r.data[0].snap_date;
       if (!d) { el.innerHTML = '<div class="hubcard" style="margin-top:12px"><div class="hubmuted">🏆 Bảng Danh Vọng sẽ tự cập nhật lên đây mỗi sáng (Thứ 2–Thứ 7).</div></div>'; return; }
       SB.from("leaderboard_daily").select("*").eq("snap_date", d).order("rank").then(function (q) {
-        var rows = q.data || [], dd = d.split("-");
-        function card(title, kind, fmt) {
-          var L = rows.filter(function (x) { return x.kind === kind; });
-          return '<div class="hubcard lb-card"><div class="lb-h">' + title + "</div>" + (L.length ? L.map(function (x, i) {
-            var top = i < 3, c = top ? ' style="color:' + COL[i] + '"' : "";
-            return '<div class="lb-row' + (top ? " t r" + (i + 1) : "") + '"><span class="lb-n">' + (top ? MED[i] : x.rank) + '</span>' + (top ? '<i class="lb-sp s1">✦</i><i class="lb-sp s2">✧</i>' : '') + '<span class="lb-nm"' + c + ">" + esc(x.name) + (x.dept && kind !== "phong" ? ' <i>' + esc(x.dept) + "</i>" : "") + '</span><b' + c + ">" + fmt(x) + "</b></div>";
-          }).join("") : '<div class="hubmuted">Chưa có dữ liệu.</div>') + "</div>";
+        var rows = q.data || [], dd = d.split("-"), PG = { phong: 0, sale: 0, khac: 0 }, PER = 10;
+        var FMT = {
+          phong: function (x) { return (x.pct != null ? String(x.pct).replace(".", ",") + "%" : m1(x.value)) + '<small>' + m1(x.value) + "</small>"; },
+          sale: function (x) { return m1(x.value); }, khac: function (x) { return m1(x.value); }
+        };
+        var TITLE = { phong: "🏅 Top phòng kinh doanh", sale: "👑 Top sale", khac: "💼 Top doanh thu khác" };
+        function rowHtml(x, kind) {
+          var k = x.rank - 1, top = k < 3, c = top ? ' style="color:' + COL[k] + '"' : "";
+          return '<div class="lb-row' + (top ? " t r" + (k + 1) : "") + '"><span class="lb-n">' + (top ? MED[k] : x.rank) + '</span>' + (top ? '<i class="lb-sp s1">✦</i><i class="lb-sp s2">✧</i>' : '') + '<span class="lb-nm"' + c + ">" + esc(x.name) + (x.dept && kind !== "phong" ? ' <i>' + esc(x.dept) + "</i>" : "") + '</span><b' + c + ">" + FMT[kind](x) + "</b></div>";
+        }
+        function draw(kind) {
+          var box = $("lb-" + kind); if (!box) return;
+          var L = rows.filter(function (x) { return x.kind === kind; }), pages = Math.max(1, Math.ceil(L.length / PER));
+          if (PG[kind] >= pages) PG[kind] = pages - 1;
+          var part = L.slice(PG[kind] * PER, PG[kind] * PER + PER);
+          box.innerHTML = '<div class="lb-h">' + TITLE[kind] + (L.length > PER ? ' <span class="lb-cnt">' + L.length + " người</span>" : "") + "</div>"
+            + (part.length ? part.map(function (x) { return rowHtml(x, kind); }).join("") : '<div class="hubmuted">Chưa có dữ liệu.</div>')
+            + (pages > 1 ? '<div class="lb-pg"><button data-k="' + kind + '" data-d="-1"' + (PG[kind] === 0 ? " disabled" : "") + '>◀</button><span>Trang ' + (PG[kind] + 1) + "/" + pages + '</span><button data-k="' + kind + '" data-d="1"' + (PG[kind] >= pages - 1 ? " disabled" : "") + ">▶</button></div>" : "");
+          [].forEach.call(box.querySelectorAll(".lb-pg button"), function (b) { b.onclick = function () { PG[kind] += +b.dataset.d; draw(kind); }; });
         }
         el.innerHTML = '<div class="lb-top"><b>🏆 Bảng Danh Vọng</b><span class="hubmuted">Cập nhật ' + dd[2] + "/" + dd[1] + " · tháng " + parseInt(dd[1], 10) + "</span></div>"
-          + '<div class="lb-grid">'
-          + card("🏅 Top phòng kinh doanh", "phong", function (x) { return (x.pct != null ? String(x.pct).replace(".", ",") + "%" : m1(x.value)) + '<small>' + m1(x.value) + "</small>"; })
-          + card("👑 Top sale", "sale", function (x) { return m1(x.value); })
-          + card("💼 Top doanh thu khác", "khac", function (x) { return m1(x.value); })
-          + "</div>";
+          + '<div class="lb-grid"><div class="hubcard lb-card" id="lb-phong"></div><div class="hubcard lb-card" id="lb-sale"></div><div class="hubcard lb-card" id="lb-khac"></div></div>';
+        draw("phong"); draw("sale"); draw("khac");
       });
     });
   }
