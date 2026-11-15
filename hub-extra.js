@@ -58,6 +58,25 @@
     ".lb-row.t{font-weight:700}.lb-n{width:22px;text-align:center;flex:none;color:#8a7a55;font-size:12.5px}.lb-row.t .lb-n{font-size:15px}",
     ".lb-nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lb-nm i{font-style:normal;font-weight:500;color:#9a8f78;font-size:11.5px}",
     ".lb-row b{white-space:nowrap;color:#B8872F;text-align:right}.lb-row b small{display:block;font-size:10.5px;color:#9a8f78;font-weight:500}",
+    "@keyframes lbflow{0%{background-position:0% 50%}100%{background-position:200% 50%}}",
+    "@keyframes lbfire{0%,100%{box-shadow:0 0 6px rgba(255,110,0,.45),0 0 14px rgba(255,60,0,.25)}50%{box-shadow:0 0 14px rgba(255,170,0,.95),0 0 26px rgba(255,80,0,.55)}}",
+    "@keyframes lbglowS{0%,100%{box-shadow:0 0 4px rgba(180,190,205,.5)}50%{box-shadow:0 0 12px rgba(215,225,240,.95)}}",
+    "@keyframes lbglowB{0%,100%{box-shadow:0 0 4px rgba(205,130,60,.5)}50%{box-shadow:0 0 12px rgba(235,170,105,.95)}}",
+    "@keyframes lbshine{0%{left:-60%}60%,100%{left:130%}}",
+    "@keyframes lbtw{0%,100%{opacity:0;transform:scale(.4) rotate(0)}50%{opacity:1;transform:scale(1.15) rotate(90deg)}}",
+    "@keyframes lbflick{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-2px) scale(1.12)}}",
+    ".lb-row.r1,.lb-row.r2,.lb-row.r3{position:relative;overflow:hidden;border-top:0!important;border-radius:10px;padding:7px 10px;margin:4px 0;background-size:200% 100%}",
+    ".lb-row.r1{background-image:linear-gradient(90deg,rgba(255,61,0,.16),rgba(255,150,0,.2),rgba(255,215,80,.26),rgba(255,150,0,.2),rgba(255,61,0,.16));border:1.5px solid rgba(255,120,0,.55);animation:lbflow 2.4s linear infinite,lbfire 1.4s ease-in-out infinite}",
+    ".lb-row.r2{background-image:linear-gradient(90deg,rgba(170,180,195,.14),rgba(230,236,245,.32),rgba(170,180,195,.14));border:1.5px solid rgba(160,170,185,.55);animation:lbflow 3s linear infinite,lbglowS 1.8s ease-in-out infinite}",
+    ".lb-row.r3{background-image:linear-gradient(90deg,rgba(185,114,63,.13),rgba(240,180,120,.3),rgba(185,114,63,.13));border:1.5px solid rgba(185,114,63,.5);animation:lbflow 3s linear infinite,lbglowB 1.8s ease-in-out infinite}",
+    ".lb-row.r1::after,.lb-row.r2::after,.lb-row.r3::after{content:'';position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.75),transparent);transform:skewX(-20deg);animation:lbshine 2.8s ease-in-out infinite;pointer-events:none}",
+    ".lb-row.r2::after{animation-delay:.5s}.lb-row.r3::after{animation-delay:1s}",
+    ".lb-row.r1 .lb-n{animation:lbflick 1s ease-in-out infinite}",
+    ".lb-row.r1 .lb-nm::after{content:' 🔥';display:inline-block;animation:lbflick .9s ease-in-out infinite}",
+    ".lb-sp{position:absolute;font-style:normal;pointer-events:none;color:#FFD54A;font-size:11px;text-shadow:0 0 6px #fff;animation:lbtw 1.8s ease-in-out infinite}",
+    ".lb-sp.s1{top:2px;left:30%}.lb-sp.s2{bottom:1px;right:34%;animation-delay:.9s;font-size:9px}",
+    ".lb-row.r2 .lb-sp{color:#E6ECF5}.lb-row.r3 .lb-sp{color:#F2B27A}",
+    "@media(prefers-reduced-motion:reduce){.lb-row.r1,.lb-row.r2,.lb-row.r3,.lb-row::after,.lb-sp,.lb-n,.lb-nm::after{animation:none!important}}",
     ".q-adm button{border:1px solid #ECE4D5;background:#fff;border-radius:7px;font-size:11px;padding:2px 7px;cursor:pointer;margin-left:3px}"
   ].join("\n");
   document.head.appendChild(css);
@@ -273,7 +292,7 @@
           var L = rows.filter(function (x) { return x.kind === kind; });
           return '<div class="hubcard lb-card"><div class="lb-h">' + title + "</div>" + (L.length ? L.map(function (x, i) {
             var top = i < 3, c = top ? ' style="color:' + COL[i] + '"' : "";
-            return '<div class="lb-row' + (top ? " t" : "") + '"><span class="lb-n">' + (top ? MED[i] : x.rank) + '</span><span class="lb-nm"' + c + ">" + esc(x.name) + (x.dept && kind !== "phong" ? ' <i>' + esc(x.dept) + "</i>" : "") + '</span><b' + c + ">" + fmt(x) + "</b></div>";
+            return '<div class="lb-row' + (top ? " t r" + (i + 1) : "") + '"><span class="lb-n">' + (top ? MED[i] : x.rank) + '</span>' + (top ? '<i class="lb-sp s1">✦</i><i class="lb-sp s2">✧</i>' : '') + '<span class="lb-nm"' + c + ">" + esc(x.name) + (x.dept && kind !== "phong" ? ' <i>' + esc(x.dept) + "</i>" : "") + '</span><b' + c + ">" + fmt(x) + "</b></div>";
           }).join("") : '<div class="hubmuted">Chưa có dữ liệu.</div>') + "</div>";
         }
         el.innerHTML = '<div class="lb-top"><b>🏆 Bảng Danh Vọng</b><span class="hubmuted">Cập nhật ' + dd[2] + "/" + dd[1] + " · tháng " + parseInt(dd[1], 10) + "</span></div>"
