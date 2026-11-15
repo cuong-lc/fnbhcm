@@ -30,6 +30,45 @@
     },
   };
 
+  // ---- Mục lục bên trái cho trang dài (tự quét tiêu đề) ----
+  function setupToc() {
+    if (window._tocOn) return; window._tocOn = 1;
+    const box = document.createElement("div"); box.id = "toc"; box.className = "toc"; document.body.appendChild(box);
+    const fab = document.createElement("button"); fab.id = "tocfab"; fab.className = "tocfab"; fab.type = "button"; document.body.appendChild(fab);
+    fab.onclick = (e) => { e.stopPropagation(); box.classList.toggle("open"); };
+    document.addEventListener("click", (e) => { if (!box.contains(e.target) && e.target !== fab) box.classList.remove("open"); });
+    let heads = [], timer = null;
+    const scan = () => {
+      const main = document.querySelector("main") || document.body;
+      const H = [].filter.call(main.querySelectorAll("h2, .grp-head h3"), (h) => h.offsetParent && h.textContent.trim() && !h.closest(".hubcard,.card,#toc,iframe"));
+      const long = document.body.scrollHeight > window.innerHeight * 2.2;
+      if (H.length < 3 || !long) { box.style.display = "none"; fab.style.display = "none"; heads = []; return; }
+      heads = H; box.style.display = ""; fab.style.display = "";
+      let n = 0;
+      box.innerHTML = '<div class="toc-h">📑 ' + H.length + " mục</div>" + H.map((h, i) => {
+        if (!h.id) h.id = "toc-" + i;
+        const sub = h.tagName === "H3"; if (!sub) n++;
+        const t = h.textContent.replace(/\s+/g, " ").trim().slice(0, 48);
+        return `<a href="#${h.id}" class="toc-i${sub ? " sub" : ""}" data-i="${i}"><span class="toc-n">${sub ? "•" : n}</span><span class="toc-t">${esc(t)}</span></a>`;
+      }).join("");
+      fab.textContent = "📑 " + H.length + " mục";
+      [].forEach.call(box.querySelectorAll(".toc-i"), (a) => a.onclick = (e) => {
+        e.preventDefault(); const h = heads[+a.dataset.i]; if (!h) return;
+        window.scrollTo({ top: h.getBoundingClientRect().top + window.scrollY - 80, behavior: "smooth" }); box.classList.remove("open");
+      });
+      spy();
+    };
+    const spy = () => {
+      if (!heads.length) return; let cur = 0;
+      heads.forEach((h, i) => { if (h.getBoundingClientRect().top < 130) cur = i; });
+      [].forEach.call(box.querySelectorAll(".toc-i"), (a) => a.classList.toggle("on", +a.dataset.i === cur));
+    };
+    const later = () => { clearTimeout(timer); timer = setTimeout(scan, 600); };
+    window.addEventListener("scroll", spy, { passive: true }); window.addEventListener("resize", later);
+    new MutationObserver(later).observe(document.querySelector("main") || document.body, { childList: true, subtree: true });
+    setTimeout(scan, 1200);
+  }
+
   // ---- shared: nav + footer ----
   function buildNav(activeFile) {
     const nav = byId("nav");
@@ -37,16 +76,25 @@
     const isGD = !!(window.CLF_PROFILE && window.CLF_PROFILE.level === "c4");
     const isLeader = isGD || (window.CLF_PROFILE && window.CLF_PROFILE.level === "c3");
     const staff = isStaffView();
-    const items = [["index.html", "Trang chủ"]].concat(
-      isGD ? [["badges.html", "🏛️ Phong Thần"], ["report.html", "📊 Báo cáo tuần"]] : []
-    ).concat([["map.html", "🗺️ Bản đồ KH"], ["kichban.html", '💬 Kịch bản chốt <span class="soon">Coming soon</span>']]).concat(
-      isLeader ? [["camnangleader.html", "📘 Cẩm nang Leader"]] : []
-    ).concat(
-      LEVELS.filter(canSeeLevel).filter((l) => !(staff && l.id === "c3")).map((l) => [l.file, l.short])
-    ).concat(staff ? [] : [["rubric.html", "Rubric"]]).concat(isGD ? [["people.html", "🔒 Hồ sơ NS"]] : [])
-     .concat(window.CLF_READY ? [["profile.html", "👤 Hồ sơ của tôi"]] : []);
-    nav.innerHTML = items.map(([f, t]) =>
-      `<a href="${f}" class="${f === activeFile ? "active" : ""}">${t}</a>`).join("");
+    // Menu gom nhóm: mục đơn + nhóm thả xuống
+    const tools = [["kichban.html", '💬 Kịch bản chốt <span class="soon">Coming soon</span>']].concat(isLeader ? [["camnangleader.html", "📘 Cẩm nang Leader"]] : []);
+    const levels = LEVELS.filter(canSeeLevel).filter((l) => !(staff && l.id === "c3")).map((l) => [l.file, l.short]).concat(staff ? [] : [["rubric.html", "📏 Rubric"]]);
+    const admin = isGD ? [["badges.html", "🏛️ Phong Thần"], ["report.html", "📊 Báo cáo tuần"], ["people.html", "🔒 Hồ sơ NS"]] : [];
+    const menu = [["index.html", "🏠 Trang chủ"], ["map.html", "🗺️ Bản đồ KH"], { label: "🧰 Công cụ", items: tools }, { label: "📚 Khung năng lực", items: levels }]
+      .concat(admin.length ? [{ label: "⚙️ Quản trị", items: admin }] : [])
+      .concat(window.CLF_READY ? [["profile.html", "👤 Hồ sơ của tôi"]] : []);
+    const link = ([f, t]) => `<a href="${f}" class="${f === activeFile ? "active" : ""}">${t}</a>`;
+    nav.innerHTML = menu.map((m) => {
+      if (Array.isArray(m)) return link(m);
+      if (m.items.length === 1) return link(m.items[0]);
+      const on = m.items.some(([f]) => f === activeFile);
+      return `<div class="ndd${on ? " on" : ""}"><button type="button" class="ndd-b">${m.label} <span class="cv">▾</span></button><div class="ndd-m">${m.items.map(link).join("")}</div></div>`;
+    }).join("");
+    [].forEach.call(nav.querySelectorAll(".ndd-b"), (b) => b.addEventListener("click", (e) => {
+      e.stopPropagation(); const d = b.parentElement, was = d.classList.contains("open");
+      [].forEach.call(nav.querySelectorAll(".ndd.open"), (x) => x.classList.remove("open")); if (!was) d.classList.add("open");
+    }));
+    if (!window._nddDoc) { window._nddDoc = 1; document.addEventListener("click", () => [].forEach.call(document.querySelectorAll(".ndd.open"), (x) => x.classList.remove("open"))); }
     // Nút ☰ cho mobile
     const wrap = nav.parentElement;
     let tg = byId("navtoggle");
@@ -57,6 +105,7 @@
       tg.onclick = (e) => { e.stopPropagation(); nav.classList.toggle("open"); };
       wrap.insertBefore(tg, nav);
       document.addEventListener("click", (e) => { if (!nav.contains(e.target) && e.target !== tg) nav.classList.remove("open"); });
+      setupToc();
     }
     [].forEach.call(nav.querySelectorAll("a"), (a) => a.addEventListener("click", () => nav.classList.remove("open")));
     // 🔔 Chuông nhắc việc (mọi trang, sau khi đã có hồ sơ)
