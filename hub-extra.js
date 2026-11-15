@@ -69,7 +69,8 @@
     ".lb-row.r1{background-image:linear-gradient(90deg,rgba(255,61,0,.16),rgba(255,150,0,.2),rgba(255,215,80,.26),rgba(255,150,0,.2),rgba(255,61,0,.16));border:1.5px solid rgba(255,120,0,.55);animation:lbflow 2.4s linear infinite,lbfire 1.4s ease-in-out infinite}",
     ".lb-row.r2{background-image:linear-gradient(90deg,rgba(170,180,195,.14),rgba(230,236,245,.32),rgba(170,180,195,.14));border:1.5px solid rgba(160,170,185,.55);animation:lbflow 3s linear infinite,lbglowS 1.8s ease-in-out infinite}",
     ".lb-row.r3{background-image:linear-gradient(90deg,rgba(185,114,63,.13),rgba(240,180,120,.3),rgba(185,114,63,.13));border:1.5px solid rgba(185,114,63,.5);animation:lbflow 3s linear infinite,lbglowB 1.8s ease-in-out infinite}",
-    ".lb-row.r1::after,.lb-row.r2::after,.lb-row.r3::after{content:'';position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.75),transparent);transform:skewX(-20deg);animation:lbshine 2.8s ease-in-out infinite;pointer-events:none}",
+    ".lb-row.r1::after,.lb-row.r2::after,.lb-row.r3::after{content:'';position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);animation:lbshine 2.8s ease-in-out infinite;pointer-events:none;z-index:1}",
+    ".lb-row.r1>span,.lb-row.r1>b,.lb-row.r2>span,.lb-row.r2>b,.lb-row.r3>span,.lb-row.r3>b{position:relative;z-index:2}.lb-row.r1 b small,.lb-row.r2 b small,.lb-row.r3 b small{color:inherit;opacity:.75}",
     ".lb-row.r2::after{animation-delay:.5s}.lb-row.r3::after{animation-delay:1s}",
     ".lb-row.r1 .lb-n{animation:lbflick 1s ease-in-out infinite}",
     ".lb-row.r1 .lb-nm::after{content:' 🔥';display:inline-block;animation:lbflick .9s ease-in-out infinite}",
@@ -282,7 +283,7 @@
   function renderLB() {
     var el = $("hub-lb"); if (!el) return;
     function m1(v) { v = Number(v) || 0; return (Math.round(v / 1e5) / 10).toString().replace(".", ",") + "M"; }
-    var MED = ["🥇", "🥈", "🥉"], COL = ["#c8972f", "#8e9095", "#b9723f"];
+    var MED = ["🥇", "🥈", "🥉"], COL = ["#C2410C", "#4B5563", "#9A4E1C"];
     SB.from("leaderboard_daily").select("snap_date").order("snap_date", { ascending: false }).limit(1).then(function (r) {
       var d = r.data && r.data[0] && r.data[0].snap_date;
       if (!d) { el.innerHTML = '<div class="hubcard" style="margin-top:12px"><div class="hubmuted">🏆 Bảng Danh Vọng sẽ tự cập nhật lên đây mỗi sáng (Thứ 2–Thứ 7).</div></div>'; return; }
