@@ -25,12 +25,12 @@
   <nav class="nav" id="nav"></nav>
 </div></div>
 
-<header class="hero">
+<header class="hero" style="padding-top:18px;padding-bottom:14px">
   <span class="box1"></span><span class="box2"></span>
   <div class="wrap">
-    <div class="eyebrow">Lộ trình phát triển đội ngũ</div>
-    <h1>Khung năng lực đội ngũ Kinh doanh</h1>
-    <p>Mỗi cấp đều biết mình đang ở đâu, cần đạt chuẩn gì và hướng tới điều gì tiếp theo. Chọn cấp của bạn để xem chuẩn cần đạt cho từng năng lực.</p>
+    <div class="eyebrow">FNBHCM HUB</div>
+    <h1 id="hello">Chào bạn 👋</h1>
+    <p>Hôm nay chốt thêm 1 khách nhé — mọi thứ bạn cần đều ở đây.</p>
   </div>
 </header>
 
@@ -38,8 +38,9 @@
 
   <section class="section" style="padding-top:16px;padding-bottom:6px">
     <div id="hub-center"></div>
-    <div id="hub-programs"></div>
+    <div id="hub-me"></div>
     <div class="hubgrid2"><div id="hub-todo"></div><div id="hub-challenge"></div></div>
+    <div id="hub-programs"></div>
   </section>
 
   <section id="mgmt" class="section" style="display:none;padding-top:22px">
@@ -208,11 +209,11 @@
   })();
   </script>
 
-  <section class="section">
-    <h2>Dashboard</h2>
+  <section class="section" id="dashsec">
+    <h2>Dashboard điều hành</h2>
     <div class="accent"></div>
-    <iframe id="dashframe" src="dashboard.html?embed=1" scrolling="no" style="width:100%;height:1180px;border:1px solid #ECE4D5;border-radius:14px;background:#fff;overflow:hidden" title="Dashboard"></iframe>
-    <script>window.addEventListener('message',function(e){ if(e.data&&e.data.clfHeight){ var f=document.getElementById('dashframe'); if(f) f.style.height=(e.data.clfHeight+24)+'px'; } });</script>
+    <iframe id="dashframe" src="dashboard.html?embed=1&mode=mgr" scrolling="no" style="width:100%;height:900px;border:1px solid #ECE4D5;border-radius:14px;background:#fff;overflow:hidden" title="Dashboard"></iframe>
+    <script>window.addEventListener('message',function(e){ if(!e.data) return; if(e.data.clfEmpty){ var s=document.getElementById('dashsec'); if(s) s.style.display='none'; return; } if(e.data.clfHeight){ var f=document.getElementById('dashframe'); if(f) f.style.height=(e.data.clfHeight+24)+'px'; } });</script>
   </section>
 
   <section class="section" style="padding-top:0">

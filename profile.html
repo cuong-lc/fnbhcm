@@ -126,97 +126,21 @@
       +'<span class="pill">Thành thạo '+pctAll+'%</span></div></div></div>';
 
     html+='<div id="honor"></div>';
-    html+='<div class="grid">'
-      +'<div class="card"><h3>Kiến thức kỹ năng (checklist)</h3><canvas id="radar" height="240"></canvas>'
+    html+='<div class="card" style="margin-top:16px"><h3>Kiến thức kỹ năng (checklist)</h3><div class="grid" style="margin-top:4px;align-items:center"><div><canvas id="radar" height="220"></canvas></div><div>'
       + order.map(function(p,i){ return '<div class="barrow"><span class="lab">'+esc(p)+'</span><div class="mini"><div class="minif" style="width:'+data[i]+'%"></div></div><span class="v">'+data[i]+'%</span></div>'; }).join('')
-      +'</div>'
-      +'<div class="card"><h3>Doanh thu theo tháng</h3>'
-      + (revs.length? '<table><tr><th>Tháng</th><th style="text-align:right">Doanh thu</th></tr>'
-          + revs.map(function(r){ return '<tr><td>'+esc(r.period)+'</td><td class="amount">'+vnd(r.amount)+'</td></tr>'; }).join('')
-          + '</table>'
-          : '<p class="muted">Chưa có dữ liệu doanh thu. Quản lý nhập ở trang Admin → Doanh thu.</p>')
-      +'</div></div>';
-
-    // Tổng quan năng lực (5 mảng, mỗi cấp 25%) — tính từ tick
-    var _done={}; prog.forEach(function(p){ if(p.done)_done[p.item_key]=true; });
-    var _ckTotal=items.length||71, _D1='Kiến thức kỹ năng chuyên môn';
-    var _byDom={}, _order=[]; (comps||[]).forEach(function(c){ if(_order.indexOf(c.domain)<0)_order.push(c.domain); (_byDom[c.domain]=_byDom[c.domain]||[]).push(c); });
-    function _ckFrac(){ var n=0; for(var k in _done){ if(k.indexOf('clf_c1_ck_')===0)n++; } return _ckTotal?Math.min(1,n/_ckTotal):0; }
-    var _W={c1:0.80,c2:0.10,c3:0.05,c4:0.05};
-    var _ds=_order.map(function(dom){ var cs=_byDom[dom],sum=0; ['c1','c2','c3','c4'].forEach(function(lv){ var f; if(dom===_D1&&lv==='c1'){f=_ckFrac();} else { var dn=0; cs.forEach(function(c){ if(_done['clf_'+lv+'_comp_'+c.id])dn++; }); f=cs.length?dn/cs.length:0; } sum+=_W[lv]*f; }); return {domain:dom,pct:Math.round(sum*100)}; });
-    html+='<div class="card" style="margin-top:16px"><h3>Tổng quan năng lực (5 mảng)</h3>'
-      +'<div class="muted" style="margin-bottom:6px">Đạt chuẩn Nhân viên = 80%, Chuyên gia 90%, Trưởng phòng 95%, GĐ 100%. Tự cập nhật khi tick chuẩn ở các trang cấp.</div>'
-      +'<div class="grid"><div><canvas id="radar2" height="300"></canvas></div><div>'
-      + _ds.map(function(x){ return '<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><b>'+esc(x.domain)+'</b><span class="muted">'+x.pct+'%</span></div><div style="height:10px;background:#FFFCF5;border-radius:6px;overflow:hidden;margin-top:4px"><div style="height:100%;background:linear-gradient(90deg,#C8912E,#E7C877);width:'+x.pct+'%"></div></div></div>'; }).join('')
       +'</div></div></div>';
-
-    // ===== 4 dashboard tự soi (quản lý xem) =====
-    function pbar(p,c){ p=Math.max(0,Math.min(100,Math.round(p))); return '<div style="height:11px;background:#FFFCF5;border-radius:7px;overflow:hidden"><div style="height:100%;width:'+p+'%;background:'+(c||'linear-gradient(90deg,#C8912E,#E7C877)')+'"></div></div>'; }
-    var msP={}; revs.forEach(function(r){ msP[r.period]=1; }); var msArr=Object.keys(msP).sort(); var nM=msArr.length, lpr=msArr[msArr.length-1];
-    var cum={total:0,soft:0,hard:0,other:0,merch:0,renew:0}; revs.forEach(function(r){ cum.total+=Number(r.amount)||0; cum.soft+=Number(r.soft)||0; cum.hard+=Number(r.hard)||0; cum.other+=Number(r.other)||0; cum.merch+=Number(r.merchants)||0; cum.renew+=Number(r.renew)||0; });
-    var _btot=(cum.soft+cum.hard+cum.other)||1, _pc=function(x){return Math.round(x/_btot*100);};
-    html+='<div class="card" style="margin-top:16px"><h3>Doanh thu bóc tách (luỹ kế '+nM+' tháng)</h3>'
-      +'<div style="display:flex;height:16px;border-radius:6px;overflow:hidden;margin-bottom:12px"><div style="width:'+_pc(cum.soft)+'%;background:#1D9E75"></div><div style="width:'+_pc(cum.hard)+'%;background:#378ADD"></div><div style="width:'+_pc(cum.other)+'%;background:#EF9F27"></div></div>'
-      +'<div class="grid" style="margin-top:0"><div style="background:#FFFCF5;border-radius:10px;padding:10px"><div class="muted"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#1D9E75;margin-right:5px"></span>Mềm</div><div style="font-weight:700">'+short(cum.soft)+' · '+_pc(cum.soft)+'%</div></div>'
-      +'<div style="background:#FFFCF5;border-radius:10px;padding:10px"><div class="muted"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#378ADD;margin-right:5px"></span>Cứng</div><div style="font-weight:700">'+short(cum.hard)+' · '+_pc(cum.hard)+'%</div></div>'
-      +'<div style="background:#FFFCF5;border-radius:10px;padding:10px"><div class="muted"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#EF9F27;margin-right:5px"></span>Khác</div><div style="font-weight:700">'+short(cum.other)+' · '+_pc(cum.other)+'%</div></div></div></div>';
-    // mạnh/yếu + việc nên làm
-    var _sorted=_ds.slice().sort(function(a,b){return a.pct-b.pct;}), weak=_sorted[0], strong=_sorted[_sorted.length-1];
-    var _LVN={c1:'Nhân viên',c2:'Chuyên gia',c3:'Trưởng phòng',c4:'GĐTT'};
-    function _itemsFor(dom){
-      var acts=[];
-      if(dom===_D1){ var CK=(window.CLF&&CLF.CHECKLISTS&&CLF.CHECKLISTS.c1)||null; if(CK){ for(var pi=0;pi<CK.length&&acts.length<3;pi++){ var pp=CK[pi]; for(var ci=0;ci<pp.categories.length&&acts.length<3;ci++){ var cat=pp.categories[ci]; for(var ii=0;ii<cat.items.length&&acts.length<3;ii++){ if(!_done['clf_c1_ck_'+pi+'_'+ci+'_'+ii]) acts.push(cat.items[ii].n); } } } } }
-      var cmps=(comps||[]).filter(function(c){return c.domain===dom;});
-      ['c1','c2','c3','c4'].forEach(function(lv){ if(dom===_D1&&lv==='c1') return; for(var i=0;i<cmps.length&&acts.length<3;i++){ if(!_done['clf_'+lv+'_comp_'+cmps[i].id]) acts.push(cmps[i].name+(lv!=='c1'?' · chuẩn '+_LVN[lv]:'')); } });
-      return acts;
-    }
-    function _nx(acts,title,doneMsg,col){
-      if(!acts.length) return '<div style="margin-top:10px;font-size:13px;color:'+col+';font-weight:600">'+doneMsg+'</div>';
-      return '<div style="margin-top:10px;font-size:12.5px;font-weight:700;color:#17130D">'+title+'</div>'+acts.map(function(a,i){ return '<div style="display:flex;gap:8px;align-items:flex-start;margin-top:6px"><span style="flex:none;width:20px;height:20px;border-radius:50%;background:'+col+';color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center">'+(i+1)+'</span><span style="font-size:13.5px">'+esc(a)+'</span></div>'; }).join('');
-    }
-    var _same=strong&&weak&&strong===weak;
-    html+='<div class="card" style="margin-top:16px"><h3>Điểm mạnh · điểm cần cải thiện</h3>'
-      +'<div class="grid" style="margin-top:0"><div style="background:#EAF7EE;border-radius:10px;padding:12px"><div class="muted">💪 Mạnh nhất</div><div style="font-weight:700;color:#0a8a3a">'+(strong?esc(strong.domain)+' · '+strong.pct+'%':'—')+'</div>'
-        +(_same||!strong?'':_nx(_itemsFor(strong.domain),'Tiếp tục phát huy — việc tiếp theo:','🏆 Đã tick hết mảng này — hãy kèm cặp 1 đồng đội để lan toả thế mạnh.','#16A34A'))+'</div>'
-      +'<div style="background:#FFF3E6;border-radius:10px;padding:12px"><div class="muted">🎯 Cần cải thiện</div><div style="font-weight:700;color:#9a6a00">'+(weak?esc(weak.domain)+' · '+weak.pct+'%':'—')+'</div>'
-        +(weak?_nx(_itemsFor(weak.domain),'3 việc nên làm để cải thiện:','🎉 Mảng yếu nhất cũng đã tick hết — đã hoàn thành toàn bộ khung năng lực!','#D97706'):'')+'</div></div>'
-      +'</div>';
-    // tiến độ lên cấp
-    var dtmStd=50000000*nM, dtmPct=dtmStd?cum.soft/dtmStd*100:0;
-    var lpNum=parseInt((lpr||'').split('-')[1],10)||0, half=lpNum<=6?1:2, expStd=500000000*half, expCum=0;
-    revs.forEach(function(r){ var mn=parseInt((r.period||'').split('-')[1],10)||0; if(half===1?mn<=6:true) expCum+=Number(r.amount)||0; });
-    var expPct=expStd?expCum/expStd*100:0, official=mentors.filter(function(m){return (m.status||'').toLowerCase().indexOf('chính thức')>=0;}).length;
-    html+='<div class="card" style="margin-top:16px"><h3>Tiến độ lên cấp</h3>'
-      +'<div style="font-weight:600;font-size:13px;margin-bottom:3px">Mốc 1 · Doanh thu mềm luỹ kế</div>'
-      +'<div class="muted" style="font-size:12px;margin-bottom:5px">Chuẩn 50tr mềm/tháng × '+nM+' tháng = '+short(dtmStd)+'</div>'+pbar(dtmPct, dtmPct>=100?'#16D865':null)
-      +'<div class="muted" style="margin:4px 0 14px">'+short(cum.soft)+' / '+short(dtmStd)+' = <b>'+Math.round(dtmPct)+'%</b></div>'
-      +'<div style="font-weight:600;font-size:13px;margin-bottom:3px">Mốc 2 · Chuyên gia (xét theo nửa năm)</div>'
-      +'<div class="muted" style="font-size:12px;margin-bottom:5px">'+(half===1?'Nửa 1 (T1–6): chuẩn 500tr':'Cả năm: chuẩn 1 tỷ')+'</div>'+pbar(expPct, expPct>=100?'#16D865':null)
-      +'<div class="muted" style="margin:4px 0 12px">'+short(expCum)+' / '+short(expStd)+' = <b>'+Math.round(expPct)+'%</b></div>'
-      +'<div style="font-size:13px;margin-bottom:4px">Kèm cặp lên chính thức: <b>'+official+'/3</b></div>'
-      +(mentors.length? mentors.map(function(m){ var ok=(m.status||'').toLowerCase().indexOf('chính thức')>=0; return '<div style="font-size:13px;margin:2px 0">'+(ok?'✓ ':'· ')+esc(m.mentee_name)+' <span class="muted">'+esc(m.status||'')+'</span></div>'; }).join('') : '<div class="muted">Chưa kèm cặp ai.</div>')
-      +'</div>';
-    // chất lượng đơn
-    var netT=cum.total-cum.renew, netS=cum.soft-cum.renew, avgKH=cum.merch?netT/cum.merch:0, softKH=cum.merch?netS/cum.merch:0, lastMerch=0;
-    revs.forEach(function(r){ if(r.period===lpr) lastMerch=Number(r.merchants)||0; });
-    html+='<div class="card" style="margin-top:16px"><h3>Chất lượng đơn &amp; khách hàng</h3>'
-      +'<div class="muted" style="font-size:12px;margin-bottom:8px">Doanh thu/khách đã trừ doanh thu gia hạn.</div>'
-      +'<div class="grid" style="margin-top:0"><div style="background:#FFFCF5;border-radius:10px;padding:12px"><div class="muted">Số KH đã chinh phục</div><div class="big" style="font-size:24px">'+Math.round(cum.merch)+'</div></div>'
-      +'<div style="background:#FFFCF5;border-radius:10px;padding:12px"><div class="muted">DT / khách · DT mềm / khách</div><div style="font-weight:700;font-size:18px;color:#B8872F">'+tr1(avgKH)+' · '+tr1(softKH)+'</div></div></div></div>';
-    // đóng góp phòng
-    html+='<div id="ranks"></div>';
+    // Dashboard cá nhân (dùng chung với trang Dashboard — tránh trùng lặp)
+    html+='<iframe id="dashca" src="dashboard.html?embed=1&mode=ca&email='+encodeURIComponent(email)+'" scrolling="no" style="width:100%;height:1500px;border:0;margin-top:6px;background:transparent;overflow:hidden" title="Dashboard cá nhân"></iframe>';
+    if(!window._dashMsg){ window._dashMsg=1; window.addEventListener('message',function(e){ if(e.data&&e.data.clfHeight){ var f=document.getElementById('dashca'); if(f) f.style.height=(e.data.clfHeight+10)+'px'; } }); }
 
     document.getElementById('root').innerHTML=html;
     fillHonor(email);
-    fillRanks(email);
 
     var ctx=document.getElementById('radar');
     new Chart(ctx,{type:'radar',data:{labels:labels,datasets:[{label:'% thành thạo',data:data,fill:true,backgroundColor:'rgba(184,135,47,.18)',borderColor:'#B8872F',pointBackgroundColor:'#16D865',borderWidth:2}]},
       options:{responsive:true,scales:{r:{min:0,max:100,ticks:{stepSize:25,backdropColor:'transparent'},pointLabels:{font:{size:12}}}},plugins:{legend:{display:false}}}});
 
-    var clabels=_ds.map(function(x){return x.domain;}), cdata=_ds.map(function(x){return x.pct;});
-    new Chart(document.getElementById('radar2'),{type:'radar',data:{labels:clabels,datasets:[{label:'%',data:cdata,fill:true,backgroundColor:'rgba(184,135,47,.16)',borderColor:'#B8872F',pointBackgroundColor:'#16D865',borderWidth:2}]},
-      options:{responsive:true,scales:{r:{min:0,max:100,ticks:{stepSize:25,backdropColor:'transparent'},pointLabels:{font:{size:9}}}},plugins:{legend:{display:false}}}});
+
   }
 
 

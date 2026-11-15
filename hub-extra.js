@@ -98,7 +98,7 @@
     var body;
     if (TAB === "gia") body = '<input class="pr-search" id="prq" placeholder="🔎 Tìm gói, thiết bị, ưu đãi…"><div id="prt" style="overflow-x:auto">' + priceTable("") + '</div><div style="margin-top:8px;font-size:12.5px"><a href="https://onesapo.github.io/banggia/" target="_blank" rel="noopener" style="font-weight:700">🧮 Mở công cụ báo giá đầy đủ ↗</a></div>';
     else { var L = TAB === "cty" ? cty : kv; body = L.length ? '<div class="pg-list">' + L.map(annItem).join("") + "</div>" : '<div class="hubmuted">Chưa có chương trình ' + (TAB === "kv" ? "khu vực" : "công ty") + " nào đang chạy.</div>"; }
-    el.innerHTML = '<div class="hubcard" style="margin-top:12px"><div style="display:flex;align-items:center;gap:8px"><h3 style="margin:0">📢 Chương trình &amp; chính sách</h3>' + (GD ? '<button class="hubbtn" id="pg-add" style="margin-left:auto">＋ ' + (TAB === "gia" ? "Thêm dòng giá" : "Đăng chương trình") + "</button>" : "") + "</div>" + tabs + form + body + "</div>";
+    el.innerHTML = '<div class="hubcard" style="margin-top:12px"><div style="display:flex;align-items:center;gap:8px"><h3 style="margin:0">📢 Chính sách chương trình</h3>' + (GD ? '<button class="hubbtn" id="pg-add" style="margin-left:auto">＋ ' + (TAB === "gia" ? "Thêm dòng giá" : "Đăng chương trình") + "</button>" : "") + "</div>" + tabs + form + body + "</div>";
     // seen
     try { var seen = JSON.parse(localStorage.getItem("hubAnnSeen") || "[]"); ANN.forEach(function (a) { if (seen.indexOf(a.id) < 0) seen.push(a.id); }); localStorage.setItem("hubAnnSeen", JSON.stringify(seen.slice(-200))); } catch (e) {}
     el.querySelectorAll(".pg-tabs button").forEach(function (b) { b.onclick = function () { TAB = b.getAttribute("data-t"); drawPrograms(); }; });
@@ -220,11 +220,30 @@
     if (PEOPLE) go(); else SB.from("role_assignments").select("email,full_name,dept").like("dept", "Phòng%").order("full_name").then(function (r) { PEOPLE = r.data || []; go(); });
   }
 
+  // ================= DẢI TÓM TẮT CÁ NHÂN =================
+  function renderMe() {
+    var P = window.CLF_PROFILE || {}, nm = (P.full_name || (window.CLF_USER || {}).email || "").trim();
+    var h1 = $("hello"); if (h1 && nm) h1.textContent = "Chào " + nm.split(/\s+/).slice(-1)[0] + " 👋";
+    var el = $("hub-me"); if (!el || GD) return;
+    function sm(n) { n = Number(n) || 0; return n >= 1e9 ? (Math.round(n / 1e7) / 100 + " tỷ").replace(".", ",") : Math.round(n / 1e6) + "tr"; }
+    Promise.all([SB.rpc("profile_ranks", { p_email: ME }), SB.rpc("my_chuan")]).then(function (r) {
+      var x = (r[0].data || [])[0], c = (r[1].data || [])[0] || {};
+      if (!x || !x.period) return;
+      var m = Number(x.mine) || 0, ch = Number(c.chuan) || 0, pc = ch ? Math.round(m / ch * 100) : 0, mon = "T" + parseInt(String(x.period).split("-")[1], 10);
+      var box = function (l, v, s) { return '<div style="flex:1;min-width:110px"><div style="font-size:11.5px;color:var(--gray);font-weight:600">' + l + '</div><div style="font-size:19px;font-weight:800;color:#B8872F;line-height:1.25">' + v + "</div>" + (s ? '<div style="font-size:11px;color:var(--gray)">' + s + "</div>" : "") + "</div>"; };
+      el.innerHTML = '<div class="hubcard" style="margin-top:12px;display:flex;gap:14px;align-items:center;flex-wrap:wrap">'
+        + box("Doanh thu " + mon, sm(m), ch ? "chuẩn " + sm(ch) : "")
+        + box("% chuẩn", pc + "%", pc >= 100 ? "🔥 vượt chuẩn" : "")
+        + box("Hạng phòng", m > 0 ? "#" + x.dept_rnk + "/" + x.dept_n : "—", "")
+        + box("Hạng trung tâm", m > 0 ? "#" + x.tt_rnk + "/" + x.tt_n : "—", "")
+        + '<a class="hubbtn" href="profile.html" style="text-decoration:none;margin-left:auto">Xem hồ sơ chi tiết →</a></div>';
+    });
+  }
   function start() {
     SB = window.SB; if (!SB) return;
     ME = ((window.CLF_USER || {}).email || "").toLowerCase(); GD = (window.CLF_PROFILE || {}).level === "c4";
     SB.from("role_assignments").select("email,full_name,dept").like("dept", "Phòng%").order("full_name").then(function (r) { PEOPLE = r.data || []; });
-    loadPrograms(); loadQuest();
+    loadPrograms(); loadQuest(); renderMe();
     if (location.hash === "#hub-programs" || location.hash === "#hub-challenge") setTimeout(function () { var t = $(location.hash.slice(1)); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" }); }, 900);
   }
   if (window.CLF_READY) start(); else document.addEventListener("clf-ready", start);

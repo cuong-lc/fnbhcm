@@ -312,9 +312,15 @@
 
   // ---------- render khung tab ----------
   function render(){
-    var tabs=[['ca','Cá nhân']];
+    var QS=new URLSearchParams(location.search), MODE=QS.get('mode')||'';
+    if(MODE==='ca'){ // chỉ dashboard cá nhân (nhúng trong Hồ sơ)
+      var em=(QS.get('email')||ME.email); if(!DATA.people.some(function(p){return p.email.toLowerCase()===em.toLowerCase();})) em=ME.email;
+      document.getElementById('root').innerHTML='<div id="tabbody"></div>'; clearCharts(); renderCaNhan(document.getElementById('tabbody'), em); return;
+    }
+    var tabs=MODE==='mgr'?[]:[['ca','Cá nhân']];
     if(MYLEVEL==='c3') tabs.push(['phong','Phòng']);
     if(MYLEVEL==='c4'){ tabs.push(['phong','Phòng']); tabs.push(['tt','Giám đốc Trung tâm']); }
+    if(!tabs.length){ try{ window.parent.postMessage({clfEmpty:true},'*'); }catch(e){} document.getElementById('root').innerHTML=''; return; }
     var html='<div class="tabs">'+tabs.map(function(t,i){return '<button class="tab'+(i===0?' active':'')+'" data-t="'+t[0]+'">'+t[1]+'</button>';}).join('')+'</div><div id="tabbody"></div>';
     document.getElementById('root').innerHTML=html;
     var btns=document.querySelectorAll('.tab');
