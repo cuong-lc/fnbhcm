@@ -320,8 +320,8 @@
   }
   // ================= POPUP SỰ KIỆN (lần đầu vào) =================
   function eventPopup() {
-    var KEY = "hubPop_1611", END = Date.parse("2026-11-16T23:59:59+07:00");
-    try { if (Date.now() > END || localStorage.getItem(KEY) === "off" || sessionStorage.getItem(KEY)) return; } catch (e) {}
+    var KEY = "hubPop_1611", END = Date.parse("2026-11-16T13:30:00+07:00");
+    try { if (Date.now() > END || localStorage.getItem(KEY) === "off" || window._hpShown) return; window._hpShown = 1; } catch (e) {}
     var st = document.createElement("style");
     st.textContent = "@keyframes hpIn{from{opacity:0;transform:scale(.85) translateY(20px)}to{opacity:1;transform:none}}@keyframes hpGlow{0%,100%{box-shadow:0 0 30px rgba(255,180,40,.45),0 20px 60px rgba(0,0,0,.6)}50%{box-shadow:0 0 60px rgba(255,200,60,.85),0 20px 60px rgba(0,0,0,.6)}}"
       + ".hp-ov{position:fixed;inset:0;z-index:9999;background:rgba(10,8,4,.72);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px}"
@@ -338,7 +338,7 @@
       + '<img src="popup-1611.jpg" alt="Vật phẩm gì sẽ mở đổi vào 13:30 ngày 16/11? Mau chóng tích điểm để dẫn đầu cuộc chơi nhé!">'
       + '<div class="hp-bar"><button class="hp-no">Không hiện lại lần sau</button><button class="hp-go">🎁 Tích điểm ngay →</button></div></div>';
     document.body.appendChild(ov);
-    var close = function () { try { sessionStorage.setItem(KEY, "1"); } catch (e) {} ov.remove(); };
+    var close = function () { ov.remove(); };
     var go = function () { close(); var t = $("hub-challenge"); if (t) window.scrollTo({ top: t.getBoundingClientRect().top + scrollY - 80, behavior: "smooth" }); };
     ov.querySelector(".hp-x").onclick = close;
     ov.querySelector(".hp-no").onclick = function () { try { localStorage.setItem(KEY, "off"); } catch (e) {} close(); };
