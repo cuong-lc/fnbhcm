@@ -335,17 +335,17 @@
         + ".hp-bar{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px 12px;background:linear-gradient(180deg,#1b1408,#0d0a05)}"
         + ".hp-no{background:none;border:0;color:#cdbf9c;font-size:12.5px;cursor:pointer;font-family:inherit;text-decoration:underline}"
         + ".hp-go{border:0;border-radius:10px;padding:9px 14px;font-weight:800;font-size:13.5px;cursor:pointer;font-family:inherit;background:linear-gradient(135deg,#FFE08A,#D4A94C);color:#17130D}"
-        + "#hp-fab{position:fixed;right:18px;bottom:18px;z-index:60;width:54px;height:54px;border-radius:50%;border:2px solid #E7C877;background:radial-gradient(circle at 30% 30%,#3a2c12,#110d06);font-size:26px;cursor:pointer;animation:hpRing 1.8s ease-out infinite;display:flex;align-items:center;justify-content:center}"
-        + "#hp-fab span{display:inline-block;animation:hpBob 1.6s ease-in-out infinite}"
-        + "#hp-fab i{position:absolute;top:2px;right:2px;width:12px;height:12px;border-radius:50%;background:#E5484D;border:2px solid #fff}"
-        + "#hp-fab b{position:absolute;right:62px;top:50%;transform:translateY(-50%);white-space:nowrap;background:#17130D;color:#F0D48A;font-size:12px;font-weight:700;padding:5px 10px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s}"
-        + "#hp-fab:hover b{opacity:1}@media(max-width:720px){#hp-fab{right:12px;bottom:70px}}";
+        + "#hp-fab{position:fixed;right:20px;bottom:20px;z-index:60;display:flex;align-items:center;gap:8px;padding:10px 16px 10px 12px;border-radius:30px;border:2px solid #fff;background:linear-gradient(135deg,#FFE08A,#D4A94C 55%,#B8872F);color:#17130D;font-family:inherit;font-weight:800;font-size:14px;cursor:pointer;animation:hpRing 1.8s ease-out infinite}"
+        + "#hp-fab span{display:inline-block;font-size:24px;animation:hpBob 1.6s ease-in-out infinite}"
+        + "#hp-fab i{position:absolute;top:-4px;right:-2px;width:14px;height:14px;border-radius:50%;background:#E5484D;border:2px solid #fff}"
+        + "#hp-fab b{font-weight:800;white-space:nowrap}"
+        + "#hp-fab:hover{transform:translateY(-2px)}@media(max-width:720px){#hp-fab{right:12px;bottom:70px;padding:8px 12px 8px 10px;font-size:12.5px}#hp-fab span{font-size:20px}}";
       document.head.appendChild(st);
     }
     var fab = $("hp-fab");
     if (!fab) {
       fab = document.createElement("button"); fab.id = "hp-fab"; fab.type = "button"; fab.setAttribute("aria-label", "Xem sự kiện");
-      fab.innerHTML = "<span>🎁</span><i></i><b>" + esc(EV.title || "Xem sự kiện") + "</b>";
+      fab.innerHTML = "<span>🎁</span><b>Xem sự kiện</b><i></i>"; fab.title = EV.title || "";
       fab.onclick = function () { eventPopup(true); };
       document.body.appendChild(fab);
     }
