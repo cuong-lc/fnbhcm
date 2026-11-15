@@ -319,27 +319,47 @@
     });
   }
   // ================= POPUP SỰ KIỆN (lần đầu vào) =================
-  function eventPopup() {
-    var KEY = "hubPop_1611", END = Date.parse("2026-11-16T13:30:00+07:00");
-    try { if (Date.now() > END || localStorage.getItem(KEY) === "off" || window._hpShown) return; window._hpShown = 1; } catch (e) {}
-    var st = document.createElement("style");
-    st.textContent = "@keyframes hpIn{from{opacity:0;transform:scale(.85) translateY(20px)}to{opacity:1;transform:none}}@keyframes hpGlow{0%,100%{box-shadow:0 0 30px rgba(255,180,40,.45),0 20px 60px rgba(0,0,0,.6)}50%{box-shadow:0 0 60px rgba(255,200,60,.85),0 20px 60px rgba(0,0,0,.6)}}"
-      + ".hp-ov{position:fixed;inset:0;z-index:9999;background:rgba(10,8,4,.72);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px}"
-      + ".hp-card{position:relative;width:min(440px,92vw);border-radius:18px;overflow:hidden;background:#110d06;border:2px solid #E7C877;animation:hpIn .45s cubic-bezier(.2,.9,.3,1.2),hpGlow 2.2s ease-in-out .45s infinite}"
-      + ".hp-card img{display:block;width:100%;height:auto;cursor:pointer}"
-      + ".hp-x{position:absolute;top:8px;right:8px;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.5);background:rgba(0,0,0,.55);color:#fff;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}"
-      + ".hp-x:hover{background:rgba(0,0,0,.8)}"
-      + ".hp-bar{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px 12px;background:linear-gradient(180deg,#1b1408,#0d0a05)}"
-      + ".hp-no{background:none;border:0;color:#cdbf9c;font-size:12.5px;cursor:pointer;font-family:inherit;text-decoration:underline}"
-      + ".hp-go{border:0;border-radius:10px;padding:9px 14px;font-weight:800;font-size:13.5px;cursor:pointer;font-family:inherit;background:linear-gradient(135deg,#FFE08A,#D4A94C);color:#17130D}";
-    document.head.appendChild(st);
+  function eventPopup(force) {
+    var EV = window.HUB_EVENT; if (!EV) return;
+    var KEY = EV.key, END = Date.parse(EV.end);
+    if (Date.now() > END) { var f0 = $("hp-fab"); if (f0) f0.remove(); return; }
+    if (!$("hp-style")) {
+      var st = document.createElement("style"); st.id = "hp-style";
+      st.textContent = "@keyframes hpIn{from{opacity:0;transform:scale(.85) translateY(20px)}to{opacity:1;transform:none}}@keyframes hpGlow{0%,100%{box-shadow:0 0 30px rgba(255,180,40,.45),0 20px 60px rgba(0,0,0,.6)}50%{box-shadow:0 0 60px rgba(255,200,60,.85),0 20px 60px rgba(0,0,0,.6)}}"
+        + "@keyframes hpBob{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-4px) rotate(-8deg)}75%{transform:translateY(-4px) rotate(8deg)}}@keyframes hpRing{0%,100%{box-shadow:0 0 0 0 rgba(255,190,60,.55),0 6px 18px rgba(0,0,0,.25)}50%{box-shadow:0 0 0 10px rgba(255,190,60,0),0 6px 18px rgba(0,0,0,.25)}}"
+        + ".hp-ov{position:fixed;inset:0;z-index:9999;background:rgba(10,8,4,.72);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px}"
+        + ".hp-card{position:relative;width:min(440px,92vw);border-radius:18px;overflow:hidden;background:#110d06;border:2px solid #E7C877;animation:hpIn .45s cubic-bezier(.2,.9,.3,1.2),hpGlow 2.2s ease-in-out .45s infinite}"
+        + ".hp-card img{display:block;width:100%;height:auto;cursor:pointer}"
+        + ".hp-x{position:absolute;top:8px;right:8px;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.5);background:rgba(0,0,0,.55);color:#fff;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}"
+        + ".hp-x:hover{background:rgba(0,0,0,.8)}"
+        + ".hp-bar{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px 12px;background:linear-gradient(180deg,#1b1408,#0d0a05)}"
+        + ".hp-no{background:none;border:0;color:#cdbf9c;font-size:12.5px;cursor:pointer;font-family:inherit;text-decoration:underline}"
+        + ".hp-go{border:0;border-radius:10px;padding:9px 14px;font-weight:800;font-size:13.5px;cursor:pointer;font-family:inherit;background:linear-gradient(135deg,#FFE08A,#D4A94C);color:#17130D}"
+        + "#hp-fab{position:fixed;right:18px;bottom:18px;z-index:60;width:54px;height:54px;border-radius:50%;border:2px solid #E7C877;background:radial-gradient(circle at 30% 30%,#3a2c12,#110d06);font-size:26px;cursor:pointer;animation:hpRing 1.8s ease-out infinite;display:flex;align-items:center;justify-content:center}"
+        + "#hp-fab span{display:inline-block;animation:hpBob 1.6s ease-in-out infinite}"
+        + "#hp-fab i{position:absolute;top:2px;right:2px;width:12px;height:12px;border-radius:50%;background:#E5484D;border:2px solid #fff}"
+        + "#hp-fab b{position:absolute;right:62px;top:50%;transform:translateY(-50%);white-space:nowrap;background:#17130D;color:#F0D48A;font-size:12px;font-weight:700;padding:5px 10px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s}"
+        + "#hp-fab:hover b{opacity:1}@media(max-width:720px){#hp-fab{right:12px;bottom:70px}}";
+      document.head.appendChild(st);
+    }
+    var fab = $("hp-fab");
+    if (!fab) {
+      fab = document.createElement("button"); fab.id = "hp-fab"; fab.type = "button"; fab.setAttribute("aria-label", "Xem sự kiện");
+      fab.innerHTML = "<span>🎁</span><i></i><b>" + esc(EV.title || "Xem sự kiện") + "</b>";
+      fab.onclick = function () { eventPopup(true); };
+      document.body.appendChild(fab);
+    }
+    var off = false; try { off = localStorage.getItem(KEY) === "off"; } catch (e) {}
+    if (!force && (off || window._hpShown)) { fab.style.display = ""; return; }
+    if (document.querySelector(".hp-ov")) return;
+    window._hpShown = 1; fab.style.display = "none";
     var ov = document.createElement("div"); ov.className = "hp-ov";
-    ov.innerHTML = '<div class="hp-card" role="dialog" aria-label="Sự kiện đổi quà"><button class="hp-x" aria-label="Đóng">✕</button>'
-      + '<img src="popup-1611.jpg" alt="Vật phẩm gì sẽ mở đổi vào 13:30 ngày 16/11? Mau chóng tích điểm để dẫn đầu cuộc chơi nhé!">'
-      + '<div class="hp-bar"><button class="hp-no">Không hiện lại lần sau</button><button class="hp-go">🎁 Tích điểm ngay →</button></div></div>';
+    ov.innerHTML = '<div class="hp-card" role="dialog" aria-label="Sự kiện"><button class="hp-x" aria-label="Đóng">✕</button>'
+      + '<img src="' + esc(EV.img) + '" alt="' + esc(EV.alt || EV.title || "") + '">'
+      + '<div class="hp-bar"><button class="hp-no">' + (off ? "Đã tắt tự hiện" : "Không hiện lại lần sau") + '</button><button class="hp-go">' + esc(EV.cta || "🎁 Tích điểm ngay →") + "</button></div></div>";
     document.body.appendChild(ov);
-    var close = function () { ov.remove(); };
-    var go = function () { close(); var t = $("hub-challenge"); if (t) window.scrollTo({ top: t.getBoundingClientRect().top + scrollY - 80, behavior: "smooth" }); };
+    var close = function () { ov.remove(); fab.style.display = ""; if (location.hash === "#event") history.replaceState(null, "", location.pathname + location.search); };
+    var go = function () { close(); var t = $(EV.target || "hub-challenge"); if (t) window.scrollTo({ top: t.getBoundingClientRect().top + scrollY - 80, behavior: "smooth" }); };
     ov.querySelector(".hp-x").onclick = close;
     ov.querySelector(".hp-no").onclick = function () { try { localStorage.setItem(KEY, "off"); } catch (e) {} close(); };
     ov.querySelector(".hp-go").onclick = go; ov.querySelector("img").onclick = go;
@@ -350,7 +370,7 @@
     SB = window.SB; if (!SB) return;
     ME = ((window.CLF_USER || {}).email || "").toLowerCase(); GD = (window.CLF_PROFILE || {}).level === "c4";
     SB.from("role_assignments").select("email,full_name,dept").like("dept", "Phòng%").order("full_name").then(function (r) { PEOPLE = r.data || []; });
-    loadPrograms(); loadQuest(); renderMe(); renderLB(); setTimeout(eventPopup, 900);
+    loadPrograms(); loadQuest(); renderMe(); renderLB(); setTimeout(function () { eventPopup(location.hash === "#event"); }, 900); window.addEventListener("hashchange", function () { if (location.hash === "#event") eventPopup(true); });
     if (location.hash === "#hub-programs" || location.hash === "#hub-challenge") setTimeout(function () { var t = $(location.hash.slice(1)); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" }); }, 900);
   }
   if (window.CLF_READY) start(); else document.addEventListener("clf-ready", start);

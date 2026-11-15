@@ -132,6 +132,9 @@
     }
   }
 
+  // ===== Sự kiện / popup hiện hành (đổi ảnh + hạn ở đây cho popup mới) =====
+  window.HUB_EVENT = { key: "hubPop_1611", img: "popup-1611.jpg", end: "2026-11-16T13:30:00+07:00", title: "Vật phẩm mở đổi 13:30 16/11", alt: "Vật phẩm gì sẽ mở đổi vào 13:30 ngày 16/11? Mau chóng tích điểm để dẫn đầu cuộc chơi nhé!", cta: "🎁 Tích điểm ngay →", target: "hub-challenge" };
+
   // ===== Việc của bạn hôm nay (dùng chung cho chuông + trang chủ) =====
   let _todoP = null;
   window.hubTodo = function () {
@@ -177,6 +180,8 @@
         const done = (r[4].data || []).length, left = Math.max(0, 71 - done);
         if (left) items.push({ act: 1, icon: "✅", text: "Còn " + left + " mục checklist Cấp 1 chưa tích", href: "cap-1-nhan-vien.html" });
       }
+      // Sự kiện đang chạy → xem lại popup
+      try { const EV = window.HUB_EVENT; if (EV && Date.now() < Date.parse(EV.end)) items.unshift({ act: 1, icon: "🎁", text: "Sự kiện: " + EV.title + " — xem lại", href: "index.html#event" }); } catch (e) {}
       // Chương trình mới (7 ngày, chưa xem)
       try {
         const q = r[5] || [], seen = JSON.parse(localStorage.getItem("hubAnnSeen") || "[]");
