@@ -223,7 +223,7 @@
   // ================= DẢI TÓM TẮT CÁ NHÂN =================
   function renderMe() {
     var P = window.CLF_PROFILE || {}, nm = (P.full_name || (window.CLF_USER || {}).email || "").trim();
-    var h1 = $("hello"); if (h1 && nm) h1.textContent = "Chào " + nm.split(/\s+/).slice(-1)[0] + " 👋";
+    var h1 = $("hello"); if (h1 && nm && nm.indexOf("@") < 0) h1.textContent = "Chào " + nm.split(/\s+/).slice(-1)[0] + " 👋";
     var el = $("hub-me"); if (!el || GD) return;
     function sm(n) { n = Number(n) || 0; return n >= 1e9 ? (Math.round(n / 1e7) / 100 + " tỷ").replace(".", ",") : Math.round(n / 1e6) + "tr"; }
     Promise.all([SB.rpc("profile_ranks", { p_email: ME }), SB.rpc("my_chuan")]).then(function (r) {
