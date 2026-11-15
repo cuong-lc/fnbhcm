@@ -263,8 +263,9 @@
   function dailyQuote() {
     var Q = window.HUB_QUOTES || [], el = $("hello-msg"); if (!Q.length || !el) return;
     var vn = new Date(Date.now() + 7 * 3600e3), day = Math.floor((Date.UTC(vn.getUTCFullYear(), vn.getUTCMonth(), vn.getUTCDate()) - Date.UTC(2026, 0, 1)) / 864e5);
-    SB.from("role_assignments").select("email,created_at").order("created_at", { ascending: true }).order("email", { ascending: true }).then(function (r) {
+    SB.from("role_assignments").select("email,created_at,full_name").order("created_at", { ascending: true }).order("email", { ascending: true }).then(function (r) {
       var L = (r.data || []).map(function (x) { return (x.email || "").toLowerCase(); }), slot = L.indexOf(ME); if (slot < 0) slot = L.length;
+      var meR = (r.data || [])[slot], h1 = $("hello"); if (h1 && meR && meR.full_name && h1.textContent.indexOf("bạn") >= 0) { var w = meR.full_name.trim().split(/\s+/); h1.textContent = "Chào " + (w.length > 2 ? w[w.length - 1] : w.join(" ")) + " 👋"; }
       var q = Q[(((day + slot * 11) % Q.length) + Q.length) % Q.length];
       var au = q[1] && !/khuyết danh/i.test(q[1]) ? ' <span style="white-space:nowrap;color:#8a6a1e;font-weight:600">– ' + esc(q[1]) + "</span>" : "";
       el.innerHTML = '<span style="color:#8a6a1e;font-weight:700">💬 Thông điệp hôm nay của bạn:</span> <i>“' + esc(q[0]) + "”</i>" + au;
