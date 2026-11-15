@@ -40,7 +40,7 @@
     let heads = [], timer = null;
     const scan = () => {
       const main = document.querySelector("main") || document.body;
-      const H = [].filter.call(main.querySelectorAll("h2, .grp-head h3"), (h) => h.offsetParent && h.textContent.trim() && !h.closest(".hubcard,.card,#toc,iframe"));
+      const H = [].filter.call(main.querySelectorAll("h2, .grp-head h3, [data-toc]"), (h) => h.offsetParent && h.offsetHeight > 8 && (h.dataset.toc || (h.textContent.trim() && !h.closest(".hubcard,.card,#toc,iframe"))));
       const long = document.body.scrollHeight > window.innerHeight * 2.2;
       if (H.length < 3 || !long) { box.style.display = "none"; fab.style.display = "none"; heads = []; return; }
       heads = H; box.style.display = ""; fab.style.display = "";
@@ -48,7 +48,7 @@
       box.innerHTML = '<div class="toc-h">📑 ' + H.length + " mục</div>" + H.map((h, i) => {
         if (!h.id) h.id = "toc-" + i;
         const sub = h.tagName === "H3"; if (!sub) n++;
-        const t = h.textContent.replace(/\s+/g, " ").trim().slice(0, 48);
+        const t = (h.dataset.toc || h.textContent).replace(/\s+/g, " ").trim().slice(0, 48);
         return `<a href="#${h.id}" class="toc-i${sub ? " sub" : ""}" data-i="${i}"><span class="toc-n">${sub ? "•" : n}</span><span class="toc-t">${esc(t)}</span></a>`;
       }).join("");
       fab.textContent = "📑 " + H.length + " mục";

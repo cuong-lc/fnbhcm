@@ -318,11 +318,39 @@
       });
     });
   }
+  // ================= POPUP SỰ KIỆN (lần đầu vào) =================
+  function eventPopup() {
+    var KEY = "hubPop_1611", END = Date.parse("2026-11-16T23:59:59+07:00");
+    try { if (Date.now() > END || localStorage.getItem(KEY) === "off" || sessionStorage.getItem(KEY)) return; } catch (e) {}
+    var st = document.createElement("style");
+    st.textContent = "@keyframes hpIn{from{opacity:0;transform:scale(.85) translateY(20px)}to{opacity:1;transform:none}}@keyframes hpGlow{0%,100%{box-shadow:0 0 30px rgba(255,180,40,.45),0 20px 60px rgba(0,0,0,.6)}50%{box-shadow:0 0 60px rgba(255,200,60,.85),0 20px 60px rgba(0,0,0,.6)}}"
+      + ".hp-ov{position:fixed;inset:0;z-index:9999;background:rgba(10,8,4,.72);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px}"
+      + ".hp-card{position:relative;width:min(440px,92vw);border-radius:18px;overflow:hidden;background:#110d06;border:2px solid #E7C877;animation:hpIn .45s cubic-bezier(.2,.9,.3,1.2),hpGlow 2.2s ease-in-out .45s infinite}"
+      + ".hp-card img{display:block;width:100%;height:auto;cursor:pointer}"
+      + ".hp-x{position:absolute;top:8px;right:8px;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.5);background:rgba(0,0,0,.55);color:#fff;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}"
+      + ".hp-x:hover{background:rgba(0,0,0,.8)}"
+      + ".hp-bar{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px 12px;background:linear-gradient(180deg,#1b1408,#0d0a05)}"
+      + ".hp-no{background:none;border:0;color:#cdbf9c;font-size:12.5px;cursor:pointer;font-family:inherit;text-decoration:underline}"
+      + ".hp-go{border:0;border-radius:10px;padding:9px 14px;font-weight:800;font-size:13.5px;cursor:pointer;font-family:inherit;background:linear-gradient(135deg,#FFE08A,#D4A94C);color:#17130D}";
+    document.head.appendChild(st);
+    var ov = document.createElement("div"); ov.className = "hp-ov";
+    ov.innerHTML = '<div class="hp-card" role="dialog" aria-label="Sự kiện đổi quà"><button class="hp-x" aria-label="Đóng">✕</button>'
+      + '<img src="popup-1611.jpg" alt="Vật phẩm gì sẽ mở đổi vào 13:30 ngày 16/11? Mau chóng tích điểm để dẫn đầu cuộc chơi nhé!">'
+      + '<div class="hp-bar"><button class="hp-no">Không hiện lại lần sau</button><button class="hp-go">🎁 Tích điểm ngay →</button></div></div>';
+    document.body.appendChild(ov);
+    var close = function () { try { sessionStorage.setItem(KEY, "1"); } catch (e) {} ov.remove(); };
+    var go = function () { close(); var t = $("hub-challenge"); if (t) window.scrollTo({ top: t.getBoundingClientRect().top + scrollY - 80, behavior: "smooth" }); };
+    ov.querySelector(".hp-x").onclick = close;
+    ov.querySelector(".hp-no").onclick = function () { try { localStorage.setItem(KEY, "off"); } catch (e) {} close(); };
+    ov.querySelector(".hp-go").onclick = go; ov.querySelector("img").onclick = go;
+    ov.addEventListener("click", function (e) { if (e.target === ov) close(); });
+    document.addEventListener("keydown", function k(e) { if (e.key === "Escape") { close(); document.removeEventListener("keydown", k); } });
+  }
   function start() {
     SB = window.SB; if (!SB) return;
     ME = ((window.CLF_USER || {}).email || "").toLowerCase(); GD = (window.CLF_PROFILE || {}).level === "c4";
     SB.from("role_assignments").select("email,full_name,dept").like("dept", "Phòng%").order("full_name").then(function (r) { PEOPLE = r.data || []; });
-    loadPrograms(); loadQuest(); renderMe(); renderLB();
+    loadPrograms(); loadQuest(); renderMe(); renderLB(); setTimeout(eventPopup, 900);
     if (location.hash === "#hub-programs" || location.hash === "#hub-challenge") setTimeout(function () { var t = $(location.hash.slice(1)); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" }); }, 900);
   }
   if (window.CLF_READY) start(); else document.addEventListener("clf-ready", start);
