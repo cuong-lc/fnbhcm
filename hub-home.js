@@ -18,10 +18,16 @@
     SB.rpc("center_progress").then(function (r) {
       var c = (r.data || [])[0]; if (!c || !c.period) { el.innerHTML = ""; return; }
       var pct = c.target ? Math.round(c.rev / c.target * 100) : 0;
+      var vn = new Date(Date.now() + 7 * 3600e3), cur = vn.getUTCFullYear() + "-" + String(vn.getUTCMonth() + 1).padStart(2, "0");
+      var cmp = pctChg(c.rev, c.prev_rev) + " so tháng " + (mon(c.period) - 1 || 12);
+      if (c.period === cur && c.target) { // tháng đang chạy: so với nhịp cần đạt tới hôm nay
+        var dim = new Date(Date.UTC(vn.getUTCFullYear(), vn.getUTCMonth() + 1, 0)).getUTCDate(), d = vn.getUTCDate(), need = c.target * d / dim, pace = Math.round(c.rev / need * 100);
+        cmp = 'tính đến ' + d + '/' + (vn.getUTCMonth() + 1) + ' · <span class="' + (pace >= 100 ? "up" : "down") + '">' + (pace >= 100 ? "▲ " : "▼ ") + pace + "%</span> nhịp cần đạt";
+      }
       el.innerHTML = '<div class="hubcenter"><div><div class="hc-l">🏢 TOÀN TRUNG TÂM · THÁNG ' + mon(c.period) + '</div>'
         + '<div class="hc-v">' + sm(c.rev) + ' <small>/ chuẩn ' + sm(c.target) + '</small></div></div>'
         + '<div class="hc-bar"><div class="hc-track"><div class="hc-fill" style="width:' + Math.min(100, pct) + '%"></div></div>'
-        + '<div class="hc-pct"><b style="color:#F0D48A">' + pct + '%</b> chuẩn · ' + pctChg(c.rev, c.prev_rev) + ' so tháng ' + (mon(c.period) - 1 || 12) + ' · ' + c.members + ' sale</div></div></div>';
+        + '<div class="hc-pct"><b style="color:#F0D48A">' + pct + '%</b> chuẩn · ' + cmp + ' · ' + c.members + ' sale</div></div></div>';
     });
   }
 
