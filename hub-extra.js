@@ -51,6 +51,13 @@
     "#qtf select,#qtf input{width:100%;box-sizing:border-box;border:1.5px solid #ddd3bf;border-radius:8px;padding:6px 8px;font-family:inherit;font-size:13px;margin-bottom:6px}",
     ".q-go{border:0;border-radius:8px;padding:4px 12px;font-weight:800;cursor:pointer;font-family:inherit;font-size:12px;background:linear-gradient(135deg,#F0D48A,#D4A94C);color:#17130D;margin-left:8px;min-width:62px}.q-go:disabled{background:#EEE8DB;color:#a59c88;cursor:not-allowed}",
     ".q-cols{display:grid;grid-template-columns:1fr 1.25fr;gap:18px;align-items:start}@media(max-width:820px){.q-cols{grid-template-columns:1fr}}.q-cols .q-sub:first-child{margin-top:4px}",
+    ".lb-top{display:flex;align-items:baseline;gap:10px;margin:14px 0 6px}.lb-top b{font-size:15px;color:#17130D}",
+    ".lb-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}@media(max-width:900px){.lb-grid{grid-template-columns:1fr}}",
+    ".lb-card{padding:12px 14px}.lb-h{font-weight:800;color:#17130D;font-size:14px;margin-bottom:6px}",
+    ".lb-row{display:flex;align-items:center;gap:8px;font-size:13px;padding:5px 0;border-top:1px solid #F4EEE2}.lb-row:first-of-type{border-top:0}",
+    ".lb-row.t{font-weight:700}.lb-n{width:22px;text-align:center;flex:none;color:#8a7a55;font-size:12.5px}.lb-row.t .lb-n{font-size:15px}",
+    ".lb-nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lb-nm i{font-style:normal;font-weight:500;color:#9a8f78;font-size:11.5px}",
+    ".lb-row b{white-space:nowrap;color:#B8872F;text-align:right}.lb-row b small{display:block;font-size:10.5px;color:#9a8f78;font-weight:500}",
     ".q-adm button{border:1px solid #ECE4D5;background:#fff;border-radius:7px;font-size:11px;padding:2px 7px;cursor:pointer;margin-left:3px}"
   ].join("\n");
   document.head.appendChild(css);
@@ -252,11 +259,37 @@
         + "</div></div>";
     });
   }
+  // ================= 3 BẢNG XẾP HẠNG (từ lịch Bảng Danh Vọng mỗi sáng) =================
+  function renderLB() {
+    var el = $("hub-lb"); if (!el) return;
+    function m1(v) { v = Number(v) || 0; return (Math.round(v / 1e5) / 10).toString().replace(".", ",") + "M"; }
+    var MED = ["🥇", "🥈", "🥉"], COL = ["#c8972f", "#8e9095", "#b9723f"];
+    SB.from("leaderboard_daily").select("snap_date").order("snap_date", { ascending: false }).limit(1).then(function (r) {
+      var d = r.data && r.data[0] && r.data[0].snap_date;
+      if (!d) { el.innerHTML = '<div class="hubcard" style="margin-top:12px"><div class="hubmuted">🏆 Bảng Danh Vọng sẽ tự cập nhật lên đây mỗi sáng (Thứ 2–Thứ 7).</div></div>'; return; }
+      SB.from("leaderboard_daily").select("*").eq("snap_date", d).order("rank").then(function (q) {
+        var rows = q.data || [], dd = d.split("-");
+        function card(title, kind, fmt) {
+          var L = rows.filter(function (x) { return x.kind === kind; });
+          return '<div class="hubcard lb-card"><div class="lb-h">' + title + "</div>" + (L.length ? L.map(function (x, i) {
+            var top = i < 3, c = top ? ' style="color:' + COL[i] + '"' : "";
+            return '<div class="lb-row' + (top ? " t" : "") + '"><span class="lb-n">' + (top ? MED[i] : x.rank) + '</span><span class="lb-nm"' + c + ">" + esc(x.name) + (x.dept && kind !== "phong" ? ' <i>' + esc(x.dept) + "</i>" : "") + '</span><b' + c + ">" + fmt(x) + "</b></div>";
+          }).join("") : '<div class="hubmuted">Chưa có dữ liệu.</div>') + "</div>";
+        }
+        el.innerHTML = '<div class="lb-top"><b>🏆 Bảng Danh Vọng</b><span class="hubmuted">Cập nhật ' + dd[2] + "/" + dd[1] + " · tháng " + parseInt(dd[1], 10) + "</span></div>"
+          + '<div class="lb-grid">'
+          + card("🏅 Top phòng kinh doanh", "phong", function (x) { return (x.pct != null ? String(x.pct).replace(".", ",") + "%" : m1(x.value)) + '<small>' + m1(x.value) + "</small>"; })
+          + card("👑 Top sale", "sale", function (x) { return m1(x.value); })
+          + card("💼 Top doanh thu khác", "khac", function (x) { return m1(x.value); })
+          + "</div>";
+      });
+    });
+  }
   function start() {
     SB = window.SB; if (!SB) return;
     ME = ((window.CLF_USER || {}).email || "").toLowerCase(); GD = (window.CLF_PROFILE || {}).level === "c4";
     SB.from("role_assignments").select("email,full_name,dept").like("dept", "Phòng%").order("full_name").then(function (r) { PEOPLE = r.data || []; });
-    loadPrograms(); loadQuest(); renderMe();
+    loadPrograms(); loadQuest(); renderMe(); renderLB();
     if (location.hash === "#hub-programs" || location.hash === "#hub-challenge") setTimeout(function () { var t = $(location.hash.slice(1)); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" }); }, 900);
   }
   if (window.CLF_READY) start(); else document.addEventListener("clf-ready", start);
