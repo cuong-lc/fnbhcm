@@ -199,7 +199,7 @@
     SB = window.SB; if (!SB) return;
     ME = ((window.CLF_USER || {}).email || "").toLowerCase();
     LV = (window.CLF_PROFILE || {}).level || ""; ISGD = LV === "c4";
-    renderCenter(); renderTodo(); renderChallenges(); renderRace();
+    renderCenter(); renderTodo(); renderRace();
     SB.rpc("refresh_rank_events").then(renderFeed, renderFeed);
     if (location.hash === "#todo") setTimeout(function () { var t = $("todo"); if (t) t.scrollIntoView({ behavior: "smooth", block: "center" }); }, 900);
   }

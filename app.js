@@ -98,7 +98,7 @@
       SB.from("revenues").select("period,amount").ilike("email", me),
       SB.rpc("my_chuan"),
       SB.from("progress").select("item_key").eq("user_id", U.id).eq("done", true).like("item_key", "clf_c1_ck_%"),
-      SB.from("challenges").select("id,title,target,end_date,metric").eq("active", true),
+      Promise.all([SB.rpc("quest_balance", { p_email: me }), SB.from("rewards").select("cost").eq("active", true), SB.from("announcements").select("id,title,created_at").eq("active", true).gte("created_at", new Date(Date.now() - 7 * 864e5).toISOString())]),
       isGD ? SB.from("badge_requests").select("id", { count: "exact", head: true }).eq("status", "pending") : Promise.resolve({}),
       isGD ? SB.from("sales_scripts").select("id", { count: "exact", head: true }).eq("status", "pending") : Promise.resolve({})
     ]).then(async (r) => {
@@ -128,15 +128,18 @@
         const done = (r[4].data || []).length, left = Math.max(0, 71 - done);
         if (left) items.push({ act: 1, icon: "✅", text: "Còn " + left + " mục checklist Cấp 1 chưa tích", href: "cap-1-nhan-vien.html" });
       }
-      // Thử thách
-      for (const c of (r[5].data || [])) {
-        const pr = await SB.rpc("challenge_progress", { p_id: c.id });
-        const mine = (pr.data || []).find((x) => x.email === me);
-        const v = mine ? Number(mine.value) : 0;
-        const days = Math.max(0, Math.ceil((Date.parse(c.end_date + "T23:59:59+07:00") - Date.now()) / 864e5));
-        if (isGD) items.push({ icon: "🎯", text: "Thử thách “" + c.title + "”: " + (pr.data || []).filter((x) => x.value >= c.target).length + " người đã đạt — còn " + days + " ngày", href: "index.html#hub-challenge" });
-        else items.push({ act: v < c.target ? 1 : 0, icon: "🎯", text: "Thử thách “" + c.title + "”: bạn " + v + "/" + c.target + (v >= c.target ? " — đã đạt 🎉" : " — còn " + days + " ngày"), href: "index.html#hub-challenge" });
-      }
+      // Chương trình mới (7 ngày, chưa xem)
+      try {
+        const q = r[5] || [], seen = JSON.parse(localStorage.getItem("hubAnnSeen") || "[]");
+        const fresh = ((q[2] && q[2].data) || []).filter((a) => seen.indexOf(a.id) < 0);
+        if (fresh.length) items.unshift({ act: 1, icon: "📢", text: fresh.length + " chương trình / chính sách mới — xem ngay", href: "index.html#hub-programs" });
+        // Nhiệm vụ đổi quà
+        const bal = Number(q[0] && q[0].data) || 0, costs = ((q[1] && q[1].data) || []).map((x) => x.cost).sort((a, b) => a - b);
+        if (!isGD && costs.length) {
+          if (bal >= costs[0]) items.push({ act: 1, icon: "🎁", text: "Bạn có " + bal + " điểm nhiệm vụ — đủ đổi quà rồi!", href: "index.html#hub-challenge" });
+          else items.push({ icon: "🎁", text: "Thêm " + (costs[0] - bal) + " cờ nữa là đổi được voucher (" + bal + "/" + costs[0] + " điểm)", href: "map.html" });
+        }
+      } catch (e) {}
       if (isGD) {
         const br = r[6].count || 0, sp = r[7].count || 0;
         if (br) items.push({ act: 1, icon: "🏛️", text: br + " đề xuất danh hiệu chờ duyệt", href: "badges.html" });
