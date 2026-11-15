@@ -50,6 +50,7 @@
     "#qtf{display:none;background:#FFFCF5;border:1px dashed #E7C877;border-radius:10px;padding:10px;margin-bottom:10px}#qtf.on{display:block}",
     "#qtf select,#qtf input{width:100%;box-sizing:border-box;border:1.5px solid #ddd3bf;border-radius:8px;padding:6px 8px;font-family:inherit;font-size:13px;margin-bottom:6px}",
     ".q-go{border:0;border-radius:8px;padding:4px 12px;font-weight:800;cursor:pointer;font-family:inherit;font-size:12px;background:linear-gradient(135deg,#F0D48A,#D4A94C);color:#17130D;margin-left:8px;min-width:62px}.q-go:disabled{background:#EEE8DB;color:#a59c88;cursor:not-allowed}",
+    ".q-cols{display:grid;grid-template-columns:1fr 1.25fr;gap:18px;align-items:start}@media(max-width:820px){.q-cols{grid-template-columns:1fr}}.q-cols .q-sub:first-child{margin-top:4px}",
     ".q-adm button{border:1px solid #ECE4D5;background:#fff;border-radius:7px;font-size:11px;padding:2px 7px;cursor:pointer;margin-left:3px}"
   ].join("\n");
   document.head.appendChild(css);
@@ -153,18 +154,18 @@
     var el = $("hub-challenge");
     var me = board.filter(function (x) { return (x.email || "").toLowerCase() === ME; })[0] || { earned: 0, balance: 0 };
     var bal = AVAIL, pendPts = (me.balance || 0) - AVAIL;
-    var h = '<div class="hubcard" id="hub-quest"><h3>🎁 Nhiệm vụ &amp; Đổi quà</h3>';
+    var h = '', rw = '';
     if (!GD) {
       h += '<div class="q-bal"><div><div class="l">Điểm khả dụng</div><div class="n">' + bal + '</div><div class="l">Đã kiếm ' + (me.earned || 0) + (pendPts > 0 ? " · đang chờ đổi " + pendPts : "") + '</div></div><button id="q-give">🔁 Tặng điểm</button></div>'
         + '<div id="qtf"><select id="qt-to"><option value="">Tặng cho…</option></select><input id="qt-n" type="number" min="1" placeholder="Số điểm"><input id="qt-note" placeholder="Lời nhắn (tuỳ chọn)"><button class="hubbtn" id="qt-ok">Tặng</button> <button class="hubbtn ghost" id="qt-x">Huỷ</button></div>';
     }
     h += '<div class="q-task"><span style="font-size:18px">📍</span><div style="flex:1"><b>Nhiệm vụ: Gắn cờ quán trên bản đồ</b><div class="hubmuted" style="font-size:12px">Mỗi cờ = +1 điểm</div></div><a class="hubbtn" href="map.html" style="text-decoration:none">Gắn cờ →</a></div>';
     var groups = [["💎 Voucher đặc biệt", function (w) { return /đặc biệt/i.test(w.name); }], ["🖥️ Thiết bị & gói", function (w) { return !/đặc biệt|1 năm/i.test(w.name); }], ["🎟️ Voucher 1 năm", function (w) { return /1 năm/i.test(w.name); }]];
-    h += '<div class="q-sub">🛍️ Đổi quà <span class="hubmuted" style="font-weight:400;font-size:11.5px">· bấm Đổi → GĐTT liên hệ gửi voucher & trừ điểm</span></div>';
+    rw += '<div class="q-sub">🛍️ Đổi quà <span class="hubmuted" style="font-weight:400;font-size:11.5px">· bấm Đổi → GĐTT liên hệ gửi voucher & trừ điểm</span></div>';
     groups.forEach(function (g) {
       var L = rewards.filter(g[1]); if (!L.length) return;
-      h += '<div style="font-size:11.5px;font-weight:800;color:#8a6a1e;margin:8px 0 2px">' + g[0] + "</div>";
-      h += L.map(function (w) {
+      rw += '<div style="font-size:11.5px;font-weight:800;color:#8a6a1e;margin:8px 0 2px">' + g[0] + "</div>";
+      rw += L.map(function (w) {
         var left = LEFT[w.id], out = left != null && left <= 0, short = bal < w.cost;
         var nm = esc(w.name.replace(/^Voucher đặc biệt — /, ""));
         return '<div class="q-row" style="align-items:center"><span style="flex:1"><b>' + esc(w.icon || "🎁") + " " + nm + '</b> <span class="hubmuted" style="font-size:11.5px">' + (left != null ? "· còn " + Math.max(0, left) : "") + '</span></span><b style="color:#B8872F;white-space:nowrap">' + w.cost + " điểm</b>"
@@ -173,7 +174,7 @@
           + "</div>";
       }).join("");
     });
-    if (GD) h += '<div style="margin-top:8px"><button class="hubbtn ghost" id="rw-add">＋ Thêm phần thưởng</button></div><div class="pg-form" id="rwf"><div class="r2"><input id="rw-icon" placeholder="Icon (VD 🎟️)"><input id="rw-cost" type="number" placeholder="Số điểm"></div><input id="rw-name" placeholder="Tên phần thưởng"><input id="rw-desc" placeholder="Mô tả"><input id="rw-stock" type="number" placeholder="Số lượng (bỏ trống = không giới hạn)"><button class="hubbtn" id="rw-save">Lưu</button></div>';
+    if (GD) rw += '<div style="margin-top:8px"><button class="hubbtn ghost" id="rw-add">＋ Thêm phần thưởng</button></div><div class="pg-form" id="rwf"><div class="r2"><input id="rw-icon" placeholder="Icon (VD 🎟️)"><input id="rw-cost" type="number" placeholder="Số điểm"></div><input id="rw-name" placeholder="Tên phần thưởng"><input id="rw-desc" placeholder="Mô tả"><input id="rw-stock" type="number" placeholder="Số lượng (bỏ trống = không giới hạn)"><button class="hubbtn" id="rw-save">Lưu</button></div>';
     // Lịch sử / quản lý
     if (GD) {
       var pend = reds.filter(function (x) { return x.status === "cho_trao"; });
@@ -187,7 +188,7 @@
     }
     // Bảng điểm
     h += '<div class="q-sub">🏅 Bảng điểm</div>' + board.slice(0, 5).map(function (x, i) { return '<div class="q-row"><span>' + (i + 1) + ". " + esc(x.full_name || x.email) + '</span><b style="color:#B8872F">' + x.balance + " điểm</b></div>"; }).join("");
-    h += "</div>";
+    h = '<div class="hubcard" id="hub-quest"><h3>🎁 Nhiệm vụ &amp; Đổi quà</h3><div class="q-cols"><div>' + h + '</div><div>' + rw + '</div></div></div>';
     el.innerHTML = h;
     bindQuest(bal);
   }
@@ -235,19 +236,20 @@
   function renderMe() {
     var P = window.CLF_PROFILE || {}, nm = (P.full_name || (window.CLF_USER || {}).email || "").trim();
     var h1 = $("hello"); if (h1 && nm && nm.indexOf("@") < 0) h1.textContent = "Chào " + nm.split(/\s+/).slice(-1)[0] + " 👋";
-    var el = $("hub-me"); if (!el || GD) return;
+    var el = $("hub-me"); if (!el) return; if (GD) { var rw1 = $("hub-row1"); if (rw1) rw1.style.gridTemplateColumns = "1fr"; el.style.display = "none"; return; }
     function sm(n) { n = Number(n) || 0; return n >= 1e9 ? (Math.round(n / 1e7) / 100 + " tỷ").replace(".", ",") : Math.round(n / 1e6) + "tr"; }
     Promise.all([SB.rpc("profile_ranks", { p_email: ME }), SB.rpc("my_chuan")]).then(function (r) {
       var x = (r[0].data || [])[0], c = (r[1].data || [])[0] || {};
       if (!x || !x.period) return;
       var m = Number(x.mine) || 0, ch = Number(c.chuan) || 0, pc = ch ? Math.round(m / ch * 100) : 0, mon = "T" + parseInt(String(x.period).split("-")[1], 10);
-      var box = function (l, v, s) { return '<div style="flex:1;min-width:110px"><div style="font-size:11.5px;color:var(--gray);font-weight:600">' + l + '</div><div style="font-size:19px;font-weight:800;color:#B8872F;line-height:1.25">' + v + "</div>" + (s ? '<div style="font-size:11px;color:var(--gray)">' + s + "</div>" : "") + "</div>"; };
-      el.innerHTML = '<div class="hubcard" style="margin-top:12px;display:flex;gap:14px;align-items:center;flex-wrap:wrap">'
-        + box("Doanh thu " + mon, sm(m), ch ? "chuẩn " + sm(ch) : "")
-        + box("% chuẩn", pc + "%", pc >= 100 ? "🔥 vượt chuẩn" : "")
-        + box("Hạng phòng", m > 0 ? "#" + x.dept_rnk + "/" + x.dept_n : "—", "")
-        + box("Hạng trung tâm", m > 0 ? "#" + x.tt_rnk + "/" + x.tt_n : "—", "")
-        + '<a class="hubbtn" href="profile.html" style="text-decoration:none;margin-left:auto">Xem hồ sơ chi tiết →</a></div>';
+      var box = function (l, v, s) { return '<div style="background:#FFFCF5;border:1px solid #F1E7D2;border-radius:10px;padding:9px 11px"><div style="font-size:11.5px;color:var(--gray);font-weight:600">' + l + '</div><div style="font-size:20px;font-weight:800;color:#B8872F;line-height:1.25">' + v + "</div>" + (s ? '<div style="font-size:11px;color:var(--gray)">' + s + "</div>" : "") + "</div>"; };
+      el.innerHTML = '<div class="hubcard" style="height:100%;box-sizing:border-box"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><h3 style="margin:0">📊 Doanh thu của bạn · ' + mon + '</h3><a href="profile.html" style="margin-left:auto;font-size:12.5px;font-weight:700;text-decoration:none">Hồ sơ chi tiết →</a></div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+        + box("Doanh thu", sm(m), ch ? "chuẩn " + sm(ch) : "")
+        + box("% chuẩn", pc + "%", pc >= 100 ? "🔥 vượt chuẩn" : (ch ? "còn thiếu " + sm(Math.max(0, ch - m)) : ""))
+        + box("Hạng phòng", m > 0 ? "#" + x.dept_rnk + "/" + x.dept_n : "—", x.dept ? esc(x.dept.replace("Phòng ", "")) : "")
+        + box("Hạng trung tâm", m > 0 ? "#" + x.tt_rnk + "/" + x.tt_n : "—", m > 0 && x.tt_rnk > 1 ? "thiếu " + sm(x.tt_gap) + " lên #" + (x.tt_rnk - 1) : "")
+        + "</div></div>";
     });
   }
   function start() {
