@@ -259,10 +259,22 @@
     if (PEOPLE) go(); else SB.from("role_assignments").select("email,full_name,dept").like("dept", "Phòng%").order("full_name").then(function (r) { PEOPLE = r.data || []; go(); });
   }
 
+  // ================= THÔNG ĐIỆP MỖI NGÀY (không trùng ai trong ngày, 500 ngày không lặp) =================
+  function dailyQuote() {
+    var Q = window.HUB_QUOTES || [], el = $("hello-msg"); if (!Q.length || !el) return;
+    var vn = new Date(Date.now() + 7 * 3600e3), day = Math.floor((Date.UTC(vn.getUTCFullYear(), vn.getUTCMonth(), vn.getUTCDate()) - Date.UTC(2026, 0, 1)) / 864e5);
+    SB.from("role_assignments").select("email,created_at").order("created_at", { ascending: true }).order("email", { ascending: true }).then(function (r) {
+      var L = (r.data || []).map(function (x) { return (x.email || "").toLowerCase(); }), slot = L.indexOf(ME); if (slot < 0) slot = L.length;
+      var q = Q[(((day + slot * 11) % Q.length) + Q.length) % Q.length];
+      var au = q[1] && !/khuyết danh/i.test(q[1]) ? ' <span style="white-space:nowrap;color:#8a6a1e;font-weight:600">– ' + esc(q[1]) + "</span>" : "";
+      el.innerHTML = '<span style="color:#8a6a1e;font-weight:700">💬 Thông điệp hôm nay của bạn:</span> <i>“' + esc(q[0]) + "”</i>" + au;
+    });
+  }
   // ================= DẢI TÓM TẮT CÁ NHÂN =================
   function renderMe() {
     var P = window.CLF_PROFILE || {}, nm = (P.full_name || (window.CLF_USER || {}).email || "").trim();
     var h1 = $("hello"); if (h1 && nm && nm.indexOf("@") < 0) h1.textContent = "Chào " + nm.split(/\s+/).slice(-1)[0] + " 👋";
+    dailyQuote();
     var el = $("hub-me"); if (!el) return; if (GD) { var rw1 = $("hub-row1"); if (rw1) rw1.style.gridTemplateColumns = "1fr"; el.style.display = "none"; return; }
     function sm(n) { n = Number(n) || 0; return n >= 1e9 ? (Math.round(n / 1e7) / 100 + " tỷ").replace(".", ",") : Math.round(n / 1e6) + "tr"; }
     Promise.all([SB.rpc("profile_ranks", { p_email: ME }), SB.rpc("my_chuan")]).then(function (r) {
