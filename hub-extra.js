@@ -49,6 +49,7 @@
     ".q-st{font-size:11px;font-weight:700;border-radius:20px;padding:1px 7px}.q-st.cho_trao{background:#FFF3D6;color:#9a6a00}.q-st.da_trao{background:#DDF7E7;color:#0a7a3a}.q-st.huy{background:#eee;color:#888}",
     "#qtf{display:none;background:#FFFCF5;border:1px dashed #E7C877;border-radius:10px;padding:10px;margin-bottom:10px}#qtf.on{display:block}",
     "#qtf select,#qtf input{width:100%;box-sizing:border-box;border:1.5px solid #ddd3bf;border-radius:8px;padding:6px 8px;font-family:inherit;font-size:13px;margin-bottom:6px}",
+    ".q-go{border:0;border-radius:8px;padding:4px 12px;font-weight:800;cursor:pointer;font-family:inherit;font-size:12px;background:linear-gradient(135deg,#F0D48A,#D4A94C);color:#17130D;margin-left:8px;min-width:62px}.q-go:disabled{background:#EEE8DB;color:#a59c88;cursor:not-allowed}",
     ".q-adm button{border:1px solid #ECE4D5;background:#fff;border-radius:7px;font-size:11px;padding:2px 7px;cursor:pointer;margin-left:3px}"
   ].join("\n");
   document.head.appendChild(css);
@@ -142,35 +143,45 @@
       SB.rpc("quest_board"),
       SB.from("rewards").select("*").eq("active", true).order("sort"),
       SB.from("redemptions").select("*").order("created_at", { ascending: false }).limit(GD ? 30 : 10),
-      SB.from("point_ledger").select("*").order("created_at", { ascending: false }).limit(10)
-    ]).then(function (r) { drawQuest(r[0].data || [], r[1].data || [], r[2].data || [], r[3].data || []); });
+      SB.from("point_ledger").select("*").order("created_at", { ascending: false }).limit(10),
+      SB.rpc("reward_left"),
+      SB.rpc("quest_available", { p_email: ME })
+    ]).then(function (r) { LEFT = {}; (r[4].data || []).forEach(function (x) { LEFT[x.id] = x.left_n; }); AVAIL = Number(r[5].data) || 0; drawQuest(r[0].data || [], r[1].data || [], r[2].data || [], r[3].data || []); });
   }
+  var LEFT = {}, AVAIL = 0;
   function drawQuest(board, rewards, reds, ledger) {
     var el = $("hub-challenge");
     var me = board.filter(function (x) { return (x.email || "").toLowerCase() === ME; })[0] || { earned: 0, balance: 0 };
-    var bal = me.balance || 0;
+    var bal = AVAIL, pendPts = (me.balance || 0) - AVAIL;
     var h = '<div class="hubcard" id="hub-quest"><h3>🎁 Nhiệm vụ &amp; Đổi quà</h3>';
     if (!GD) {
-      h += '<div class="q-bal"><div><div class="l">Điểm của bạn</div><div class="n">' + bal + '</div><div class="l">Đã kiếm ' + (me.earned || 0) + " · đã dùng/tặng " + Math.max(0, (me.earned || 0) - bal) + '</div></div><button id="q-give">🔁 Tặng điểm</button></div>'
+      h += '<div class="q-bal"><div><div class="l">Điểm khả dụng</div><div class="n">' + bal + '</div><div class="l">Đã kiếm ' + (me.earned || 0) + (pendPts > 0 ? " · đang chờ đổi " + pendPts : "") + '</div></div><button id="q-give">🔁 Tặng điểm</button></div>'
         + '<div id="qtf"><select id="qt-to"><option value="">Tặng cho…</option></select><input id="qt-n" type="number" min="1" placeholder="Số điểm"><input id="qt-note" placeholder="Lời nhắn (tuỳ chọn)"><button class="hubbtn" id="qt-ok">Tặng</button> <button class="hubbtn ghost" id="qt-x">Huỷ</button></div>';
     }
     h += '<div class="q-task"><span style="font-size:18px">📍</span><div style="flex:1"><b>Nhiệm vụ: Gắn cờ quán trên bản đồ</b><div class="hubmuted" style="font-size:12px">Mỗi cờ = +1 điểm</div></div><a class="hubbtn" href="map.html" style="text-decoration:none">Gắn cờ →</a></div>';
-    h += '<div class="q-sub">🛍️ Đổi quà</div><div class="q-rw">' + rewards.map(function (w) {
-      var p = Math.min(100, Math.round(bal / w.cost * 100));
-      return '<div class="q-r"><div class="ic">' + esc(w.icon || "🎁") + '</div><div class="nm">' + esc(w.name) + '</div><div class="ct">' + w.cost + " điểm</div>"
-        + (GD ? '<div class="hubmuted" style="font-size:11.5px;margin-top:4px">' + esc(w.descr || "") + '</div><div class="q-adm" style="margin-top:6px"><button data-rwoff="' + w.id + '">Ẩn</button></div>'
-          : '<div class="bar"><i style="width:' + p + '%"></i></div><button data-rd="' + w.id + '" data-nm="' + esc(w.name) + '" data-ct="' + w.cost + '"' + (bal < w.cost ? " disabled" : "") + ">" + (bal < w.cost ? "Còn thiếu " + (w.cost - bal) : "Đổi ngay") + "</button>")
-        + "</div>";
-    }).join("") + "</div>";
-    if (GD) h += '<div style="margin-top:8px"><button class="hubbtn ghost" id="rw-add">＋ Thêm phần thưởng</button></div><div class="pg-form" id="rwf"><div class="r2"><input id="rw-icon" placeholder="Icon (VD 🎟️)"><input id="rw-cost" type="number" placeholder="Số điểm"></div><input id="rw-name" placeholder="Tên phần thưởng"><input id="rw-desc" placeholder="Mô tả"><button class="hubbtn" id="rw-save">Lưu</button></div>';
+    var groups = [["💎 Voucher đặc biệt", function (w) { return /đặc biệt/i.test(w.name); }], ["🖥️ Thiết bị & gói", function (w) { return !/đặc biệt|1 năm/i.test(w.name); }], ["🎟️ Voucher 1 năm", function (w) { return /1 năm/i.test(w.name); }]];
+    h += '<div class="q-sub">🛍️ Đổi quà <span class="hubmuted" style="font-weight:400;font-size:11.5px">· bấm Đổi → GĐTT liên hệ gửi voucher & trừ điểm</span></div>';
+    groups.forEach(function (g) {
+      var L = rewards.filter(g[1]); if (!L.length) return;
+      h += '<div style="font-size:11.5px;font-weight:800;color:#8a6a1e;margin:8px 0 2px">' + g[0] + "</div>";
+      h += L.map(function (w) {
+        var left = LEFT[w.id], out = left != null && left <= 0, short = bal < w.cost;
+        var nm = esc(w.name.replace(/^Voucher đặc biệt — /, ""));
+        return '<div class="q-row" style="align-items:center"><span style="flex:1"><b>' + esc(w.icon || "🎁") + " " + nm + '</b> <span class="hubmuted" style="font-size:11.5px">' + (left != null ? "· còn " + Math.max(0, left) : "") + '</span></span><b style="color:#B8872F;white-space:nowrap">' + w.cost + " điểm</b>"
+          + (GD ? '<span class="q-adm"><button data-rwoff="' + w.id + '">Ẩn</button></span>'
+            : '<button class="q-go" data-rd="' + w.id + '" data-nm="' + esc(w.name) + '" data-ct="' + w.cost + '"' + (out || short ? " disabled" : "") + ">" + (out ? "Hết" : short ? "Thiếu " + (w.cost - bal) : "Đổi") + "</button>")
+          + "</div>";
+      }).join("");
+    });
+    if (GD) h += '<div style="margin-top:8px"><button class="hubbtn ghost" id="rw-add">＋ Thêm phần thưởng</button></div><div class="pg-form" id="rwf"><div class="r2"><input id="rw-icon" placeholder="Icon (VD 🎟️)"><input id="rw-cost" type="number" placeholder="Số điểm"></div><input id="rw-name" placeholder="Tên phần thưởng"><input id="rw-desc" placeholder="Mô tả"><input id="rw-stock" type="number" placeholder="Số lượng (bỏ trống = không giới hạn)"><button class="hubbtn" id="rw-save">Lưu</button></div>';
     // Lịch sử / quản lý
     if (GD) {
       var pend = reds.filter(function (x) { return x.status === "cho_trao"; });
-      h += '<div class="q-sub">📦 Yêu cầu đổi quà ' + (pend.length ? "(" + pend.length + " chờ trao)" : "") + "</div>"
-        + (reds.length ? reds.map(function (x) { return '<div class="q-row"><span><b>' + esc(x.full_name || x.email) + "</b> · " + esc(x.reward_name) + ' <span class="c">' + esc(x.code) + '</span></span><span><span class="q-st ' + x.status + '">' + ({ cho_trao: "Chờ trao", da_trao: "Đã trao", huy: "Đã huỷ" }[x.status] || x.status) + "</span>" + (x.status === "cho_trao" ? '<span class="q-adm"><button data-mk="' + x.id + '" data-s="da_trao">✓ Đã trao</button><button data-mk="' + x.id + '" data-s="huy">Huỷ & hoàn</button></span>' : "") + "</span></div>"; }).join("") : '<div class="hubmuted">Chưa có ai đổi quà.</div>');
+      h += '<div class="q-sub">📦 Yêu cầu đổi quà ' + (pend.length ? "(" + pend.length + " chờ xử lý)" : "") + "</div>"
+        + (reds.length ? reds.map(function (x) { return '<div class="q-row"><span><b>' + esc(x.full_name || x.email) + "</b> · " + esc(x.reward_name) + ' <span class="c">' + esc(x.code) + '</span></span><span><span class="q-st ' + x.status + '">' + ({ cho_trao: "Chờ xử lý", da_trao: "Đã gửi", huy: "Từ chối" }[x.status] || x.status) + "</span>" + (x.status === "cho_trao" ? '<span class="q-adm"><button data-mk="' + x.id + '" data-s="da_trao">✓ Đã gửi & trừ điểm</button><button data-mk="' + x.id + '" data-s="huy">Từ chối</button></span>' : "") + "</span></div>"; }).join("") : '<div class="hubmuted">Chưa có ai đổi quà.</div>');
     } else if (reds.length || ledger.length) {
       h += '<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12.5px;font-weight:700;color:#8a6a1e">📜 Lịch sử của bạn</summary>'
-        + reds.map(function (x) { return '<div class="q-row"><span>' + esc(x.reward_name) + ' <span class="c">' + esc(x.code) + '</span></span><span class="q-st ' + x.status + '">' + ({ cho_trao: "Chờ trao", da_trao: "Đã nhận", huy: "Đã huỷ" }[x.status] || x.status) + "</span></div>"; }).join("")
+        + reds.map(function (x) { return '<div class="q-row"><span>' + esc(x.reward_name) + ' <span class="c">' + esc(x.code) + '</span></span><span class="q-st ' + x.status + '">' + ({ cho_trao: "Chờ GĐTT gửi", da_trao: "Đã nhận", huy: "Từ chối" }[x.status] || x.status) + "</span></div>"; }).join("")
         + ledger.filter(function (l) { return l.kind !== "redeem"; }).map(function (l) { var nm = (PEOPLE || []).filter(function (p) { return p.email.toLowerCase() === (l.ref_email || ""); })[0]; return '<div class="q-row"><span>' + (l.kind === "transfer_in" ? "Nhận từ " : l.kind === "transfer_out" ? "Tặng cho " : "Điều chỉnh ") + esc(nm ? nm.full_name : (l.ref_email || "")) + (l.note ? ' <span class="hubmuted">“' + esc(l.note) + "”</span>" : "") + '</span><b style="color:' + (l.delta > 0 ? "#0a7a3a" : "#C0262D") + '">' + (l.delta > 0 ? "+" : "") + l.delta + "</b></div>"; }).join("")
         + "</details>";
     }
@@ -182,11 +193,11 @@
   }
   function bindQuest(bal) {
     document.querySelectorAll("[data-rd]").forEach(function (b) { b.onclick = function () {
-      if (!confirm("Đổi " + b.dataset.ct + " điểm lấy “" + b.dataset.nm + "”?")) return;
+      if (!confirm("Gửi yêu cầu đổi “" + b.dataset.nm + "” (" + b.dataset.ct + " điểm)?\nGĐTT sẽ liên hệ gửi voucher và trừ điểm.")) return;
       b.disabled = true; SB.rpc("redeem_reward", { p_reward: +b.dataset.rd }).then(function (r) {
         if (r.error) { b.disabled = false; return toast("Lỗi: " + r.error.message); }
         if (window.confetti) window.confetti({ particleCount: 140, spread: 80, origin: { y: 0.6 }, colors: ["#C8912E", "#F0D48A", "#FF7A00", "#16D865"] });
-        toast("🎉 Đổi thành công! Mã: " + r.data + " — GĐTT sẽ trao quà cho bạn.", 6000); loadQuest();
+        toast("✅ Đã gửi yêu cầu (mã " + r.data + "). GĐTT sẽ liên hệ gửi voucher và trừ điểm.", 6500); loadQuest();
       });
     }; });
     var g = $("q-give"); if (g) {
@@ -201,13 +212,13 @@
       };
     }
     document.querySelectorAll("[data-mk]").forEach(function (b) { b.onclick = function () {
-      if (b.dataset.s === "huy" && !confirm("Huỷ yêu cầu và hoàn điểm cho bạn này?")) return;
+      if (!confirm(b.dataset.s === "huy" ? "Từ chối yêu cầu này?" : "Xác nhận đã gửi voucher và trừ điểm?")) return;
       SB.rpc("mark_redemption", { p_id: +b.dataset.mk, p_status: b.dataset.s }).then(function (r) { if (r.error) return toast("Lỗi: " + r.error.message); loadQuest(); });
     }; });
     var ra = $("rw-add"); if (ra) {
       ra.onclick = function () { $("rwf").classList.toggle("on"); };
       $("rw-save").onclick = function () {
-        var row = { icon: $("rw-icon").value.trim() || "🎁", name: $("rw-name").value.trim(), descr: $("rw-desc").value.trim() || null, cost: parseInt($("rw-cost").value, 10) || 0, sort: 10 };
+        var row = { icon: $("rw-icon").value.trim() || "🎁", name: $("rw-name").value.trim(), descr: $("rw-desc").value.trim() || null, cost: parseInt($("rw-cost").value, 10) || 0, sort: 10, stock: $("rw-stock").value === "" ? null : parseInt($("rw-stock").value, 10) };
         if (!row.name || row.cost <= 0) return toast("Nhập tên và số điểm");
         SB.from("rewards").insert(row).then(function (r) { if (r.error) return toast("Lỗi: " + r.error.message); toast("Đã thêm phần thưởng"); loadQuest(); });
       };

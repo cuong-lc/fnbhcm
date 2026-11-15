@@ -98,7 +98,7 @@
       SB.from("revenues").select("period,amount").ilike("email", me),
       SB.rpc("my_chuan"),
       SB.from("progress").select("item_key").eq("user_id", U.id).eq("done", true).like("item_key", "clf_c1_ck_%"),
-      Promise.all([SB.rpc("quest_balance", { p_email: me }), SB.from("rewards").select("cost").eq("active", true), SB.from("announcements").select("id,title,created_at").eq("active", true).gte("created_at", new Date(Date.now() - 7 * 864e5).toISOString())]),
+      Promise.all([SB.rpc("quest_available", { p_email: me }), SB.from("rewards").select("cost").eq("active", true), SB.from("announcements").select("id,title,created_at").eq("active", true).gte("created_at", new Date(Date.now() - 7 * 864e5).toISOString())]),
       isGD ? SB.from("badge_requests").select("id", { count: "exact", head: true }).eq("status", "pending") : Promise.resolve({}),
       isGD ? SB.from("sales_scripts").select("id", { count: "exact", head: true }).eq("status", "pending") : Promise.resolve({})
     ]).then(async (r) => {
@@ -144,6 +144,7 @@
         const br = r[6].count || 0, sp = r[7].count || 0;
         if (br) items.push({ act: 1, icon: "🏛️", text: br + " đề xuất danh hiệu chờ duyệt", href: "badges.html" });
         if (sp) items.push({ act: 1, icon: "💬", text: sp + " kịch bản chốt chờ duyệt", href: "kichban.html" });
+        try { const rd = await SB.from("redemptions").select("id", { count: "exact", head: true }).eq("status", "cho_trao"); if (rd.count) items.unshift({ act: 1, icon: "🎁", text: rd.count + " yêu cầu đổi quà chờ anh gửi voucher", href: "index.html#hub-challenge" }); } catch (e) {}
         items.push({ icon: "📊", text: "Xem báo cáo tuần & điểm sức khoẻ đội ngũ", href: "report.html" });
       }
       return items;
