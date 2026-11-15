@@ -88,7 +88,7 @@
       if (Array.isArray(m)) return link(m);
       if (m.items.length === 1) return link(m.items[0]);
       const on = m.items.some(([f]) => f === activeFile);
-      return `<div class="ndd${on ? " on" : ""}"><button type="button" class="ndd-b">${m.label} <span class="cv">▾</span></button><div class="ndd-m">${m.items.map(link).join("")}</div></div>`;
+      return `<div class="ndd${on ? " on" : ""}"><button type="button" class="ndd-b">${m.label} <span class="ndd-cv">▾</span></button><div class="ndd-m">${m.items.map(link).join("")}</div></div>`;
     }).join("");
     [].forEach.call(nav.querySelectorAll(".ndd-b"), (b) => b.addEventListener("click", (e) => {
       e.stopPropagation(); const d = b.parentElement, was = d.classList.contains("open");

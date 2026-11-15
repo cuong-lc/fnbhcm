@@ -345,7 +345,7 @@ button.navbell{background:none;border:none;cursor:pointer;font-family:inherit}
 .ndd-b{background:none;border:0;font-family:inherit;color:#6b5f48;padding:7px 12px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
 .ndd-b:hover,.ndd.open .ndd-b{background:#F6EFDE;color:var(--berkeley)}
 .ndd.on .ndd-b{background:linear-gradient(135deg,var(--gold1),var(--gold2));color:#1A1713}
-.ndd-b .cv{font-size:10px;opacity:.7}
+.ndd-cv{font-size:10px;opacity:.7}
 .ndd-m{display:none;position:absolute;top:calc(100% + 6px);left:0;min-width:210px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 28px rgba(0,0,0,.14);padding:6px;z-index:70}
 .ndd-m a{display:block;white-space:nowrap}
 .ndd.open .ndd-m{display:block}
@@ -354,7 +354,7 @@ button.navbell{background:none;border:none;cursor:pointer;font-family:inherit}
   .ndd{width:100%}
   .ndd-b{width:100%;text-align:left;padding:10px 12px;font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:#9a8f78;pointer-events:none;background:none!important}
   .ndd.on .ndd-b{color:#8a6a1e}
-  .ndd-b .cv{display:none}
+  .ndd-cv{display:none}
   .ndd-m{display:block;position:static;box-shadow:none;border:0;padding:0 0 4px 8px;min-width:0}
 }
 
