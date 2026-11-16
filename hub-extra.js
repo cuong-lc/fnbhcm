@@ -81,6 +81,9 @@
     ".lb-card{display:flex;flex-direction:column}.lb-cnt{font-size:11px;font-weight:600;color:#9a8f78;margin-left:4px}",
     ".lb-pg{margin-top:auto;padding-top:10px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:12.5px;color:#6B6150}",
     ".lb-pg button{width:32px;height:30px;border-radius:9px;border:1px solid #ECE4D5;background:#fff;cursor:pointer;font-size:12px;color:#17130D}.lb-pg button:disabled{opacity:.35;cursor:default}.lb-pg button:not(:disabled):hover{background:#F6EFDE}",
+    ".q-lead{border:1.5px solid #E7C877;background:linear-gradient(135deg,#FFF8E6,#FFFDF7);border-radius:12px;padding:10px 12px;margin:6px 0 4px}",
+    ".q-lead-st{display:flex;justify-content:space-between;font-size:12px;color:#6B6150;margin-top:6px}",
+    ".q-lead-act{display:flex;align-items:center;gap:8px;margin-top:8px}.q-lead-act input{width:64px;border:1.5px solid #ddd3bf;border-radius:8px;padding:5px 6px;font-family:inherit;font-size:13px}.q-lead-act .q-go{margin-left:auto}",
     ".q-adm button{border:1px solid #ECE4D5;background:#fff;border-radius:7px;font-size:11px;padding:2px 7px;cursor:pointer;margin-left:3px}"
   ].join("\n");
   document.head.appendChild(css);
@@ -177,10 +180,11 @@
       SB.from("redemptions").select("*").order("created_at", { ascending: false }).limit(GD ? 30 : 10),
       SB.from("point_ledger").select("*").order("created_at", { ascending: false }).limit(10),
       SB.rpc("reward_left"),
-      SB.rpc("quest_available", { p_email: ME })
-    ]).then(function (r) { LEFT = {}; (r[4].data || []).forEach(function (x) { LEFT[x.id] = x.left_n; }); AVAIL = Number(r[5].data) || 0; drawQuest(r[0].data || [], r[1].data || [], r[2].data || [], r[3].data || []); });
+      SB.rpc("quest_available", { p_email: ME }),
+      SB.rpc("my_reward_used")
+    ]).then(function (r) { LEFT = {}; (r[4].data || []).forEach(function (x) { LEFT[x.id] = x.left_n; }); AVAIL = Number(r[5].data) || 0; USED = {}; ((r[6] && r[6].data) || []).forEach(function (x) { USED[x.reward_id] = x.used; }); drawQuest(r[0].data || [], r[1].data || [], r[2].data || [], r[3].data || []); });
   }
-  var LEFT = {}, AVAIL = 0;
+  var LEFT = {}, AVAIL = 0, USED = {};
   function drawQuest(board, rewards, reds, ledger) {
     var el = $("hub-challenge");
     var me = board.filter(function (x) { return (x.email || "").toLowerCase() === ME; })[0] || { earned: 0, balance: 0 };
@@ -191,13 +195,22 @@
         + '<div id="qtf"><select id="qt-to"><option value="">Tặng cho…</option></select><input id="qt-n" type="number" min="1" placeholder="Số điểm"><input id="qt-note" placeholder="Lời nhắn (tuỳ chọn)"><button class="hubbtn" id="qt-ok">Tặng</button> <button class="hubbtn ghost" id="qt-x">Huỷ</button></div>';
     }
     h += '<div class="q-task"><span style="font-size:18px">📍</span><div style="flex:1"><b>Nhiệm vụ: Gắn cờ quán trên bản đồ</b><div class="hubmuted" style="font-size:12px">Mỗi cờ = +1 điểm</div></div><a class="hubbtn" href="map.html" style="text-decoration:none">Gắn cờ →</a></div>';
-    var groups = [["💎 Voucher đặc biệt", function (w) { return /đặc biệt/i.test(w.name); }], ["🖥️ Thiết bị & gói", function (w) { return !/đặc biệt|1 năm/i.test(w.name); }], ["🎟️ Voucher 1 năm", function (w) { return /1 năm/i.test(w.name); }]];
+    var groups = [["📇 Lead công ty", function (w) { return w.per_user_max != null; }], ["💎 Voucher đặc biệt", function (w) { return w.per_user_max == null && /đặc biệt/i.test(w.name); }], ["🖥️ Thiết bị & gói", function (w) { return w.per_user_max == null && !/đặc biệt|1 năm/i.test(w.name); }], ["🎟️ Voucher 1 năm", function (w) { return w.per_user_max == null && /1 năm/i.test(w.name); }]];
     rw += '<div class="q-sub">🛍️ Đổi quà <span class="hubmuted" style="font-weight:400;font-size:11.5px">· bấm Đổi → GĐTT liên hệ gửi voucher & trừ điểm</span></div>';
     groups.forEach(function (g) {
       var L = rewards.filter(g[1]); if (!L.length) return;
       rw += '<div style="font-size:11.5px;font-weight:800;color:#8a6a1e;margin:8px 0 2px">' + g[0] + "</div>";
       rw += L.map(function (w) {
         var left = LEFT[w.id], out = left != null && left <= 0, short = bal < w.cost;
+        if (w.per_user_max != null) {
+          var used = USED[w.id] || 0, room = Math.max(0, w.per_user_max - used), mx = Math.max(0, Math.min(room, left != null ? left : room, Math.floor(bal / w.cost)));
+          return '<div class="q-lead"><div style="display:flex;align-items:center;gap:8px"><span style="flex:1"><b>' + esc(w.icon || "📇") + " " + esc(w.name) + '</b><div class="hubmuted" style="font-size:11.5px">' + esc(w.descr || "") + "</div></span><b style=\"color:#B8872F;white-space:nowrap\">" + w.cost + ' điểm/slot</b></div>'
+            + '<div class="q-lead-st"><span>Còn <b>' + Math.max(0, left != null ? left : 0) + "</b>/" + (w.stock != null ? w.stock : "∞") + " slot</span><span>Bạn đã đổi <b>" + used + "</b>/" + w.per_user_max + "</span></div>"
+            + (GD ? '<div class="q-adm" style="margin-top:6px"><button data-rwoff="' + w.id + '">Ẩn</button></div>'
+              : '<div class="q-lead-act"><input type="number" min="1" max="' + Math.max(1, mx) + '" value="' + (mx ? 1 : 0) + '" id="qty-' + w.id + '"' + (mx ? "" : " disabled") + '><span class="hubmuted" style="font-size:11.5px">slot = <b id="qtyl-' + w.id + '">' + (mx ? 2 : 0) + "</b> lead</span>"
+                + '<button class="q-go" data-rdq="' + w.id + '" data-nm="' + esc(w.name) + '" data-ct="' + w.cost + '" data-mx="' + mx + '"' + (mx ? "" : " disabled") + ">" + (out ? "Hết slot" : room <= 0 ? "Đã đủ " + w.per_user_max : short ? "Thiếu điểm" : "Đổi") + "</button></div>")
+            + "</div>";
+        }
         var nm = esc(w.name.replace(/^Voucher đặc biệt — /, ""));
         return '<div class="q-row" style="align-items:center"><span style="flex:1"><b>' + esc(w.icon || "🎁") + " " + nm + '</b> <span class="hubmuted" style="font-size:11.5px">' + (left != null ? "· còn " + Math.max(0, left) : "") + '</span></span><b style="color:#B8872F;white-space:nowrap">' + w.cost + " điểm</b>"
           + (GD ? '<span class="q-adm"><button data-rwoff="' + w.id + '">Ẩn</button></span>'
@@ -224,6 +237,19 @@
     bindQuest(bal);
   }
   function bindQuest(bal) {
+    document.querySelectorAll("[data-rdq]").forEach(function (b) {
+      var id = b.dataset.rdq, inp = $("qty-" + id), lab = $("qtyl-" + id), mx = +b.dataset.mx;
+      if (inp) inp.oninput = function () { var v = Math.max(1, Math.min(mx, parseInt(inp.value, 10) || 1)); if (lab) lab.textContent = v * 2; };
+      b.onclick = function () {
+        var q = Math.max(1, Math.min(mx, parseInt(inp && inp.value, 10) || 1)); if (inp) inp.value = q;
+        if (!confirm("Đổi " + q + " slot “" + b.dataset.nm + "” (= " + q * 2 + " lead, " + q * b.dataset.ct + " điểm)?\nGĐTT sẽ liên hệ gửi lead và trừ điểm.")) return;
+        b.disabled = true; SB.rpc("redeem_reward", { p_reward: +id, p_qty: q }).then(function (r) {
+          if (r.error) { b.disabled = false; return toast("Lỗi: " + r.error.message); }
+          if (window.confetti) window.confetti({ particleCount: 140, spread: 80, origin: { y: 0.6 }, colors: ["#C8912E", "#F0D48A", "#FF7A00", "#16D865"] });
+          toast("✅ Đã gửi yêu cầu " + q + " slot (mã " + r.data + "). GĐTT sẽ liên hệ gửi lead và trừ điểm.", 6500); loadQuest();
+        });
+      };
+    });
     document.querySelectorAll("[data-rd]").forEach(function (b) { b.onclick = function () {
       if (!confirm("Gửi yêu cầu đổi “" + b.dataset.nm + "” (" + b.dataset.ct + " điểm)?\nGĐTT sẽ liên hệ gửi voucher và trừ điểm.")) return;
       b.disabled = true; SB.rpc("redeem_reward", { p_reward: +b.dataset.rd }).then(function (r) {
