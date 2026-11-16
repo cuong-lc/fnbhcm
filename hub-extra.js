@@ -223,7 +223,7 @@
     if (GD) {
       var pend = reds.filter(function (x) { return x.status === "cho_trao"; });
       h += '<div class="q-sub">📦 Yêu cầu đổi quà ' + (pend.length ? "(" + pend.length + " chờ xử lý)" : "") + "</div>"
-        + (reds.length ? reds.map(function (x) { return '<div class="q-row"><span><b>' + esc(x.full_name || x.email) + "</b> · " + esc(x.reward_name) + ' <span class="c">' + esc(x.code) + '</span></span><span><span class="q-st ' + x.status + '">' + ({ cho_trao: "Chờ xử lý", da_trao: "Đã gửi", huy: "Từ chối" }[x.status] || x.status) + "</span>" + (x.status === "cho_trao" ? '<span class="q-adm"><button data-mk="' + x.id + '" data-s="da_trao">✓ Đã gửi & trừ điểm</button><button data-mk="' + x.id + '" data-s="huy">Từ chối</button></span>' : "") + "</span></div>"; }).join("") : '<div class="hubmuted">Chưa có ai đổi quà.</div>');
+        + (reds.length ? reds.map(function (x) { return '<div class="q-row"><span><b>' + esc(x.full_name || x.email) + "</b> · " + esc(x.reward_name) + ' <span class="c">' + esc(x.code) + '</span>' + (x.link ? ' <a href="' + esc(/^https?:/i.test(x.link) ? x.link : "https://" + x.link) + '" target="_blank" rel="noopener" style="font-size:11.5px;font-weight:700">🔗 Link add voucher</a>' : "") + '</span><span><span class="q-st ' + x.status + '">' + ({ cho_trao: "Chờ xử lý", da_trao: "Đã gửi", huy: "Từ chối" }[x.status] || x.status) + "</span>" + (x.status === "cho_trao" ? '<span class="q-adm"><button data-mk="' + x.id + '" data-s="da_trao">✓ Đã gửi & trừ điểm</button><button data-mk="' + x.id + '" data-s="huy">Từ chối</button></span>' : "") + "</span></div>"; }).join("") : '<div class="hubmuted">Chưa có ai đổi quà.</div>');
     } else if (reds.length || ledger.length) {
       h += '<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12.5px;font-weight:700;color:#8a6a1e">📜 Lịch sử của bạn</summary>'
         + reds.map(function (x) { return '<div class="q-row"><span>' + esc(x.reward_name) + ' <span class="c">' + esc(x.code) + '</span></span><span class="q-st ' + x.status + '">' + ({ cho_trao: "Chờ GĐTT gửi", da_trao: "Đã nhận", huy: "Từ chối" }[x.status] || x.status) + "</span></div>"; }).join("")
@@ -251,8 +251,10 @@
       };
     });
     document.querySelectorAll("[data-rd]").forEach(function (b) { b.onclick = function () {
-      if (!confirm("Gửi yêu cầu đổi “" + b.dataset.nm + "” (" + b.dataset.ct + " điểm)?\nGĐTT sẽ liên hệ gửi voucher và trừ điểm.")) return;
-      b.disabled = true; SB.rpc("redeem_reward", { p_reward: +b.dataset.rd }).then(function (r) {
+      var link = prompt("Đổi “" + b.dataset.nm + "” (" + b.dataset.ct + " điểm)\n\nDán LINK đơn hàng / báo giá / khách hàng để GĐTT add voucher vào:", "");
+      if (link === null) return;
+      link = link.trim(); if (link.length < 5) { toast("Cần dán link để GĐTT add voucher nhé"); return; }
+      b.disabled = true; SB.rpc("redeem_reward", { p_reward: +b.dataset.rd, p_qty: 1, p_link: link }).then(function (r) {
         if (r.error) { b.disabled = false; return toast("Lỗi: " + r.error.message); }
         if (window.confetti) window.confetti({ particleCount: 140, spread: 80, origin: { y: 0.6 }, colors: ["#C8912E", "#F0D48A", "#FF7A00", "#16D865"] });
         toast("✅ Đã gửi yêu cầu (mã " + r.data + "). GĐTT sẽ liên hệ gửi voucher và trừ điểm.", 6500); loadQuest();
