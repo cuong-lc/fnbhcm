@@ -192,7 +192,7 @@
   }
 
   // ===== Sự kiện / popup hiện hành (đổi ảnh + hạn ở đây cho popup mới) =====
-  window.HUB_EVENT = { key: "hubPop_lead200", img: "popup-lead200.jpg", end: "2026-11-30T23:59:59+07:00", title: "Mở 200 slot Lead công ty", alt: "Bí mật được bật mí: Mở 200 slot Lead công ty tháng trước bất kỳ, mỗi slot 2 lead, tối đa 25 slot đổi/sale", cta: "📇 Đổi slot ngay →", target: "hub-challenge" };
+  window.HUB_EVENT = { key: "hubPop_lead200", img: "popup-lead200.jpg", end: "2026-11-30T23:59:59+07:00", title: "Slot Lead công ty — mỗi slot 4 lead", alt: "Bí mật được bật mí: Mở slot Lead công ty tháng trước bất kỳ, mỗi slot 4 lead, tối đa 25 slot đổi/sale", cta: "📇 Đổi slot ngay →", target: "hub-challenge" };
 
   // ===== Việc của bạn hôm nay (dùng chung cho chuông + trang chủ) =====
   let _todoP = null;
