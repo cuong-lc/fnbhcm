@@ -192,7 +192,12 @@
   }
 
   // ===== Sự kiện / popup hiện hành (đổi ảnh + hạn ở đây cho popup mới) =====
-  window.HUB_EVENT = { key: "hubPop_lead200", img: "popup-lead200.jpg", end: "2026-11-30T23:59:59+07:00", title: "Slot Lead công ty — mỗi slot 4 lead", alt: "Bí mật được bật mí: Mở slot Lead công ty tháng trước bất kỳ, mỗi slot 4 lead, tối đa 25 slot đổi/sale", cta: "📇 Đổi slot ngay →", target: "hub-challenge" };
+  // Sự kiện popup: lấy cái đầu tiên còn hạn (hết hạn tự chuyển sang cái sau)
+  window.HUB_EVENTS = [
+    { key: "hubPop_tanggia", img: "popup-tanggia.jpg", end: "2026-11-17T12:00:00+07:00", title: "Thông báo tăng giá vật phẩm", alt: "Thông báo tăng giá vật phẩm đổi quà", cta: "🎁 Xem bảng đổi quà →", target: "hub-challenge" },
+    { key: "hubPop_lead200", img: "popup-lead200.jpg", end: "2026-11-30T23:59:59+07:00", title: "Slot Lead công ty — mỗi slot 4 lead", alt: "Bí mật được bật mí: Mở slot Lead công ty tháng trước bất kỳ, mỗi slot 4 lead, tối đa 25 slot đổi/sale", cta: "📇 Đổi slot ngay →", target: "hub-challenge" }
+  ];
+  window.HUB_EVENT = window.HUB_EVENTS.find(function (e) { return Date.now() < new Date(e.end).getTime(); }) || null;
 
   // ===== Việc của bạn hôm nay (dùng chung cho chuông + trang chủ) =====
   let _todoP = null;
