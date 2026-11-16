@@ -95,14 +95,15 @@
   }
   function annItem(a) {
     var isNew = Date.now() - Date.parse(a.created_at) < 7 * 864e5, dl = a.end_date ? dleft(a.end_date) : null;
-    var img = a.image ? '<img class="th" src="' + esc(a.image) + '" alt="" data-zoom="' + esc(a.image) + '">' : "";
+    var IM = (a.image || "").split(",").map(function (x) { return x.trim(); }).filter(Boolean);
+    var img = IM.length ? '<img class="th" src="' + esc(IM[0]) + '" alt="" data-zoom="' + esc(IM[0]) + '">' : "";
     return '<div class="pg-it">' + img + '<div style="flex:1;min-width:0"><div style="display:flex;gap:6px;align-items:flex-start"><div class="tt">' + esc(a.title) + "</div>"
       + (GD ? '<span class="pg-adm"><button data-ed="' + a.id + '">✎</button><button data-del="' + a.id + '">✕</button></span>' : "") + "</div>"
       + (a.summary ? '<div class="sm">' + esc(a.summary) + "</div>" : "")
       + '<div class="pg-chips">' + (isNew ? '<span class="pg-chip new">🆕 Mới</span>' : "")
       + (a.end_date ? '<span class="pg-chip' + (dl <= 3 ? " hot" : "") + '">⏳ ' + (a.start_date ? dm(a.start_date) + " – " : "đến ") + dm(a.end_date) + " · còn " + dl + " ngày</span>" : "")
       + ((a.body || a.link || a.image) ? '<button class="pg-more" data-more="' + a.id + '">Chi tiết ▾</button>' : "") + "</div>"
-      + '<div class="pg-body" id="pgb' + a.id + '">' + esc(a.body || "") + (a.image ? '<img src="' + esc(a.image) + '" alt="">' : "")
+      + '<div class="pg-body" id="pgb' + a.id + '">' + esc(a.body || "") + IM.map(function (u) { return '<img src="' + esc(u) + '" alt="">'; }).join("")
       + (a.link ? '<div style="margin-top:6px"><a href="' + esc(a.link) + '" target="_blank" rel="noopener" style="font-weight:700">Xem nguồn chi tiết ↗</a></div>' : "") + "</div>"
       + "</div></div>";
   }
@@ -120,16 +121,16 @@
   function drawPrograms() {
     var el = $("hub-programs"); if (!el) return;
     var cty = ANN.filter(function (a) { return a.scope === "cty"; }), kv = ANN.filter(function (a) { return a.scope === "kv"; });
-    var tabs = '<div class="pg-tabs"><button data-t="cty" class="' + (TAB === "cty" ? "on" : "") + '">🏢 Công ty (' + cty.length + ')</button><button data-t="kv" class="' + (TAB === "kv" ? "on" : "") + '">📍 Khu vực (' + kv.length + ')</button><button data-t="gia" class="' + (TAB === "gia" ? "on" : "") + '">💰 Chính sách giá</button></div>';
+    var tabs = '<div class="pg-tabs"><button data-t="cty" class="' + (TAB === "cty" ? "on" : "") + '">🏢 Công ty (' + cty.length + ')</button><button data-t="kv" class="' + (TAB === "kv" ? "on" : "") + '">📍 Khu vực/trung tâm (' + kv.length + ')</button><button data-t="gia" class="' + (TAB === "gia" ? "on" : "") + '">💰 Chính sách giá</button></div>';
     var form = "";
     if (GD) {
       form = TAB === "gia"
         ? '<div class="pg-form" id="pgf"><input type="hidden" id="pf-id"><div class="r2"><input id="pf-grp" placeholder="Nhóm (VD: Phần mềm FnB)"><input id="pf-name" placeholder="Tên gói / thiết bị"></div><div class="r2"><input id="pf-price" placeholder="Giá niêm yết"><input id="pf-sort" type="number" placeholder="Thứ tự"></div><input id="pf-promo" placeholder="Ưu đãi hiện hành"><input id="pf-note" placeholder="Ghi chú"><button class="hubbtn" id="pf-save">Lưu</button> <button class="hubbtn ghost" id="pf-cancel">Huỷ</button></div>'
-        : '<div class="pg-form" id="pgf"><input type="hidden" id="af-id"><select id="af-scope"><option value="cty">🏢 Chương trình công ty</option><option value="kv">📍 Chương trình khu vực</option></select><input id="af-title" placeholder="Tên chương trình"><input id="af-sum" placeholder="Tóm tắt 1 dòng (hiện ngoài)"><textarea id="af-body" rows="4" placeholder="Nội dung chi tiết (mỗi ý 1 dòng)"></textarea><div class="r2"><input id="af-start" type="date" title="Bắt đầu"><input id="af-end" type="date" title="Kết thúc"></div><input id="af-img" placeholder="Link ảnh (tuỳ chọn)"><input id="af-link" placeholder="Link nguồn chi tiết (tuỳ chọn)"><button class="hubbtn" id="af-save">Đăng</button> <button class="hubbtn ghost" id="af-cancel">Huỷ</button></div>';
+        : '<div class="pg-form" id="pgf"><input type="hidden" id="af-id"><select id="af-scope"><option value="cty">🏢 Chương trình công ty</option><option value="kv">📍 Chương trình khu vực/trung tâm</option></select><input id="af-title" placeholder="Tên chương trình"><input id="af-sum" placeholder="Tóm tắt 1 dòng (hiện ngoài)"><textarea id="af-body" rows="4" placeholder="Nội dung chi tiết (mỗi ý 1 dòng)"></textarea><div class="r2"><input id="af-start" type="date" title="Bắt đầu"><input id="af-end" type="date" title="Kết thúc"></div><input id="af-img" placeholder="Link ảnh (tuỳ chọn)"><input id="af-link" placeholder="Link nguồn chi tiết (tuỳ chọn)"><button class="hubbtn" id="af-save">Đăng</button> <button class="hubbtn ghost" id="af-cancel">Huỷ</button></div>';
     }
     var body;
     if (TAB === "gia") body = '<input class="pr-search" id="prq" placeholder="🔎 Tìm gói, thiết bị, ưu đãi…"><div id="prt" style="overflow-x:auto">' + priceTable("") + '</div><div style="margin-top:8px;font-size:12.5px"><a href="https://onesapo.github.io/banggia/" target="_blank" rel="noopener" style="font-weight:700">🧮 Mở công cụ báo giá đầy đủ ↗</a></div>';
-    else { var L = TAB === "cty" ? cty : kv; body = L.length ? '<div class="pg-list">' + L.map(annItem).join("") + "</div>" : '<div class="hubmuted">Chưa có chương trình ' + (TAB === "kv" ? "khu vực" : "công ty") + " nào đang chạy.</div>"; }
+    else { var L = TAB === "cty" ? cty : kv; body = L.length ? '<div class="pg-list">' + L.map(annItem).join("") + "</div>" : '<div class="hubmuted">Chưa có chương trình ' + (TAB === "kv" ? "khu vực/trung tâm" : "công ty") + " nào đang chạy.</div>"; }
     el.innerHTML = '<div class="hubcard" style="margin-top:12px"><div style="display:flex;align-items:center;gap:8px"><h3 style="margin:0">📢 Chính sách chương trình</h3>' + (GD ? '<button class="hubbtn" id="pg-add" style="margin-left:auto">＋ ' + (TAB === "gia" ? "Thêm dòng giá" : "Đăng chương trình") + "</button>" : "") + "</div>" + tabs + form + body + "</div>";
     // seen
     try { var seen = JSON.parse(localStorage.getItem("hubAnnSeen") || "[]"); ANN.forEach(function (a) { if (seen.indexOf(a.id) < 0) seen.push(a.id); }); localStorage.setItem("hubAnnSeen", JSON.stringify(seen.slice(-200))); } catch (e) {}
