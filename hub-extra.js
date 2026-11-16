@@ -84,6 +84,11 @@
     ".q-lead{border:1.5px solid #E7C877;background:linear-gradient(135deg,#FFF8E6,#FFFDF7);border-radius:12px;padding:10px 12px;margin:6px 0 4px}",
     ".q-lead-st{display:flex;justify-content:space-between;font-size:12px;color:#6B6150;margin-top:6px}",
     ".q-lead-act{display:flex;align-items:center;gap:8px;margin-top:8px}.q-lead-act input{width:64px;border:1.5px solid #ddd3bf;border-radius:8px;padding:5px 6px;font-family:inherit;font-size:13px}.q-lead-act .q-go{margin-left:auto}",
+    ".q-req{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid #F4EEE2;font-size:12.5px}.q-req-l{flex:1;min-width:0;line-height:1.35}.q-req-l a{text-decoration:none}",
+    ".q-req-r{display:flex;gap:4px;flex:none}.q-req-r button{border:1px solid #ECE4D5;background:#fff;border-radius:7px;font-size:11.5px;padding:3px 8px;cursor:pointer;font-family:inherit}.q-req-r .q-ok{background:#16A34A;border-color:#16A34A;color:#fff;font-weight:700}.q-req-r .q-no{color:#C0262D}",
+    "#hub-quest .q-row{padding:4px 0;font-size:12.5px}#hub-quest .q-sub{margin:10px 0 4px}#hub-quest .q-lead{padding:8px 10px;margin:4px 0}#hub-quest .q-go{padding:3px 10px;min-width:54px}",
+    ".q-grid{display:grid;grid-template-columns:1fr 1fr;column-gap:14px}.q-grid.one{grid-template-columns:1fr}@media(max-width:1100px){.q-grid{grid-template-columns:1fr}}",
+    ".q-grid .q-row{border-top:1px solid #F4EEE2}",
     ".q-adm button{border:1px solid #ECE4D5;background:#fff;border-radius:7px;font-size:11px;padding:2px 7px;cursor:pointer;margin-left:3px}"
   ].join("\n");
   document.head.appendChild(css);
@@ -200,7 +205,7 @@
     groups.forEach(function (g) {
       var L = rewards.filter(g[1]); if (!L.length) return;
       rw += '<div style="font-size:11.5px;font-weight:800;color:#8a6a1e;margin:8px 0 2px">' + g[0] + "</div>";
-      rw += L.map(function (w) {
+      rw += '<div class="q-grid' + (L.some(function (w) { return w.per_user_max != null; }) ? " one" : "") + '">' + L.map(function (w) {
         var left = LEFT[w.id], out = left != null && left <= 0, short = bal < w.cost;
         if (w.per_user_max != null) {
           var used = USED[w.id] || 0, room = Math.max(0, w.per_user_max - used), mx = Math.max(0, Math.min(room, left != null ? left : room, Math.floor(bal / w.cost)));
@@ -216,14 +221,19 @@
           + (GD ? '<span class="q-adm"><button data-rwoff="' + w.id + '">Ẩn</button></span>'
             : '<button class="q-go" data-rd="' + w.id + '" data-nm="' + esc(w.name) + '" data-ct="' + w.cost + '"' + (out || short ? " disabled" : "") + ">" + (out ? "Hết" : short ? "Thiếu " + (w.cost - bal) : "Đổi") + "</button>")
           + "</div>";
-      }).join("");
+      }).join("") + "</div>";
     });
     if (GD) rw += '<div style="margin-top:8px"><button class="hubbtn ghost" id="rw-add">＋ Thêm phần thưởng</button></div><div class="pg-form" id="rwf"><div class="r2"><input id="rw-icon" placeholder="Icon (VD 🎟️)"><input id="rw-cost" type="number" placeholder="Số điểm"></div><input id="rw-name" placeholder="Tên phần thưởng"><input id="rw-desc" placeholder="Mô tả"><input id="rw-stock" type="number" placeholder="Số lượng (bỏ trống = không giới hạn)"><button class="hubbtn" id="rw-save">Lưu</button></div>';
     // Lịch sử / quản lý
     if (GD) {
       var pend = reds.filter(function (x) { return x.status === "cho_trao"; });
-      h += '<div class="q-sub">📦 Yêu cầu đổi quà ' + (pend.length ? "(" + pend.length + " chờ xử lý)" : "") + "</div>"
-        + (reds.length ? reds.map(function (x) { return '<div class="q-row"><span><b>' + esc(x.full_name || x.email) + "</b> · " + esc(x.reward_name) + ' <span class="c">' + esc(x.code) + '</span>' + (x.link ? ' <a href="' + esc(/^https?:/i.test(x.link) ? x.link : "https://" + x.link) + '" target="_blank" rel="noopener" style="font-size:11.5px;font-weight:700">🔗 Link add voucher</a>' : "") + '</span><span><span class="q-st ' + x.status + '">' + ({ cho_trao: "Chờ xử lý", da_trao: "Đã gửi", huy: "Từ chối" }[x.status] || x.status) + "</span>" + (x.status === "cho_trao" ? '<span class="q-adm"><button data-mk="' + x.id + '" data-s="da_trao">✓ Đã gửi & trừ điểm</button><button data-mk="' + x.id + '" data-s="huy">Từ chối</button></span>' : "") + "</span></div>"; }).join("") : '<div class="hubmuted">Chưa có ai đổi quà.</div>');
+      var REQ = reds.slice().sort(function (a, b) { return (a.status === "cho_trao" ? 0 : 1) - (b.status === "cho_trao" ? 0 : 1); }).map(function (x) {
+        var nm = esc(x.reward_name).replace("Lead công ty tháng trước bất kỳ", "Lead"), lk = x.link ? ' <a href="' + esc(/^https?:/i.test(x.link) ? x.link : "https://" + x.link) + '" target="_blank" rel="noopener" title="Link add voucher">🔗</a>' : "";
+        return '<div class="q-req"><div class="q-req-l"><b>' + esc(x.full_name || x.email) + '</b> · ' + nm + ' <span class="c">' + esc(x.code) + "</span>" + lk + '</div><div class="q-req-r">'
+          + (x.status === "cho_trao" ? '<button class="q-ok" data-mk="' + x.id + '" data-s="da_trao" title="Đã gửi & trừ điểm">✓ Gửi</button><button class="q-no" data-mk="' + x.id + '" data-s="huy" title="Từ chối">✕</button>' : '<span class="q-st ' + x.status + '">' + ({ da_trao: "Đã gửi", huy: "Từ chối" }[x.status] || x.status) + "</span>") + "</div></div>";
+      });
+      h += '<div class="q-sub">📦 Yêu cầu đổi quà ' + (pend.length ? "(" + pend.length + " chờ xử lý)" : "") + '</div><div id="q-req-box"></div>';
+      window._QREQ = REQ;
     } else if (reds.length || ledger.length) {
       h += '<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12.5px;font-weight:700;color:#8a6a1e">📜 Lịch sử của bạn</summary>'
         + reds.map(function (x) { return '<div class="q-row"><span>' + esc(x.reward_name) + ' <span class="c">' + esc(x.code) + '</span></span><span class="q-st ' + x.status + '">' + ({ cho_trao: "Chờ GĐTT gửi", da_trao: "Đã nhận", huy: "Từ chối" }[x.status] || x.status) + "</span></div>"; }).join("")
@@ -231,10 +241,24 @@
         + "</details>";
     }
     // Bảng điểm
-    h += '<div class="q-sub">🏅 Bảng điểm</div>' + board.slice(0, 5).map(function (x, i) { return '<div class="q-row"><span>' + (i + 1) + ". " + esc(x.full_name || x.email) + '</span><b style="color:#B8872F">' + x.balance + " điểm</b></div>"; }).join("");
+    window._QBD = board.map(function (x, i) { return '<div class="q-row"><span>' + (i + 1) + ". " + esc(x.full_name || x.email) + '</span><b style="color:#B8872F">' + x.balance + " điểm</b></div>"; });
+    h += '<div class="q-sub">🏅 Bảng điểm</div><div id="q-bd-box"></div>';
     h = '<div class="hubcard" id="hub-quest"><h3>🎁 Nhiệm vụ &amp; Đổi quà</h3><div class="q-cols"><div>' + h + '</div><div>' + rw + '</div></div></div>';
     el.innerHTML = h;
+    qPager("q-req-box", window._QREQ || [], 6, "_qReqPg", function () { bindQuest(bal); });
+    qPager("q-bd-box", window._QBD || [], 5, "_qBdPg");
     bindQuest(bal);
+  }
+  function qPager(id, items, per, key, after) {
+    var box = $(id); if (!box) return;
+    var pages = Math.max(1, Math.ceil(items.length / per)); window[key] = Math.min(window[key] || 0, pages - 1);
+    var draw = function () {
+      var p = window[key];
+      box.innerHTML = (items.length ? items.slice(p * per, p * per + per).join("") : '<div class="hubmuted" style="font-size:12.5px">Chưa có dữ liệu.</div>')
+        + (pages > 1 ? '<div class="lb-pg"><button data-d="-1"' + (p === 0 ? " disabled" : "") + '>◀</button><span>' + (p + 1) + "/" + pages + '</span><button data-d="1"' + (p >= pages - 1 ? " disabled" : "") + ">▶</button></div>" : "");
+      [].forEach.call(box.querySelectorAll(".lb-pg button"), function (b) { b.onclick = function () { window[key] += +b.dataset.d; draw(); if (after) after(); }; });
+    };
+    draw();
   }
   function bindQuest(bal) {
     document.querySelectorAll("[data-rdq]").forEach(function (b) {
