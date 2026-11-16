@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=goong2"></script>
+<script src="config.js?v=goong3"></script>
 <script src="auth.js"></script>
 <style>
   .hero{padding:30px 0 26px!important}
@@ -448,7 +448,12 @@
   }
 
   // ===== Goong (địa chỉ Việt Nam chính xác) =====
-  var GK=window.GOONG_KEY||'';
+  var GKEYS=[window.GOONG_KEY,window.GOONG_KEY2].filter(Boolean), GK=GKEYS[0]||'', GOFF={};
+  try{ GOFF=JSON.parse(localStorage.getItem('goongKeyOff')||'{}'); }catch(e){}
+  function gk(){ for(var i=0;i<GKEYS.length;i++){ if(!(GOFF[i]>Date.now())) return GKEYS[i]; } return null; }
+  function gkBad(key){ var i=GKEYS.indexOf(key); if(i<0) return; GOFF[i]=Date.now()+60*60e3; try{ localStorage.setItem('goongKeyOff',JSON.stringify(GOFF)); }catch(e){} }
+  function gFetch(path){ var key=gk(); if(!key) return Promise.reject('nokey');
+    return fetch('https://rsapi.goong.io/'+path+(path.indexOf('?')>=0?'&':'?')+'api_key='+key).then(function(r){ if(r.status===429||r.status===403){ gkBad(key); return gFetch(path); } return r.json(); }); }
   function gBias(){ try{ if(map){var c=map.getCenter(); return c.lat.toFixed(5)+','+c.lng.toFixed(5);} }catch(e){} return ''; }
   // Gợi ý địa chỉ: Goong (chính xác) → hết hạn mức thì tự chuyển sang Photon/OSM (miễn phí); có cache để tiết kiệm lượt gọi
   var AC_CACHE={}, GOONG_OFF_UNTIL=0;
@@ -461,15 +466,14 @@
   function gAC(input){
     var key=input.toLowerCase(); if(AC_CACHE[key]) return Promise.resolve(AC_CACHE[key]);
     var save=function(list){ AC_CACHE[key]=list; return list; };
-    if(!GK || Date.now()<GOONG_OFF_UNTIL) return photonAC(input).then(save);
+    if(!gk()) return photonAC(input).then(save);
     var loc=gBias();
-    return fetch('https://rsapi.goong.io/Place/AutoComplete?api_key='+GK+'&input='+encodeURIComponent(input)+(loc?'&location='+loc:''))
-      .then(function(r){ if(r.status===429||r.status===403){ GOONG_OFF_UNTIL=Date.now()+30*60e3; try{localStorage.setItem('goongOffUntil',GOONG_OFF_UNTIL);}catch(e){} throw 0; } return r.json(); })
+    return gFetch('Place/AutoComplete?input='+encodeURIComponent(input)+(loc?'&location='+loc:''))
       .then(function(j){ var p=(j&&j.predictions)||[]; return p.length?p:photonAC(input); })
       .catch(function(){ return photonAC(input); }).then(save); }
   function gDetail(pid){ if(String(pid).indexOf('osm:')===0){ var a=String(pid).slice(4).split(','); return Promise.resolve(a.length===2&&a[0]?{lat:+a[0],lng:+a[1],label:''}:null); }
-    return fetch('https://rsapi.goong.io/Place/Detail?api_key='+GK+'&place_id='+encodeURIComponent(pid)).then(function(r){return r.json();}).then(function(j){ var l=j&&j.result&&j.result.geometry&&j.result.geometry.location; return l?{lat:l.lat,lng:l.lng,label:(j.result.formatted_address||j.result.name||'')}:null; }).catch(function(){return null;}); }
-  function gGeocode(addr){ return fetch('https://rsapi.goong.io/geocode?api_key='+GK+'&address='+encodeURIComponent(addr)).then(function(r){return r.json();}).then(function(j){ var x=j&&j.results&&j.results[0]; return x?{lat:x.geometry.location.lat,lng:x.geometry.location.lng,label:x.formatted_address}:null; }).catch(function(){return null;}); }
+    return gFetch('Place/Detail?place_id='+encodeURIComponent(pid)).then(function(j){ var l=j&&j.result&&j.result.geometry&&j.result.geometry.location; return l?{lat:l.lat,lng:l.lng,label:(j.result.formatted_address||j.result.name||'')}:null; }).catch(function(){return null;}); }
+  function gGeocode(addr){ return gFetch('geocode?address='+encodeURIComponent(addr)).then(function(j){ var x=j&&j.results&&j.results[0]; return x?{lat:x.geometry.location.lat,lng:x.geometry.location.lng,label:x.formatted_address}:null; }).catch(function(){return null;}); }
   var acTimer=null, acItems=[];
   function hideAC(){ $('fac').style.display='none'; }
   function renderAC(preds){ acItems=preds||[]; var box=$('fac'); if(!acItems.length){hideAC();return;} box.innerHTML=acItems.map(function(p,i){ var m=p.structured_formatting||{}; return '<div class="acitem" data-i="'+i+'"><div class="main">'+esc(m.main_text||p.description)+'</div>'+(m.secondary_text?'<div class="sub">'+esc(m.secondary_text)+'</div>':'')+'</div>'; }).join('')+'<div class="pwr">Gợi ý bởi '+(acItems[0]&&String(acItems[0].place_id).indexOf('osm:')===0?'OpenStreetMap':'Goong')+'</div>'; box.style.display='block'; [].forEach.call(box.querySelectorAll('.acitem'),function(el){ el.onmousedown=function(ev){ ev.preventDefault(); pickAC(parseInt(el.getAttribute('data-i'),10)); }; }); }
