@@ -422,11 +422,11 @@
     var ov = document.createElement("div"); ov.className = "hp-ov";
     ov.innerHTML = '<div class="hp-card" role="dialog" aria-label="Sự kiện"><button class="hp-x" aria-label="Đóng">✕</button>'
       + '<img src="' + esc(EV.img) + '" alt="' + esc(EV.alt || EV.title || "") + '">'
-      + '<div class="hp-bar"><button class="hp-no">' + (off ? "Đã tắt tự hiện" : "Không hiện lại lần sau") + '</button><button class="hp-go">' + esc(EV.cta || "🎁 Tích điểm ngay →") + "</button></div></div>";
+      + '<div class="hp-bar"><button class="hp-no">' + (off ? "Đã tắt tự hiện" : "Không hiện lại lần sau") + '</button>' + (EV.target ? '<button class="hp-go">' + esc(EV.cta || "Xem ngay →") + "</button>" : "") + "</div></div>";
     document.body.appendChild(ov);
     var close = function () { ov.remove(); fab.style.display = ""; if (location.hash === "#event") history.replaceState(null, "", location.pathname + location.search); };
-    var go = function () { close(); var t = $(EV.target || "hub-challenge"); if (t) window.scrollTo({ top: t.getBoundingClientRect().top + scrollY - 80, behavior: "smooth" }); };
-    ov.querySelector(".hp-x").onclick = close;
+    var go = function () { close(); var t = EV.target ? $(EV.target) : null; if (t) window.scrollTo({ top: t.getBoundingClientRect().top + scrollY - 80, behavior: "smooth" }); };
+    ov.querySelector(".hp-x").onclick = close; if (!ov.querySelector(".hp-go")) ov.querySelector(".hp-bar").insertAdjacentHTML("beforeend", '<button class="hp-go">Đã hiểu</button>');
     ov.querySelector(".hp-no").onclick = function () { try { localStorage.setItem(KEY, "off"); } catch (e) {} close(); };
     ov.querySelector(".hp-go").onclick = go; ov.querySelector("img").onclick = go;
     ov.addEventListener("click", function (e) { if (e.target === ov) close(); });
@@ -436,7 +436,7 @@
     SB = window.SB; if (!SB) return;
     ME = ((window.CLF_USER || {}).email || "").toLowerCase(); GD = (window.CLF_PROFILE || {}).level === "c4";
     SB.from("role_assignments").select("email,full_name,dept").like("dept", "Phòng%").order("full_name").then(function (r) { PEOPLE = r.data || []; });
-    loadPrograms(); loadQuest(); renderMe(); renderLB(); setTimeout(function () { eventPopup(location.hash === "#event"); }, 900); window.addEventListener("hashchange", function () { if (location.hash === "#event") eventPopup(true); });
+    loadPrograms(); loadQuest(); renderMe(); renderLB(); (window.hubEvent ? window.hubEvent() : Promise.resolve()).then(function () { setTimeout(function () { eventPopup(location.hash === "#event"); }, 700); }); window.addEventListener("hashchange", function () { if (location.hash === "#event") eventPopup(true); });
     if (location.hash === "#hub-programs" || location.hash === "#hub-challenge") setTimeout(function () { var t = $(location.hash.slice(1)); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" }); }, 900);
   }
   if (window.CLF_READY) start(); else document.addEventListener("clf-ready", start);

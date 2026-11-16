@@ -137,7 +137,7 @@
     // Menu gom nhóm: mục đơn + nhóm thả xuống
     const tools = [["kichban.html", '💬 Kịch bản chốt <span class="soon">Coming soon</span>']].concat(isLeader ? [["camnangleader.html", "📘 Cẩm nang Leader"]] : []);
     const levels = LEVELS.filter(canSeeLevel).filter((l) => !(staff && l.id === "c3")).map((l) => [l.file, l.short]).concat(staff ? [] : [["rubric.html", "📏 Rubric"]]);
-    const admin = isGD ? [["badges.html", "🏛️ Phong Thần"], ["report.html", "📊 Báo cáo tuần"], ["people.html", "🔒 Hồ sơ NS"]] : [];
+    const admin = isGD ? [["popup.html", "🎁 Quản lý Popup"], ["badges.html", "🏛️ Phong Thần"], ["report.html", "📊 Báo cáo tuần"], ["people.html", "🔒 Hồ sơ NS"]] : [];
     const menu = [["index.html", "🏠 Trang chủ"], ["map.html", "🗺️ Bản đồ KH"], { label: "🧰 Công cụ", items: tools }, { label: "📚 Khung năng lực", items: levels }]
       .concat(admin.length ? [{ label: "⚙️ Quản trị", items: admin }] : [])
       .concat(window.CLF_READY ? [["profile.html", "👤 Hồ sơ của tôi"]] : []);
@@ -192,12 +192,19 @@
   }
 
   // ===== Sự kiện / popup hiện hành (đổi ảnh + hạn ở đây cho popup mới) =====
-  // Sự kiện popup: lấy cái đầu tiên còn hạn (hết hạn tự chuyển sang cái sau)
-  window.HUB_EVENTS = [
-    { key: "hubPop_tanggia", img: "popup-tanggia.jpg", end: "2026-11-17T12:00:00+07:00", title: "Thông báo tăng giá vật phẩm", alt: "Thông báo tăng giá vật phẩm đổi quà", cta: "🎁 Xem bảng đổi quà →", target: "hub-challenge" },
-    { key: "hubPop_lead200", img: "popup-lead200.jpg", end: "2026-11-30T23:59:59+07:00", title: "Slot Lead công ty — mỗi slot 4 lead", alt: "Bí mật được bật mí: Mở slot Lead công ty tháng trước bất kỳ, mỗi slot 4 lead, tối đa 25 slot đổi/sale", cta: "📇 Đổi slot ngay →", target: "hub-challenge" }
-  ];
-  window.HUB_EVENT = window.HUB_EVENTS.find(function (e) { return Date.now() < new Date(e.end).getTime(); }) || null;
+  // Sự kiện popup: GĐTT quản lý tại popup.html (bảng popups). Lấy popup còn hạn ưu tiên sort nhỏ nhất.
+  window.HUB_EVENT = null;
+  let _evP = null;
+  window.hubEvent = function () {
+    if (_evP) return _evP;
+    if (!window.SB) return Promise.resolve(null);
+    const now = new Date().toISOString();
+    _evP = window.SB.from("popups").select("*").eq("active", true).lte("start_at", now).gt("end_at", now)
+      .order("sort", { ascending: true }).order("start_at", { ascending: false }).limit(1)
+      .then((r) => { const x = (r.data || [])[0]; window.HUB_EVENT = x ? { key: "hubPop_" + x.id, img: x.img, end: x.end_at, title: x.title, alt: x.title, cta: x.cta, target: x.target } : null; return window.HUB_EVENT; })
+      .catch(() => null);
+    return _evP;
+  };
 
   // ===== Việc của bạn hôm nay (dùng chung cho chuông + trang chủ) =====
   let _todoP = null;
@@ -245,7 +252,7 @@
         if (left) items.push({ act: 1, icon: "✅", text: "Còn " + left + " mục checklist Cấp 1 chưa tích", href: "cap-1-nhan-vien.html" });
       }
       // Sự kiện đang chạy → xem lại popup
-      try { const EV = window.HUB_EVENT; if (EV && Date.now() < Date.parse(EV.end)) items.unshift({ act: 1, icon: "🎁", text: "Sự kiện: " + EV.title + " — xem lại", href: "index.html#event" }); } catch (e) {}
+      try { const EV = await window.hubEvent(); if (EV && Date.now() < Date.parse(EV.end)) items.unshift({ act: 1, icon: "🎁", text: "Sự kiện: " + EV.title + " — xem lại", href: "index.html#event" }); } catch (e) {}
       // Chương trình mới (7 ngày, chưa xem)
       try {
         const q = r[5] || [], seen = JSON.parse(localStorage.getItem("hubAnnSeen") || "[]");

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<title>Quản lý Popup · FNBHCM HUB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=11161725">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="auth.js"></script>
+<style>
+.pp-grid{display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start}
+@media(max-width:860px){.pp-grid{grid-template-columns:1fr}}
+.pp-f label{display:block;font-size:12px;font-weight:700;color:var(--gray);margin:10px 0 4px}
+.pp-f input,.pp-f select{width:100%;padding:8px 10px;border:1px solid #ddd3bf;border-radius:8px;font-family:inherit;font-size:13.5px;box-sizing:border-box}
+.pp-f .r2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pp-prev{margin-top:10px;border:2px dashed #E7C877;border-radius:12px;min-height:120px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#FBF8F1;color:var(--gray);font-size:12.5px;cursor:pointer}
+.pp-prev img{display:block;width:100%;height:auto}
+.pp-it{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid #f1ece0}
+.pp-it:first-child{border-top:none}
+.pp-it img{width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+.pp-it .m{flex:1;min-width:0}
+.pp-it .t{font-weight:800}
+.pp-tag{display:inline-block;font-size:11px;font-weight:700;border-radius:20px;padding:1px 8px;margin-left:6px}
+.on{background:#E7F8EE;color:#0E8A4A}.wait{background:#EAF2FF;color:#0057C7}.off{background:#F1EEE8;color:#8A8170}.exp{background:#FDECEC;color:#C0392B}
+.pp-act button{border:1px solid #ddd3bf;background:#fff;border-radius:8px;padding:5px 9px;font-family:inherit;font-size:12px;cursor:pointer;margin-left:4px}
+</style>
+</head>
+<body data-page="popup">
+<div class="topbar"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> FNBHCM HUB</a>
+  <nav class="nav" id="nav"></nav>
+</div></div>
+<header class="hero">
+  <span class="box1"></span><span class="box2"></span>
+  <div class="wrap">
+    <div class="eyebrow">Dành cho Giám đốc Trung tâm</div>
+    <h1>🎁 Quản lý Popup sự kiện</h1>
+    <p>Tải ảnh, đặt giờ bắt đầu – kết thúc. Popup tự hiện khi đến giờ và tự ẩn khi hết hạn. Nếu nhiều popup cùng chạy, popup có "Ưu tiên" nhỏ hơn hiện trước.</p>
+  </div>
+</header>
+<main class="wrap">
+<section class="section" style="padding-top:14px">
+<div class="pp-grid">
+  <div class="hubcard pp-f">
+    <h3 id="pp-h">＋ Popup mới</h3>
+    <div class="pp-prev" id="pp-prev">Bấm để chọn ảnh (vuông ~900×900)</div>
+    <input type="file" id="pp-file" accept="image/*" style="display:none">
+    <label>Tiêu đề (hiện ở chuông 🔔)</label><input id="pp-title" placeholder="VD: Thông báo tăng giá vật phẩm">
+    <div class="r2">
+      <div><label>Bắt đầu</label><input type="datetime-local" id="pp-start"></div>
+      <div><label>Kết thúc (tự ẩn)</label><input type="datetime-local" id="pp-end"></div>
+    </div>
+    <label>Nút bấm dẫn tới</label>
+    <select id="pp-target">
+      <option value="hub-challenge">🎯 Nhiệm vụ &amp; Đổi quà</option>
+      <option value="hub-programs">📢 Chính sách chương trình</option>
+      <option value="hub-lb">🏆 Bảng Danh Vọng</option>
+      <option value="">— Không có nút (chỉ "Đã hiểu") —</option>
+    </select>
+    <label>Chữ trên nút</label><input id="pp-cta" placeholder="VD: 🎁 Xem bảng đổi quà →">
+    <div class="r2">
+      <div><label>Ưu tiên (số nhỏ hiện trước)</label><input type="number" id="pp-sort" value="1"></div>
+      <div><label>&nbsp;</label><label style="display:flex;gap:6px;align-items:center;margin:8px 0 0;color:#17130D"><input type="checkbox" id="pp-active" checked style="width:auto"> Đang bật</label></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px"><button class="hubbtn" id="pp-save">💾 Lưu popup</button><button class="hubbtn ghost" id="pp-reset">Làm mới</button></div>
+    <div class="hubmuted" id="pp-msg" style="margin-top:8px"></div>
+  </div>
+  <div class="hubcard"><h3>📋 Danh sách popup</h3><div id="pp-list"><div class="hubmuted">Đang tải…</div></div></div>
+</div>
+</section>
+</main>
+<footer class="foot" id="foot"></footer>
+<script src="framework-data.js?v=11161725"></script>
+<script src="app.js?v=11161725"></script>
+<script>
+(function(){
+  function $(id){return document.getElementById(id);}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function pad(n){return (n<10?'0':'')+n;}
+  function toLocal(iso){var d=new Date(iso);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());}
+  function fmt(iso){var d=new Date(iso);return pad(d.getHours())+':'+pad(d.getMinutes())+' '+pad(d.getDate())+'/'+pad(d.getMonth()+1);}
+  var ROWS=[], EDIT=null, FILE=null, IMG='';
+  function msg(t){$('pp-msg').textContent=t||'';}
+  function reset(){
+    EDIT=null;FILE=null;IMG='';$('pp-h').textContent='＋ Popup mới';
+    $('pp-prev').innerHTML='Bấm để chọn ảnh (vuông ~900×900)';
+    $('pp-title').value='';$('pp-cta').value='';$('pp-target').value='hub-challenge';$('pp-sort').value='1';$('pp-active').checked=true;
+    var n=new Date();$('pp-start').value=toLocal(n);var e=new Date(n.getTime()+864e5);e.setHours(12,0,0,0);$('pp-end').value=toLocal(e);msg('');
+  }
+  function load(){
+    SB.from('popups').select('*').order('end_at',{ascending:false}).then(function(r){
+      ROWS=r.data||[];var now=Date.now();
+      $('pp-list').innerHTML=ROWS.length?ROWS.map(function(x){
+        var st=!x.active?['off','Đã tắt']:now>Date.parse(x.end_at)?['exp','Hết hạn']:now<Date.parse(x.start_at)?['wait','Chờ chạy']:['on','Đang hiện'];
+        return '<div class="pp-it"><img src="'+esc(x.img)+'" alt=""><div class="m"><div class="t">'+esc(x.title)+'<span class="pp-tag '+st[0]+'">'+st[1]+'</span></div>'
+          +'<div class="hubmuted" style="font-size:12.5px">'+fmt(x.start_at)+' → '+fmt(x.end_at)+' · ưu tiên '+(x.sort==null?'-':x.sort)+'</div></div>'
+          +'<div class="pp-act"><button data-ed="'+x.id+'">✏️ Sửa</button><button data-tg="'+x.id+'">'+(x.active?'⏸ Tắt':'▶ Bật')+'</button><button data-dl="'+x.id+'">🗑</button></div></div>';
+      }).join(''):'<div class="hubmuted">Chưa có popup nào.</div>';
+      document.querySelectorAll('[data-ed]').forEach(function(b){b.onclick=function(){edit(+b.dataset.ed);};});
+      document.querySelectorAll('[data-tg]').forEach(function(b){b.onclick=function(){var x=ROWS.find(function(y){return y.id==b.dataset.tg;});SB.from('popups').update({active:!x.active}).eq('id',x.id).then(load);};});
+      document.querySelectorAll('[data-dl]').forEach(function(b){b.onclick=function(){if(!confirm('Xoá popup này?'))return;SB.from('popups').delete().eq('id',+b.dataset.dl).then(load);};});
+    });
+  }
+  function edit(id){
+    var x=ROWS.find(function(y){return y.id===id;});if(!x)return;
+    EDIT=id;FILE=null;IMG=x.img;$('pp-h').textContent='✏️ Sửa popup';
+    $('pp-prev').innerHTML='<img src="'+esc(x.img)+'">';
+    $('pp-title').value=x.title||'';$('pp-cta').value=x.cta||'';$('pp-target').value=x.target||'';$('pp-sort').value=x.sort==null?1:x.sort;$('pp-active').checked=!!x.active;
+    $('pp-start').value=toLocal(x.start_at);$('pp-end').value=toLocal(x.end_at);msg('');window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function shrink(file){ // thu ảnh về tối đa 1000px, JPEG
+    return new Promise(function(res){var im=new Image();im.onload=function(){var k=Math.min(1,1000/Math.max(im.width,im.height));var c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);c.toBlob(function(b){res(b||file);},'image/jpeg',0.86);};im.onerror=function(){res(file);};im.src=URL.createObjectURL(file);});
+  }
+  function save(){
+    var row={title:$('pp-title').value.trim(),cta:$('pp-cta').value.trim()||null,target:$('pp-target').value||null,sort:parseInt($('pp-sort').value,10)||1,active:$('pp-active').checked,
+      start_at:new Date($('pp-start').value).toISOString(),end_at:new Date($('pp-end').value).toISOString()};
+    if(!row.title) return msg('Nhập tiêu đề');
+    if(!FILE&&!IMG) return msg('Chọn ảnh popup');
+    if(Date.parse(row.end_at)<=Date.parse(row.start_at)) return msg('Giờ kết thúc phải sau giờ bắt đầu');
+    $('pp-save').disabled=true;msg('Đang lưu…');
+    var up=FILE?shrink(FILE).then(function(b){var path=Date.now()+'.jpg';return SB.storage.from('popups').upload(path,b,{contentType:'image/jpeg',upsert:true}).then(function(u){if(u.error)throw u.error;return SB.storage.from('popups').getPublicUrl(path).data.publicUrl;});}):Promise.resolve(IMG);
+    up.then(function(url){row.img=url;return EDIT?SB.from('popups').update(row).eq('id',EDIT):SB.from('popups').insert(row);})
+      .then(function(r){$('pp-save').disabled=false;if(r&&r.error)return msg('Lỗi: '+r.error.message);reset();msg('✅ Đã lưu — mọi người tải lại trang chủ là thấy.');load();})
+      .catch(function(e){$('pp-save').disabled=false;msg('Lỗi: '+(e.message||e));});
+  }
+  function run(){
+    if(((window.CLF_PROFILE||{}).level)!=='c4'){location.replace('index.html');return;}
+    $('pp-prev').onclick=function(){$('pp-file').click();};
+    $('pp-file').onchange=function(){var f=this.files[0];if(!f)return;FILE=f;$('pp-prev').innerHTML='<img src="'+URL.createObjectURL(f)+'">';};
+    $('pp-save').onclick=save;$('pp-reset').onclick=reset;
+    reset();load();
+  }
+  if(window.CLF_READY) run(); else document.addEventListener('clf-ready', run);
+})();
+</script>
+</body>
+</html>
