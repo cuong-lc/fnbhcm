@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=goong3"></script>
+<script src="config.js?v=goong4"></script>
 <script src="auth.js"></script>
 <style>
   .hero{padding:30px 0 26px!important}
@@ -466,17 +466,25 @@
   function gAC(input){
     var key=input.toLowerCase(); if(AC_CACHE[key]) return Promise.resolve(AC_CACHE[key]);
     var save=function(list){ AC_CACHE[key]=list; return list; };
-    if(!gk()) return photonAC(input).then(save);
+    var backup=function(){ return vmAC(input).then(function(v){ return v.length?v:photonAC(input); }); };
+    if(!gk()) return backup().then(save);
     var loc=gBias();
     return gFetch('Place/AutoComplete?input='+encodeURIComponent(input)+(loc?'&location='+loc:''))
-      .then(function(j){ var p=(j&&j.predictions)||[]; return p.length?p:photonAC(input); })
-      .catch(function(){ return photonAC(input); }).then(save); }
-  function gDetail(pid){ if(String(pid).indexOf('osm:')===0){ var a=String(pid).slice(4).split(','); return Promise.resolve(a.length===2&&a[0]?{lat:+a[0],lng:+a[1],label:''}:null); }
+      .then(function(j){ var p=(j&&j.predictions)||[]; return p.length?p:backup(); })
+      .catch(function(){ return backup(); }).then(save); }
+  // VietMap (dự phòng thứ 2 — 60.000 lượt miễn phí)
+  var VMK=window.VIETMAP_KEY||'';
+  function vmAC(input){ if(!VMK) return Promise.resolve([]); var c=null; try{ if(map) c=map.getCenter(); }catch(e){}
+    return fetch('https://maps.vietmap.vn/api/autocomplete/v3?apikey='+VMK+'&text='+encodeURIComponent(input)+(c?'&focus='+c.lat.toFixed(5)+','+c.lng.toFixed(5):''))
+      .then(function(r){ return r.ok?r.json():[]; }).then(function(a){ return (Array.isArray(a)?a:[]).slice(0,6).map(function(x){ return { description:x.display||((x.name||'')+' '+(x.address||'')), place_id:'vm:'+x.ref_id, structured_formatting:{ main_text:x.name||x.display, secondary_text:x.address||'' } }; }); }).catch(function(){ return []; }); }
+  function vmPlace(ref){ return fetch('https://maps.vietmap.vn/api/place/v3?apikey='+VMK+'&refid='+encodeURIComponent(ref)).then(function(r){return r.json();}).then(function(p){ return p&&p.lat!=null?{lat:+p.lat,lng:+p.lng,label:p.display||''}:null; }).catch(function(){return null;}); }
+  function vmGeocode(addr){ if(!VMK) return Promise.resolve(null); return fetch('https://maps.vietmap.vn/api/search/v3?apikey='+VMK+'&text='+encodeURIComponent(addr)).then(function(r){return r.json();}).then(function(a){ var x=Array.isArray(a)&&a[0]; return x&&x.ref_id?vmPlace(x.ref_id):null; }).catch(function(){return null;}); }
+  function gDetail(pid){ if(String(pid).indexOf('vm:')===0) return vmPlace(String(pid).slice(3)); if(String(pid).indexOf('osm:')===0){ var a=String(pid).slice(4).split(','); return Promise.resolve(a.length===2&&a[0]?{lat:+a[0],lng:+a[1],label:''}:null); }
     return gFetch('Place/Detail?place_id='+encodeURIComponent(pid)).then(function(j){ var l=j&&j.result&&j.result.geometry&&j.result.geometry.location; return l?{lat:l.lat,lng:l.lng,label:(j.result.formatted_address||j.result.name||'')}:null; }).catch(function(){return null;}); }
-  function gGeocode(addr){ return gFetch('geocode?address='+encodeURIComponent(addr)).then(function(j){ var x=j&&j.results&&j.results[0]; return x?{lat:x.geometry.location.lat,lng:x.geometry.location.lng,label:x.formatted_address}:null; }).catch(function(){return null;}); }
+  function gGeocode(addr){ return gFetch('geocode?address='+encodeURIComponent(addr)).then(function(j){ var x=j&&j.results&&j.results[0]; return x?{lat:x.geometry.location.lat,lng:x.geometry.location.lng,label:x.formatted_address}:null; }).catch(function(){return null;}).then(function(g){ return g||vmGeocode(addr); }); }
   var acTimer=null, acItems=[];
   function hideAC(){ $('fac').style.display='none'; }
-  function renderAC(preds){ acItems=preds||[]; var box=$('fac'); if(!acItems.length){hideAC();return;} box.innerHTML=acItems.map(function(p,i){ var m=p.structured_formatting||{}; return '<div class="acitem" data-i="'+i+'"><div class="main">'+esc(m.main_text||p.description)+'</div>'+(m.secondary_text?'<div class="sub">'+esc(m.secondary_text)+'</div>':'')+'</div>'; }).join('')+'<div class="pwr">Gợi ý bởi '+(acItems[0]&&String(acItems[0].place_id).indexOf('osm:')===0?'OpenStreetMap':'Goong')+'</div>'; box.style.display='block'; [].forEach.call(box.querySelectorAll('.acitem'),function(el){ el.onmousedown=function(ev){ ev.preventDefault(); pickAC(parseInt(el.getAttribute('data-i'),10)); }; }); }
+  function renderAC(preds){ acItems=preds||[]; var box=$('fac'); if(!acItems.length){hideAC();return;} box.innerHTML=acItems.map(function(p,i){ var m=p.structured_formatting||{}; return '<div class="acitem" data-i="'+i+'"><div class="main">'+esc(m.main_text||p.description)+'</div>'+(m.secondary_text?'<div class="sub">'+esc(m.secondary_text)+'</div>':'')+'</div>'; }).join('')+'<div class="pwr">Gợi ý bởi '+(acItems[0]&&String(acItems[0].place_id).indexOf('osm:')===0?'OpenStreetMap':(acItems[0]&&String(acItems[0].place_id).indexOf('vm:')===0?'VietMap':'Goong'))+'</div>'; box.style.display='block'; [].forEach.call(box.querySelectorAll('.acitem'),function(el){ el.onmousedown=function(ev){ ev.preventDefault(); pickAC(parseInt(el.getAttribute('data-i'),10)); }; }); }
   function pickAC(i){ var p=acItems[i]; if(!p)return; $('faddr').value=p.description; hideAC(); fmsg('Đang lấy toạ độ…','#8a6a1e'); gDetail(p.place_id).then(function(g){ if(!g){ fmsg('Không lấy được toạ độ. Bấm Định vị hoặc Chọn trên bản đồ.'); return; } fmsg(''); setPick(g.lat,g.lng,true); }); }
   if(true){ $('faddr').addEventListener('input',function(){ var v=$('faddr').value.trim(); clearTimeout(acTimer); if(v.length<4){hideAC();return;} acTimer=setTimeout(function(){ gAC(v).then(renderAC); },450); }); $('faddr').addEventListener('blur',function(){ setTimeout(hideAC,160); }); }
   function reverseFill(lat,lng){ fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lng,{headers:{'Accept':'application/json'}}).then(function(r){return r.json();}).then(function(d){ if(d&&d.display_name && !$('faddr').value) $('faddr').value=d.display_name; }).catch(function(){}); }
