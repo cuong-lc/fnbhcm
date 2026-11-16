@@ -211,14 +211,14 @@
           var used = USED[w.id] || 0, room = Math.max(0, w.per_user_max - used), mx = Math.max(0, Math.min(room, left != null ? left : room, Math.floor(bal / w.cost)));
           return '<div class="q-lead"><div style="display:flex;align-items:center;gap:8px"><span style="flex:1"><b>' + esc(w.icon || "📇") + " " + esc(w.name) + '</b><div class="hubmuted" style="font-size:11.5px">' + esc(w.descr || "") + "</div></span><b style=\"color:#B8872F;white-space:nowrap\">" + w.cost + ' điểm/slot</b></div>'
             + '<div class="q-lead-st"><span>Còn <b>' + Math.max(0, left != null ? left : 0) + "</b>/" + (w.total || w.stock || "∞") + " slot</span><span>Bạn đã đổi <b>" + used + "</b>/" + w.per_user_max + "</span></div>"
-            + (GD ? '<div class="q-adm" style="margin-top:6px"><button data-rwoff="' + w.id + '">Ẩn</button></div>'
+            + (GD ? '<div class="q-adm" style="margin-top:6px"><button data-rwcost="' + w.id + '" data-ct="' + w.cost + '" data-nm="' + esc(w.name) + '">✏️ Điểm</button> <button data-rwoff="' + w.id + '">Ẩn</button></div>'
               : '<div class="q-lead-act"><input type="number" min="1" max="' + Math.max(1, mx) + '" value="' + (mx ? 1 : 0) + '" id="qty-' + w.id + '"' + (mx ? "" : " disabled") + '><span class="hubmuted" style="font-size:11.5px">slot = <b id="qtyl-' + w.id + '">' + (mx ? 4 : 0) + "</b> lead</span>"
                 + '<button class="q-go" data-rdq="' + w.id + '" data-nm="' + esc(w.name) + '" data-ct="' + w.cost + '" data-mx="' + mx + '"' + (mx ? "" : " disabled") + ">" + (out ? "Hết slot" : room <= 0 ? "Đã đủ " + w.per_user_max : short ? "Thiếu điểm" : "Đổi") + "</button></div>")
             + "</div>";
         }
         var nm = esc(w.name.replace(/^Voucher đặc biệt — /, ""));
         return '<div class="q-row" style="align-items:center"><span style="flex:1"><b>' + esc(w.icon || "🎁") + " " + nm + '</b> <span class="hubmuted" style="font-size:11.5px">' + (left != null ? "· còn " + Math.max(0, left) : "") + '</span></span><b style="color:#B8872F;white-space:nowrap">' + w.cost + " điểm</b>"
-          + (GD ? '<span class="q-adm"><button data-rwoff="' + w.id + '">Ẩn</button></span>'
+          + (GD ? '<span class="q-adm"><button data-rwcost="' + w.id + '" data-ct="' + w.cost + '" data-nm="' + esc(w.name) + '">✏️ Điểm</button> <button data-rwoff="' + w.id + '">Ẩn</button></span>'
             : '<button class="q-go" data-rd="' + w.id + '" data-nm="' + esc(w.name) + '" data-ct="' + w.cost + '"' + (out || short ? " disabled" : "") + ">" + (out ? "Hết" : short ? "Thiếu " + (w.cost - bal) : "Đổi") + "</button>")
           + "</div>";
       }).join("") + "</div>";
@@ -307,6 +307,7 @@
         SB.from("rewards").insert(row).then(function (r) { if (r.error) return toast("Lỗi: " + r.error.message); toast("Đã thêm phần thưởng"); loadQuest(); });
       };
     }
+    document.querySelectorAll("[data-rwcost]").forEach(function (b) { b.onclick = function () { var v = prompt("Số điểm mới cho: " + b.dataset.nm, b.dataset.ct); if (v == null) return; v = parseInt(v, 10); if (!(v > 0)) return toast("Nhập số điểm > 0"); SB.from("rewards").update({ cost: v }).eq("id", +b.dataset.rwcost).then(function (r) { if (r.error) return toast("Lỗi: " + r.error.message); toast("Đã đổi thành " + v + " điểm"); loadQuest(); }); }; });
     document.querySelectorAll("[data-rwoff]").forEach(function (b) { b.onclick = function () { if (!confirm("Ẩn phần thưởng này?")) return; SB.from("rewards").update({ active: false }).eq("id", +b.dataset.rwoff).then(function () { loadQuest(); }); }; });
   }
   function fillPeople() {
