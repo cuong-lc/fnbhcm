@@ -69,6 +69,64 @@
     setTimeout(scan, 1200);
   }
 
+  // ---- Nút Góp ý: Báo lỗi / Góp ý tính năng (mọi trang) ----
+  function setupFeedback() {
+    if (window._fbOn) return; window._fbOn = 1;
+    const SB = window.SB, U = window.CLF_USER || {}, P = window.CLF_PROFILE || {}, GD = P.level === "c4";
+    const st = document.createElement("style");
+    st.textContent = "#fb-btn{position:fixed;left:14px;bottom:14px;z-index:58;border:1px solid var(--line);background:#fff;color:#17130D;font-weight:800;font-size:12.5px;border-radius:22px;padding:9px 14px;box-shadow:0 6px 18px rgba(0,0,0,.14);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px}"
+      + "#fb-btn:hover{background:#FBF3E2}#fb-btn .nb{background:#E5484D;color:#fff;border-radius:10px;font-size:10px;padding:1px 6px}"
+      + "@media(max-width:1280px){#fb-btn{bottom:62px}}"
+      + "#fb-pn{position:fixed;left:14px;bottom:64px;z-index:59;width:min(380px,calc(100vw - 28px));max-height:calc(100vh - 110px);overflow:auto;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 16px 40px rgba(0,0,0,.18);padding:14px;display:none}"
+      + "#fb-pn.on{display:block}@media(max-width:1280px){#fb-pn{bottom:112px}}"
+      + ".fb-tabs{display:flex;gap:4px;background:#F6EFDE;border-radius:10px;padding:3px;margin:6px 0 10px}.fb-tabs button{flex:1;border:0;background:transparent;border-radius:8px;padding:7px 6px;font-size:12.5px;font-weight:700;color:#6B6150;cursor:pointer;font-family:inherit}.fb-tabs button.on{background:#fff;color:#17130D;box-shadow:0 1px 3px rgba(0,0,0,.1)}"
+      + "#fb-pn textarea{width:100%;box-sizing:border-box;min-height:110px;border:1.5px solid #ddd3bf;border-radius:10px;padding:9px 10px;font-family:inherit;font-size:13.5px;resize:vertical}"
+      + ".fb-send{margin-top:8px;width:100%;border:0;border-radius:10px;padding:10px;font-weight:800;cursor:pointer;font-family:inherit;background:linear-gradient(135deg,#F0D48A,#D4A94C);color:#17130D}"
+      + ".fb-it{border-top:1px solid #F1E7D2;padding:8px 0;font-size:12.5px}.fb-it .m{color:#8a7a55;font-size:11.5px}.fb-it .t{white-space:pre-wrap;color:#17130D;margin:3px 0}.fb-it button{border:1px solid #ECE4D5;background:#fff;border-radius:7px;font-size:11px;padding:2px 8px;cursor:pointer;margin-right:4px}"
+      + ".fb-st{font-size:10.5px;font-weight:700;border-radius:20px;padding:1px 7px;margin-left:4px}.fb-st.moi{background:#FFF3D6;color:#9a6a00}.fb-st.dang{background:#E3EEFB;color:#24467A}.fb-st.xong{background:#DDF7E7;color:#0a7a3a}";
+    document.head.appendChild(st);
+    const btn = document.createElement("button"); btn.id = "fb-btn"; btn.type = "button"; btn.innerHTML = "💬 Góp ý";
+    const pn = document.createElement("div"); pn.id = "fb-pn";
+    document.body.appendChild(btn); document.body.appendChild(pn);
+    pn.addEventListener("click", (e) => e.stopPropagation());
+    let TAB = "bug";
+    const ST = { moi: "Mới", dang: "Đang xử lý", xong: "Đã xong" };
+    const draw = () => {
+      const tabs = [["bug", "🐞 Báo lỗi"], ["idea", "💡 Góp ý tính năng"], [GD ? "inbox" : "mine", GD ? "📥 Hộp thư" : "📄 Của tôi"]];
+      pn.innerHTML = '<div style="display:flex;align-items:center"><b style="font-size:14px">💬 Góp ý cho FNBHCM HUB</b><span id="fb-x" style="margin-left:auto;cursor:pointer;color:#8a6a1e">✕</span></div>'
+        + '<div class="fb-tabs">' + tabs.map(([k, t]) => `<button data-k="${k}" class="${TAB === k ? "on" : ""}">${t}</button>`).join("") + "</div><div id=\"fb-body\"></div>";
+      pn.querySelector("#fb-x").onclick = () => pn.classList.remove("on");
+      [].forEach.call(pn.querySelectorAll(".fb-tabs button"), (b) => b.onclick = () => { TAB = b.dataset.k; draw(); });
+      const body = pn.querySelector("#fb-body");
+      if (TAB === "bug" || TAB === "idea") {
+        body.innerHTML = '<div style="font-size:12px;color:#6B6150;margin-bottom:6px">' + (TAB === "bug" ? "Mô tả lỗi: bạn đang làm gì, thấy gì sai? (trang hiện tại được gửi kèm tự động)" : "Bạn muốn web có thêm tính năng gì, hoặc sửa chỗ nào cho tiện hơn?") + "</div>"
+          + '<textarea id="fb-tx" placeholder="' + (TAB === "bug" ? "VD: Bấm Lưu điểm trên bản đồ thì báo lỗi…" : "VD: Thêm bộ lọc quán theo quận…") + '"></textarea><button class="fb-send" id="fb-go">Gửi</button><div id="fb-ok" style="font-size:12px;margin-top:6px"></div>';
+        body.querySelector("#fb-go").onclick = async () => {
+          const t = body.querySelector("#fb-tx").value.trim(); if (t.length < 5) { body.querySelector("#fb-ok").textContent = "Viết thêm chút nội dung nhé."; return; }
+          const b = body.querySelector("#fb-go"); b.disabled = true; b.textContent = "Đang gửi…";
+          const r = await SB.from("feedback").insert({ kind: TAB, content: t, page: location.pathname + location.search, email: (U.email || "").toLowerCase(), full_name: P.full_name || null });
+          b.disabled = false; b.textContent = "Gửi";
+          if (r.error) { body.querySelector("#fb-ok").textContent = "Lỗi: " + r.error.message; return; }
+          body.querySelector("#fb-tx").value = ""; body.querySelector("#fb-ok").innerHTML = '<span style="color:#0a7a3a;font-weight:700">✅ Đã gửi — cảm ơn bạn! GĐTT đã nhận được thông báo.</span>';
+        };
+      } else {
+        body.innerHTML = '<div class="hubmuted" style="font-size:12px">Đang tải…</div>';
+        let q = SB.from("feedback").select("*").order("created_at", { ascending: false }).limit(50);
+        q.then((r) => {
+          const L = r.data || [];
+          body.innerHTML = L.length ? L.map((f) => `<div class="fb-it"><div class="m">${f.kind === "bug" ? "🐞 Lỗi" : "💡 Góp ý"} · ${esc(f.full_name || f.email)} · ${new Date(f.created_at).toLocaleString("vi-VN")} <span class="fb-st ${f.status}">${ST[f.status] || f.status}</span></div><div class="t">${esc(f.content)}</div><div class="m">📄 ${esc(f.page || "")}</div>`
+            + (GD ? `<div style="margin-top:4px">${f.status !== "dang" ? `<button data-id="${f.id}" data-s="dang">Đang xử lý</button>` : ""}${f.status !== "xong" ? `<button data-id="${f.id}" data-s="xong">✓ Đã xong</button>` : ""}</div>` : "") + "</div>").join("")
+            : '<div class="hubmuted" style="font-size:12.5px">Chưa có góp ý nào.</div>';
+          [].forEach.call(body.querySelectorAll("button[data-id]"), (b) => b.onclick = async () => { await SB.from("feedback").update({ status: b.dataset.s }).eq("id", +b.dataset.id); draw(); badge(); });
+        });
+      }
+    };
+    const badge = () => { if (!GD) return; SB.from("feedback").select("id", { count: "exact", head: true }).eq("status", "moi").then((r) => { btn.innerHTML = "💬 Góp ý" + (r.count ? ` <span class="nb">${r.count}</span>` : ""); }); };
+    btn.onclick = (e) => { e.stopPropagation(); if (GD && !pn.classList.contains("on")) TAB = "inbox"; pn.classList.toggle("on"); if (pn.classList.contains("on")) draw(); };
+    document.addEventListener("click", (e) => { if (!pn.contains(e.target) && e.target !== btn && !btn.contains(e.target)) pn.classList.remove("on"); });
+    badge();
+  }
+
   // ---- shared: nav + footer ----
   function buildNav(activeFile) {
     const nav = byId("nav");
@@ -109,6 +167,7 @@
     }
     [].forEach.call(nav.querySelectorAll("a"), (a) => a.addEventListener("click", () => nav.classList.remove("open")));
     // 🔔 Chuông nhắc việc (mọi trang, sau khi đã có hồ sơ)
+    if (window.CLF_READY && window.SB) setupFeedback();
     if (window.CLF_READY && window.SB && wrap && !byId("navbell")) {
       const bell = document.createElement("button");
       bell.type = "button"; bell.id = "navbell"; bell.className = "navbell";
