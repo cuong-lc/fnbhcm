@@ -222,7 +222,7 @@
   // ===== ĐĂNG VIDEO =====
   function renderDang(){
     var mine=V.filter(function(v){return (v.owner_email||'').toLowerCase()===ME;});
-    $('kv-body').innerHTML='<div class="hubcard frm"><h3>📤 Đăng video lên Kho</h3><div class="hubmuted" style="font-size:12.5px">Đăng video lên kênh YouTube chung trước, rồi dán link vào đây. GĐTT duyệt xong video lên Kho và bạn được cộng <b>5–10 điểm</b> Nhiệm vụ.</div>'
+    $('kv-body').innerHTML='<div class="hubcard frm"><h3>📤 Đăng video lên Kho</h3><div class="hubmuted" style="font-size:12.5px"><b>Bước 1:</b> Đăng video lên <b>kênh YouTube chung của Trung tâm</b> qua YouTube Studio (GĐTT sẽ cấp quyền &amp; hướng dẫn cách đăng — chưa có quyền thì nhắn GĐTT). <b>Bước 2:</b> Dán link video vào đây, chọn tag rồi gửi duyệt. GĐTT duyệt xong video lên Kho và bạn được cộng <b>5–10 điểm</b> Nhiệm vụ.</div>'
       +'<label>Link YouTube *</label><input id="f-link" placeholder="https://youtu.be/... hoặc https://youtube.com/shorts/...">'
       +'<label>Tiêu đề *</label><input id="f-title" placeholder="Tự điền khi dán link — sửa lại cho dễ hiểu với khách">'
       +'<div id="f-warn"></div>'+formFields({tags:[],apps:[]})
