@@ -44,6 +44,12 @@
     ".q-r button{width:100%;border:0;border-radius:8px;padding:6px;font-weight:800;cursor:pointer;font-family:inherit;font-size:12.5px;background:linear-gradient(135deg,#F0D48A,#D4A94C);color:#17130D}",
     ".q-r button:disabled{background:#EEE8DB;color:#a59c88;cursor:not-allowed}",
     "#hub-whale{display:none;position:fixed;inset:0;z-index:9998;background:rgba(10,8,4,.55);align-items:center;justify-content:center;padding:16px}#hub-whale.on{display:flex}#hub-whale>.hubcard{width:min(560px,94vw);max-height:86vh;overflow:auto;margin:0!important;position:relative}#hub-whale .wh-x{border:0;background:none;font-size:18px;cursor:pointer;color:#8a7a55;margin-left:6px}",
+    ".lb-split #lb-phong-in .lb-row{padding:3px 0;font-size:12.5px}.lb-split #lb-phong-in .lb-row.r1,.lb-split #lb-phong-in .lb-row.r2,.lb-split #lb-phong-in .lb-row.r3{padding:4px 9px;margin:3px 0}.lb-split #lb-phong-in .lb-row b small.lb-in{display:inline;font-size:11px;margin-left:4px}",
+    "#hub-honor{margin-top:10px;padding-top:10px;border-top:1px dashed #E7C877}.hn-h{display:flex;align-items:center;gap:6px;font-weight:800;color:#17130D;font-size:14px;margin-bottom:6px}.hn-h button{margin-left:auto;border:1px solid #E7C877;background:#FFF8E6;color:#8a5a00;border-radius:14px;padding:2px 9px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit}",
+    "@keyframes hnGlow{0%,100%{box-shadow:0 0 0 rgba(255,180,40,0)}50%{box-shadow:0 0 14px rgba(255,180,40,.55)}}.hn-it{position:relative;border-radius:12px;padding:9px 11px;margin:6px 0;background:linear-gradient(135deg,#FFF6DD,#FFEBC2);border:1.5px solid #F0C96A;animation:hnGlow 2.6s ease-in-out infinite}",
+    ".hn-t{font-weight:800;color:#7A4A00;font-size:13px}.hn-n{font-weight:800;color:#17130D;font-size:14px;margin:2px 0}.hn-r{font-size:12px;color:#6b5b3a;line-height:1.4}.hn-f{display:flex;align-items:center;gap:6px;margin-top:6px}",
+    ".hn-clap{border:1px solid #E7C877;background:#fff;border-radius:14px;padding:2px 10px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:700;color:#8a5a00}.hn-clap.on{background:#FFD36B;border-color:#E0A82E;color:#3a2600}.hn-x{margin-left:auto;border:0;background:none;color:#a08b5c;cursor:pointer;font-size:12px}",
+    "#hnf{display:none;background:#FFFCF5;border:1px dashed #E7C877;border-radius:10px;padding:8px;margin-bottom:6px}#hnf.on{display:block}#hnf input{width:100%;box-sizing:border-box;border:1.5px solid #ddd3bf;border-radius:8px;padding:6px 8px;font-family:inherit;font-size:12.5px;margin-bottom:5px}#hnf .r2{display:grid;grid-template-columns:70px 1fr;gap:5px}",
     ".q-sub{font-size:12.5px;font-weight:800;color:#17130D;margin:12px 0 6px}",
     ".q-row{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:5px 0;border-top:1px solid #F4EEE2}",
     ".q-row .c{font-family:monospace;font-weight:800;color:#8a6a1e}",
@@ -362,7 +368,7 @@
       SB.from("leaderboard_daily").select("*").eq("snap_date", d).order("rank").then(function (q) {
         var rows = q.data || [], dd = d.split("-"), PG = { phong: 0, sale: 0, khac: 0 }, PER = 10;
         var FMT = {
-          phong: function (x) { return (x.pct != null ? String(x.pct).replace(".", ",") + "%" : m1(x.value)) + '<small>' + m1(x.value) + "</small>"; },
+          phong: function (x) { return (x.pct != null ? String(x.pct).replace(".", ",") + "%" : m1(x.value)) + ' <small class="lb-in">' + m1(x.value) + "</small>"; },
           sale: function (x) { return m1(x.value); }, khac: function (x) { return m1(x.value); }
         };
         var TITLE = { phong: "🏅 Top phòng kinh doanh", sale: "👑 Top sale", khac: "💼 Top doanh thu khác" };
@@ -382,11 +388,45 @@
         }
         el.innerHTML = '<div class="lb-top"><b>🏆 Bảng Danh Vọng</b><span class="hubmuted">Cập nhật ' + dd[2] + "/" + dd[1] + " · tháng " + parseInt(dd[1], 10) + "</span></div>"
           + '<div class="lb-grid"><div class="hubcard lb-card" id="lb-phong"></div><div class="hubcard lb-card" id="lb-sale"></div><div class="hubcard lb-card" id="lb-khac"></div></div>';
-        draw("phong"); draw("sale"); draw("khac");
+        $("lb-phong").innerHTML = '<div id="lb-phong-in"></div><div id="hub-honor"></div>'; $("lb-phong").classList.add("lb-split");
+        var _dp = draw; draw = function (k) { if (k === "phong") { var b = $("lb-phong"); b.id = "lb-phong-x"; $("lb-phong-in").id = "lb-phong"; _dp(k); $("lb-phong").id = "lb-phong-in"; b.id = "lb-phong"; } else _dp(k); };
+        draw("phong"); draw("sale"); draw("khac"); renderHonor();
       });
     });
   }
 
+
+  // ================= 📌 VINH DANH (GĐTT ghim, mọi người vỗ tay) =================
+  function renderHonor() {
+    var el = $("hub-honor"); if (!el) return;
+    var now = new Date().toISOString();
+    Promise.all([
+      SB.from("honors").select("*").eq("active", true).lte("start_at", now).gt("end_at", now).order("created_at", { ascending: false }),
+      SB.from("honor_claps").select("honor_id,email")
+    ]).then(function (r) {
+      var H = r[0].data || [], C = r[1].data || [], cnt = {}, mine = {};
+      C.forEach(function (c) { cnt[c.honor_id] = (cnt[c.honor_id] || 0) + 1; if ((c.email || "").toLowerCase() === ME) mine[c.honor_id] = 1; });
+      if (!H.length && !GD) { el.style.display = "none"; return; }
+      el.style.display = "";
+      var end7 = new Date(Date.now() + 7 * 864e5 + 7 * 3600e3).toISOString().slice(0, 10);
+      el.innerHTML = '<div class="hn-h">📌 Vinh danh' + (GD ? '<button id="hn-add">＋ Ghim</button>' : "") + "</div>"
+        + (GD ? '<div id="hnf"><div class="r2"><input id="hn-icon" value="🏅"><input id="hn-title" placeholder="Danh hiệu / lý do ngắn (VD: Chiến thần làm video)"></div><input id="hn-names" placeholder="Tên người được vinh danh (VD: Trâm · Thúy Mi · Yến Nhi)"><input id="hn-reason" placeholder="Lời ghi nhận (tuỳ chọn)"><div class="r2"><span class="hubmuted" style="font-size:11.5px;align-self:center">Hiện đến</span><input type="date" id="hn-end" value="' + end7 + '"></div><button class="hubbtn" id="hn-save" style="padding:5px 12px;font-size:12.5px">Ghim vinh danh</button></div>' : "")
+        + (H.length ? H.map(function (h) {
+          return '<div class="hn-it"><div class="hn-t">' + esc(h.icon || "🏅") + " " + esc(h.title) + '</div><div class="hn-n">' + esc(h.names) + "</div>" + (h.reason ? '<div class="hn-r">' + esc(h.reason) + "</div>" : "")
+            + '<div class="hn-f"><button class="hn-clap' + (mine[h.id] ? " on" : "") + '" data-hc="' + h.id + '">👏 ' + (cnt[h.id] || 0) + "</button>" + (GD ? '<button class="hn-x" data-hx="' + h.id + '">Gỡ</button>' : "") + "</div></div>";
+        }).join("") : '<div class="hubmuted" style="font-size:12px">Chưa có vinh danh nào đang ghim.</div>');
+      el.querySelectorAll("[data-hc]").forEach(function (b) { b.onclick = function () { var id = +b.dataset.hc; (mine[id] ? SB.from("honor_claps").delete().eq("honor_id", id).ilike("email", ME) : SB.from("honor_claps").insert({ honor_id: id, email: ME })).then(renderHonor); }; });
+      if (GD) {
+        $("hn-add").onclick = function () { $("hnf").classList.toggle("on"); };
+        $("hn-save").onclick = function () {
+          var row = { icon: $("hn-icon").value.trim() || "🏅", title: $("hn-title").value.trim(), names: $("hn-names").value.trim(), reason: $("hn-reason").value.trim() || null, end_at: new Date($("hn-end").value + "T23:59:59+07:00").toISOString() };
+          if (!row.title || !row.names) return toast("Nhập danh hiệu và tên người được vinh danh");
+          SB.from("honors").insert(row).then(function (x) { if (x.error) return toast("Lỗi: " + x.error.message); toast("📌 Đã ghim vinh danh"); renderHonor(); });
+        };
+        el.querySelectorAll("[data-hx]").forEach(function (b) { b.onclick = function () { if (!confirm("Gỡ vinh danh này?")) return; SB.from("honors").update({ active: false }).eq("id", +b.dataset.hx).then(renderHonor); }; });
+      }
+    });
+  }
   // ================= 🐋 KÌNH NGƯ SÁT THỦ (sale tự gửi yêu cầu ghi nhận, GĐTT duyệt) =================
   var WMIN = 10e6;
   function wm(n) { n = Number(n) || 0; return n >= 1e9 ? (Math.round(n / 1e7) / 100 + "").replace(".", ",") + " tỷ" : (Math.round(n / 1e5) / 10 + "").replace(".", ",") + "tr"; }

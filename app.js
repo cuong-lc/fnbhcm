@@ -776,6 +776,38 @@
     ov.addEventListener("click", function (e) { if (e.target === ov) close(); });
     document.addEventListener("keydown", function k(e) { if (e.key === "Escape") { close(); document.removeEventListener("keydown", k); } });
   };
+  // ---- Dải 🔥 Tin nóng (mọi trang): vinh danh đang ghim + thành tích quan trọng 3 ngày gần nhất ----
+  function startTicker() {
+    if (!window.SB || !window.CLF_READY || document.getElementById("hub-tick")) return;
+    const bar = document.querySelector(".topbar"); if (!bar) return;
+    const since = new Date(Date.now() - 3 * 864e5).toISOString(), now = new Date().toISOString();
+    Promise.all([
+      window.SB.from("honors").select("icon,title,names").eq("active", true).lte("start_at", now).gt("end_at", now).order("created_at", { ascending: false }).limit(5),
+      window.SB.from("feed_events").select("icon,title,kind").in("kind", ["rank", "whale", "honor", "challenge", "star", "award"]).gte("created_at", since).order("created_at", { ascending: false }).limit(15)
+    ]).then((r) => {
+      const esc = (x) => String(x == null ? "" : x).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+      const items = [];
+      (r[0].data || []).forEach((h) => items.push("<b>" + esc(h.icon || "🏅") + " Vinh danh " + esc(h.names) + "</b> — " + esc(h.title)));
+      (r[1].data || []).filter((e) => e.kind !== "honor").forEach((e) => items.push(esc(e.icon || "✨") + " " + esc(e.title)));
+      if (!items.length) return;
+      if (!document.getElementById("tick-style")) {
+        const st = document.createElement("style"); st.id = "tick-style";
+        st.textContent = "#hub-tick{display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,#1b1408,#3a2a10 50%,#1b1408);color:#FFE8B0;font-size:12.5px;height:30px;overflow:hidden;cursor:pointer;border-top:1px solid #5a4318}"
+          + "#hub-tick .tk-l{flex:none;padding:0 10px 0 12px;font-weight:800;color:#FFB547;background:#1b1408;height:100%;display:flex;align-items:center;box-shadow:6px 0 10px #1b1408;z-index:1}"
+          + "#hub-tick .tk-w{flex:1;overflow:hidden;white-space:nowrap;-webkit-mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent);mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent)}"
+          + "#hub-tick .tk-t{display:inline-block;padding-left:100%;animation:tkMove var(--tkd,40s) linear infinite}#hub-tick:hover .tk-t{animation-play-state:paused}"
+          + "#hub-tick .tk-t span{margin-right:42px}#hub-tick .tk-t b{color:#FFD36B}"
+          + "@keyframes tkMove{from{transform:translateX(0)}to{transform:translateX(-100%)}}@media(prefers-reduced-motion:reduce){#hub-tick .tk-t{animation:none;padding-left:0}}";
+        document.head.appendChild(st);
+      }
+      const el = document.createElement("div"); el.id = "hub-tick"; el.title = "Xem Bảng tin thành tích";
+      el.innerHTML = '<span class="tk-l">🔥 Tin nóng</span><div class="tk-w"><div class="tk-t">' + items.map((x) => "<span>" + x + "</span>").join("") + "</div></div>";
+      el.querySelector(".tk-t").style.setProperty("--tkd", Math.max(25, items.length * 9) + "s");
+      el.onclick = () => { const f = document.getElementById("hub-feed"); if (f) f.scrollIntoView({ behavior: "smooth", block: "start" }); else location.href = "index.html#hub-feed"; };
+      bar.appendChild(el);
+    }).catch(() => {});
+  }
+
   function startEventPopup() {
     if (!window.SB || !window.CLF_READY || window._evStarted) return; window._evStarted = 1;
     window.hubEvent().then(function () { setTimeout(function () { window.hubEventPopup(location.hash === "#event"); }, 800); });
@@ -794,7 +826,7 @@
     const file = location.pathname.split("/").pop() || "index.html";
     buildNav(file);
     buildFoot();
-    const go = () => { buildNav(file); startRender(); try { startEventPopup(); } catch (e) {} };
+    const go = () => { buildNav(file); startRender(); try { startEventPopup(); startTicker(); } catch (e) {} };
     if (window.CLF_READY || !window.SB) go();
     else document.addEventListener("clf-ready", go, { once: true });
   });
