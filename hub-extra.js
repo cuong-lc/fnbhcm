@@ -406,7 +406,7 @@
       var rows = L.slice(0, 10).map(function (x, k) {
         var top = k < 3, c = top ? ' style="color:' + COL[k] + '"' : "";
         return '<div class="lb-row' + (top ? " t r" + (k + 1) : "") + '"><span class="lb-n">' + (top ? MED[k] : k + 1) + "</span>" + (top ? '<i class="lb-sp s1">✦</i><i class="lb-sp s2">✧</i>' : "")
-          + '<span class="lb-nm"' + c + ">" + esc(x.name) + (x.dept ? " <i>" + esc(x.dept) + "</i>" : "") + '<br><i>🏪 ' + esc(x.cust) + "</i></span><b" + c + ">" + wm(x.max) + "<small>🐋 × " + x.n + "</small></b></div>";
+          + '<span class="lb-nm"' + c + ">" + esc(x.name) + (x.dept ? " <i>" + esc(x.dept) + "</i>" : "") + (/^Đơn Sapo 360/.test(x.cust) ? "" : '<br><i>🏪 ' + esc(x.cust) + "</i>") + "</span><b" + c + ">" + wm(x.max) + "<small>🐋 × " + x.n + "</small></b></div>";
       }).join("") || '<div class="hubmuted" style="padding:8px 0">Tháng này chưa có Kình Ngư nào được ghi nhận — chốt khách lớn rồi gửi yêu cầu nhé! 🐋</div>';
       var ST = { cho_duyet: ["⏳ Chờ duyệt", "#B8872F"], da_duyet: ["✅ Đã ghi nhận", "#16A34A"], tu_choi: ["✕ Từ chối", "#C0262D"] };
       var my = mine.length ? '<div class="q-sub" style="margin-top:10px">📄 Yêu cầu của tôi</div>' + mine.map(function (w) {
