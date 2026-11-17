@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=goong4"></script>
+<script src="config.js?v=goong5"></script>
 <script src="auth.js"></script>
 <style>
   .hero{padding:30px 0 26px!important}
@@ -448,7 +448,7 @@
   }
 
   // ===== Goong (địa chỉ Việt Nam chính xác) =====
-  var GKEYS=[window.GOONG_KEY,window.GOONG_KEY2].filter(Boolean), GK=GKEYS[0]||'', GOFF={};
+  var GKEYS=[window.GOONG_KEY,window.GOONG_KEY2,window.GOONG_KEY3,window.GOONG_KEY4].filter(Boolean), GK=GKEYS[0]||'', GOFF={};
   try{ GOFF=JSON.parse(localStorage.getItem('goongKeyOff')||'{}'); }catch(e){}
   function gk(){ for(var i=0;i<GKEYS.length;i++){ if(!(GOFF[i]>Date.now())) return GKEYS[i]; } return null; }
   function gkBad(key){ var i=GKEYS.indexOf(key); if(i<0) return; GOFF[i]=Date.now()+60*60e3; try{ localStorage.setItem('goongKeyOff',JSON.stringify(GOFF)); }catch(e){} }

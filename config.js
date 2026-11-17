@@ -15,6 +15,8 @@ window.LEVEL_ID = "c1";
    Key nên được giới hạn theo tên miền cuong-lc.github.io trong dashboard Goong. */
 window.GOONG_KEY = "21nP2IqruM3q48drULfj9IMxjk0BThE6aA7zEUEF";
 window.GOONG_KEY2 = 'cqu3rnCw3cxTmp74WphQcbcHmr4Z5q3FGNnSXXnN'; // key dự phòng (xoay vòng khi key 1 hết lượt ngày)
+window.GOONG_KEY3 = 'eErIsu9tUTsZyRVUQ9gcq23OpYEHKJ419v650afP'; // key dự phòng 3
+window.GOONG_KEY4 = 'SnfvxM9Cswjtg8ZLtdbsJinx1kSO5KYEjUwp3rsa'; // key dự phòng 4
 window.VIETMAP_KEY = '14ccd31e3ec6d3cbadc7a85549d358beccbc718516718f49'; // VietMap Default Key — dự phòng khi cả 2 key Goong hết lượt
 /* Maptiles key (hiển thị nền bản đồ Goong). Cũng nên giới hạn domain cuong-lc.github.io. */
 window.GOONG_MAPTILES_KEY = "OvWa4WR5PaarBdssvzbdyh6jrSsx7ouua4qvy2sN";
