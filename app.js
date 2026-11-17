@@ -783,12 +783,17 @@
     const since = new Date(Date.now() - 3 * 864e5).toISOString(), now = new Date().toISOString();
     Promise.all([
       window.SB.from("honors").select("icon,title,names").eq("active", true).lte("start_at", now).gt("end_at", now).order("created_at", { ascending: false }).limit(5),
-      window.SB.from("feed_events").select("icon,title,kind").in("kind", ["rank", "whale", "honor", "challenge", "star", "award"]).gte("created_at", since).order("created_at", { ascending: false }).limit(15)
+      window.SB.from("feed_events").select("icon,title,kind,full_name").in("kind", ["rank", "whale", "honor", "challenge", "star", "award"]).gte("created_at", since).order("created_at", { ascending: false }).limit(15)
     ]).then((r) => {
       const esc = (x) => String(x == null ? "" : x).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
       const items = [];
       (r[0].data || []).forEach((h) => items.push("<b>" + esc(h.icon || "🏅") + " Vinh danh " + esc(h.names) + "</b> — " + esc(h.title)));
-      (r[1].data || []).filter((e) => e.kind !== "honor").forEach((e) => items.push(esc(e.icon || "✨") + " " + esc(e.title)));
+      const seen = {};
+      (r[1].data || []).filter((e) => e.kind !== "honor").forEach((e) => {
+        // Mỗi mục chỉ lấy tin mới nhất: lên hạng → theo danh hiệu (phần sau "·"); loại khác → theo người + loại
+        const t = String(e.title || ""), k = e.kind === "rank" ? "rank|" + (t.split("·").pop() || "").trim() : e.kind + "|" + (e.full_name || t);
+        if (seen[k]) return; seen[k] = 1; items.push(esc(e.icon || "✨") + " " + esc(t));
+      });
       if (!items.length) return;
       if (!document.getElementById("tick-style")) {
         const st = document.createElement("style"); st.id = "tick-style";
