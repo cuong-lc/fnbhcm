@@ -50,6 +50,9 @@
     ".hn-t{font-weight:800;color:#7A4A00;font-size:13px}.hn-n{font-weight:800;color:#17130D;font-size:14px;margin:2px 0}.hn-r{font-size:12px;color:#6b5b3a;line-height:1.4}.hn-f{display:flex;align-items:center;gap:6px;margin-top:6px}",
     ".hn-clap{border:1px solid #E7C877;background:#fff;border-radius:14px;padding:2px 10px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:700;color:#8a5a00}.hn-clap.on{background:#FFD36B;border-color:#E0A82E;color:#3a2600}.hn-x{margin-left:auto;border:0;background:none;color:#a08b5c;cursor:pointer;font-size:12px}",
     "#hnf{display:none;background:#FFFCF5;border:1px dashed #E7C877;border-radius:10px;padding:8px;margin-bottom:6px}#hnf.on{display:block}#hnf input{width:100%;box-sizing:border-box;border:1.5px solid #ddd3bf;border-radius:8px;padding:6px 8px;font-family:inherit;font-size:12.5px;margin-bottom:5px}#hnf .r2{display:grid;grid-template-columns:70px 1fr;gap:5px}",
+    ".rw-gear{border:1px solid #ECE4D5;background:#fff;border-radius:8px;width:30px;height:28px;cursor:pointer;font-size:14px;flex:none;margin-left:6px}.rw-gear:hover{background:#FFF6DD;border-color:#E7C877}",
+    "#rwm{position:fixed;inset:0;z-index:9995;background:rgba(10,8,4,.55);display:flex;align-items:center;justify-content:center;padding:16px}#rwm .bx{background:#fff;border-radius:14px;width:min(420px,94vw);padding:16px 18px;max-height:90vh;overflow:auto}",
+    "#rwm label{display:block;font-size:12px;font-weight:700;color:#7a6a4a;margin:9px 0 3px}#rwm input[type=text],#rwm input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #ddd3bf;border-radius:8px;padding:7px 9px;font-family:inherit;font-size:14px}#rwm .r2{display:grid;grid-template-columns:1fr 1fr;gap:8px}#rwm .ft{display:flex;gap:8px;margin-top:14px;align-items:center}",
     ".q-sub{font-size:12.5px;font-weight:800;color:#17130D;margin:12px 0 6px}",
     ".q-row{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:5px 0;border-top:1px solid #F4EEE2}",
     ".q-row .c{font-family:monospace;font-weight:800;color:#8a6a1e}",
@@ -210,6 +213,7 @@
     var groups = [["📇 Lead công ty", function (w) { return w.per_user_max != null; }], ["💎 Voucher đặc biệt", function (w) { return w.per_user_max == null && /đặc biệt/i.test(w.name); }], ["🖥️ Thiết bị & gói", function (w) { return w.per_user_max == null && !/đặc biệt|1 năm/i.test(w.name) && /^(S\d|Pro\b)|gói/i.test(w.name); }], ["🎟️ Voucher 1 năm", function (w) { return w.per_user_max == null && /1 năm/i.test(w.name); }],
       ["📦 Khác", function (w) { return w.per_user_max == null && !/đặc biệt|1 năm/i.test(w.name) && !/^(S\d|Pro\b)|gói/i.test(w.name); }]];
     rw += '<div class="q-sub">🛍️ Đổi quà <span class="hubmuted" style="font-weight:400;font-size:11.5px">· bấm Đổi → GĐTT liên hệ gửi voucher & trừ điểm</span></div>';
+    window._RW = {}; rewards.forEach(function (w) { window._RW[w.id] = w; });
     groups.forEach(function (g) {
       var L = rewards.filter(g[1]); if (!L.length) return;
       rw += '<div style="font-size:11.5px;font-weight:800;color:#8a6a1e;margin:8px 0 2px">' + g[0] + "</div>";
@@ -219,14 +223,14 @@
           var used = USED[w.id] || 0, room = Math.max(0, w.per_user_max - used), mx = Math.max(0, Math.min(room, left != null ? left : room, Math.floor(bal / w.cost)));
           return '<div class="q-lead"><div style="display:flex;align-items:center;gap:8px"><span style="flex:1"><b>' + esc(w.icon || "📇") + " " + esc(w.name) + '</b><div class="hubmuted" style="font-size:11.5px">' + esc(w.descr || "") + "</div></span><b style=\"color:#B8872F;white-space:nowrap\">" + w.cost + ' điểm/slot</b></div>'
             + '<div class="q-lead-st"><span>Còn <b>' + Math.max(0, left != null ? left : 0) + "</b>/" + (w.total || w.stock || "∞") + " slot</span><span>Bạn đã đổi <b>" + used + "</b>/" + w.per_user_max + "</span></div>"
-            + (GD ? '<div class="q-adm" style="margin-top:6px"><button data-rwcost="' + w.id + '" data-ct="' + w.cost + '" data-st="' + (w.stock == null ? "" : w.stock) + '" data-lf="' + (LEFT[w.id] == null ? "" : LEFT[w.id]) + '" data-nm="' + esc(w.name) + '">✏️ Sửa</button> <button data-rwlink="' + w.id + '" data-on="' + (w.need_link === false ? 0 : 1) + '" title="Bật/tắt yêu cầu dán link khi đổi">' + (w.need_link === false ? "🔗 Không cần link" : "🔗 Cần link") + '</button> <button data-rwoff="' + w.id + '">Ẩn</button></div>'
+            + (GD ? '<div style="margin-top:6px;text-align:right"><button class="rw-gear" data-rwset="' + w.id + '" title="Sửa phần thưởng">⚙️</button></div>'
               : '<div class="q-lead-act"><input type="number" min="1" max="' + Math.max(1, mx) + '" value="' + (mx ? 1 : 0) + '" id="qty-' + w.id + '"' + (mx ? "" : " disabled") + '><span class="hubmuted" style="font-size:11.5px">slot = <b id="qtyl-' + w.id + '">' + (mx ? 4 : 0) + "</b> lead</span>"
                 + '<button class="q-go" data-rdq="' + w.id + '" data-nm="' + esc(w.name) + '" data-ct="' + w.cost + '" data-mx="' + mx + '"' + (mx ? "" : " disabled") + ">" + (out ? "Hết slot" : room <= 0 ? "Đã đủ " + w.per_user_max : short ? "Thiếu điểm" : "Đổi") + "</button></div>")
             + "</div>";
         }
         var nm = esc(w.name.replace(/^Voucher đặc biệt — /, ""));
         return '<div class="q-row" style="align-items:center"><span style="flex:1"><b>' + esc(w.icon || "🎁") + " " + nm + '</b> <span class="hubmuted" style="font-size:11.5px">' + (left != null ? "· còn " + Math.max(0, left) : "") + '</span></span><b style="color:#B8872F;white-space:nowrap">' + w.cost + " điểm</b>"
-          + (GD ? '<span class="q-adm"><button data-rwcost="' + w.id + '" data-ct="' + w.cost + '" data-st="' + (w.stock == null ? "" : w.stock) + '" data-lf="' + (LEFT[w.id] == null ? "" : LEFT[w.id]) + '" data-nm="' + esc(w.name) + '">✏️ Sửa</button> <button data-rwlink="' + w.id + '" data-on="' + (w.need_link === false ? 0 : 1) + '" title="Bật/tắt yêu cầu dán link khi đổi">' + (w.need_link === false ? "🔗 Không cần link" : "🔗 Cần link") + '</button> <button data-rwoff="' + w.id + '">Ẩn</button></span>'
+          + (GD ? '<button class="rw-gear" data-rwset="' + w.id + '" title="Sửa phần thưởng">⚙️</button>'
             : '<button class="q-go" data-rd="' + w.id + '" data-nl="' + (w.need_link === false ? 0 : 1) + '" data-nm="' + esc(w.name) + '" data-ct="' + w.cost + '"' + (out || short ? " disabled" : "") + ">" + (out ? "Hết" : short ? "Thiếu " + (w.cost - bal) : "Đổi") + "</button>")
           + "</div>";
       }).join("") + "</div>";
@@ -318,16 +322,7 @@
         SB.from("rewards").insert(row).then(function (r) { if (r.error) return toast("Lỗi: " + r.error.message); toast("Đã thêm phần thưởng"); loadQuest(); });
       };
     }
-    document.querySelectorAll("[data-rwcost]").forEach(function (b) { b.onclick = function () {
-      var v = prompt("Sửa “" + b.dataset.nm + "”\n\nSố điểm mỗi lần đổi:", b.dataset.ct); if (v == null) return; v = parseInt(v, 10); if (!(v > 0)) return toast("Nhập số điểm > 0");
-      var st = b.dataset.st === "" ? null : +b.dataset.st, lf = b.dataset.lf === "" ? null : +b.dataset.lf, pend = (st != null && lf != null) ? st - lf : 0;
-      var q = prompt("Số lượng / slot CÒN LẠI cho sale đổi" + (pend > 0 ? " (đang có " + pend + " yêu cầu chờ duyệt, đã tự trừ riêng)" : "") + ":\n— Bỏ trống = không giới hạn", lf == null ? "" : lf); if (q == null) return;
-      var up = { cost: v }; q = q.trim();
-      if (q === "") up.stock = null; else { q = parseInt(q, 10); if (!(q >= 0)) return toast("Số lượng không hợp lệ"); up.stock = q + pend; }
-      SB.from("rewards").update(up).eq("id", +b.dataset.rwcost).then(function (r) { if (r.error) return toast("Lỗi: " + r.error.message); toast("Đã lưu: " + v + " điểm · " + (up.stock == null ? "không giới hạn" : "còn " + (up.stock - pend))); loadQuest(); });
-    }; });
-    document.querySelectorAll("[data-rwlink]").forEach(function (b) { b.onclick = function () { var on = b.dataset.on !== "1"; SB.from("rewards").update({ need_link: on }).eq("id", +b.dataset.rwlink).then(function (r) { if (r.error) return toast("Lỗi: " + r.error.message); toast(on ? "Đã bật: bắt dán link khi đổi" : "Đã tắt: đổi không cần link"); loadQuest(); }); }; });
-    document.querySelectorAll("[data-rwoff]").forEach(function (b) { b.onclick = function () { if (!confirm("Ẩn phần thưởng này?")) return; SB.from("rewards").update({ active: false }).eq("id", +b.dataset.rwoff).then(function () { loadQuest(); }); }; });
+    document.querySelectorAll("[data-rwset]").forEach(function (b) { b.onclick = function () { rewardEditor(window._RW[+b.dataset.rwset]); }; });
   }
   function fillPeople() {
     var s = $("qt-to"); if (!s) return;
@@ -407,6 +402,36 @@
   }
 
 
+
+  // ===== ⚙️ Hộp sửa phần thưởng (GĐTT) =====
+  function rewardEditor(w) {
+    if (!w) return;
+    var left = LEFT[w.id], pend = (w.stock != null && left != null) ? w.stock - left : 0, isLead = w.per_user_max != null;
+    var old = $("rwm"); if (old) old.remove();
+    var m = document.createElement("div"); m.id = "rwm";
+    m.innerHTML = '<div class="bx"><div style="display:flex;align-items:center;gap:8px"><b style="font-size:15px;flex:1">⚙️ Sửa phần thưởng</b><button id="rwm-x" style="border:0;background:none;font-size:18px;cursor:pointer">✕</button></div>'
+      + '<div class="r2" style="grid-template-columns:70px 1fr"><div><label>Icon</label><input type="text" id="rwm-icon" value="' + esc(w.icon || "🎁") + '"></div><div><label>Tên phần thưởng</label><input type="text" id="rwm-name" value="' + esc(w.name) + '"></div></div>'
+      + '<label>Mô tả (tuỳ chọn)</label><input type="text" id="rwm-desc" value="' + esc(w.descr || "") + '">'
+      + '<div class="r2"><div><label>Điểm mỗi lần đổi' + (isLead ? " / slot" : "") + '</label><input type="number" min="1" id="rwm-cost" value="' + w.cost + '"></div>'
+      + '<div><label>Còn lại cho sale đổi</label><input type="number" min="0" id="rwm-left" placeholder="Trống = không giới hạn" value="' + (left == null ? "" : left) + '"></div></div>'
+      + (pend > 0 ? '<div class="hubmuted" style="font-size:11.5px;margin-top:4px">Đang có ' + pend + ' yêu cầu chờ duyệt — đã giữ riêng, không tính vào ô "Còn lại".</div>' : "")
+      + (isLead ? '<label>Tối đa mỗi sale được đổi</label><input type="number" min="1" id="rwm-max" value="' + w.per_user_max + '">' : "")
+      + '<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#17130D;margin-top:12px"><input type="checkbox" id="rwm-link"' + (w.need_link === false ? "" : " checked") + '> Bắt sale dán link đơn hàng / khách hàng khi đổi</label>'
+      + '<div class="ft"><button class="hubbtn" id="rwm-save">💾 Lưu</button><button class="hubbtn ghost" id="rwm-cancel">Huỷ</button><span style="flex:1"></span><button class="hubbtn ghost" id="rwm-hide" style="color:#C0262D">🙈 Ẩn phần thưởng</button></div></div>';
+    document.body.appendChild(m);
+    var close = function () { m.remove(); };
+    $("rwm-x").onclick = $("rwm-cancel").onclick = close; m.onclick = function (e) { if (e.target === m) close(); };
+    $("rwm-save").onclick = function () {
+      var cost = parseInt($("rwm-cost").value, 10), name = $("rwm-name").value.trim(), lv = $("rwm-left").value.trim();
+      if (!name) return toast("Nhập tên phần thưởng"); if (!(cost > 0)) return toast("Điểm phải lớn hơn 0");
+      var up = { icon: $("rwm-icon").value.trim() || "🎁", name: name, descr: $("rwm-desc").value.trim() || null, cost: cost, need_link: $("rwm-link").checked };
+      if (lv === "") up.stock = null; else { var n = parseInt(lv, 10); if (!(n >= 0)) return toast("Số lượng không hợp lệ"); up.stock = n + pend; }
+      if (isLead) { var mx = parseInt($("rwm-max").value, 10); if (mx > 0) up.per_user_max = mx; }
+      this.disabled = true; var bt = this;
+      SB.from("rewards").update(up).eq("id", w.id).then(function (r) { bt.disabled = false; if (r.error) return toast("Lỗi: " + r.error.message); toast("💾 Đã lưu “" + name + "”"); close(); loadQuest(); });
+    };
+    $("rwm-hide").onclick = function () { if (!confirm("Ẩn “" + w.name + "” khỏi danh sách đổi quà?")) return; SB.from("rewards").update({ active: false }).eq("id", w.id).then(function () { toast("Đã ẩn"); close(); loadQuest(); }); };
+  }
   // ================= 📌 VINH DANH (GĐTT ghim, mọi người vỗ tay) =================
   function renderHonor() {
     var el = $("hub-honor"); if (!el) return;
