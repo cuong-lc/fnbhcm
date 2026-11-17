@@ -43,6 +43,7 @@
     ".q-r .bar{height:6px;background:#F6EFDE;border-radius:4px;overflow:hidden;margin:6px 0}.q-r .bar i{display:block;height:100%;background:linear-gradient(90deg,#C8912E,#F0D48A)}",
     ".q-r button{width:100%;border:0;border-radius:8px;padding:6px;font-weight:800;cursor:pointer;font-family:inherit;font-size:12.5px;background:linear-gradient(135deg,#F0D48A,#D4A94C);color:#17130D}",
     ".q-r button:disabled{background:#EEE8DB;color:#a59c88;cursor:not-allowed}",
+    "#hub-whale{display:none;position:fixed;inset:0;z-index:9998;background:rgba(10,8,4,.55);align-items:center;justify-content:center;padding:16px}#hub-whale.on{display:flex}#hub-whale>.hubcard{width:min(560px,94vw);max-height:86vh;overflow:auto;margin:0!important;position:relative}#hub-whale .wh-x{border:0;background:none;font-size:18px;cursor:pointer;color:#8a7a55;margin-left:6px}",
     ".q-sub{font-size:12.5px;font-weight:800;color:#17130D;margin:12px 0 6px}",
     ".q-row{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:5px 0;border-top:1px solid #F4EEE2}",
     ".q-row .c{font-family:monospace;font-weight:800;color:#8a6a1e}",
@@ -389,6 +390,7 @@
   // ================= 🐋 KÌNH NGƯ SÁT THỦ (sale tự gửi yêu cầu ghi nhận, GĐTT duyệt) =================
   var WMIN = 10e6;
   function wm(n) { n = Number(n) || 0; return n >= 1e9 ? (Math.round(n / 1e7) / 100 + "").replace(".", ",") + " tỷ" : (Math.round(n / 1e5) / 10 + "").replace(".", ",") + "tr"; }
+  window.openWhale = function () { var el = $("hub-whale"); if (el) el.classList.add("on"); };
   function renderWhale() {
     var el = $("hub-whale"); if (!el) return;
     var now = new Date(), per = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
@@ -401,31 +403,29 @@
       var ok = r[0].data || [], mine = r[1].data || [], pend = r[2].data || [];
       var ST = { cho_duyet: ["⏳ Chờ duyệt", "#B8872F"], da_duyet: ["✅ Đã ghi nhận", "#16A34A"], tu_choi: ["✕ Từ chối", "#C0262D"] };
       var my = mine.length ? '<div class="q-sub" style="margin-top:10px">📄 Yêu cầu của tôi</div>' + mine.map(function (w) {
-        return '<div class="q-req"><div class="q-req-l"><b>' + esc(w.customer) + "</b> · " + wm(w.amount) + " · " + w.contracts + ' HĐ <span style="color:' + ST[w.status][1] + ';font-weight:700">' + ST[w.status][0] + "</span></div>"
+        return '<div class="q-req"><div class="q-req-l"><b>' + Number(w.amount).toLocaleString("vi-VN") + "đ</b> · " + esc(w.deal_date) + ' <span style="color:' + ST[w.status][1] + ';font-weight:700">' + ST[w.status][0] + "</span></div>"
           + (w.status === "cho_duyet" ? '<div class="q-req-r"><button data-whdel="' + w.id + '">Huỷ</button></div>' : "") + "</div>";
       }).join("") : "";
       var gd = GD ? '<div class="q-sub" style="margin-top:10px">📥 Chờ anh duyệt (' + pend.length + ")</div>" + (pend.map(function (w) {
-        return '<div class="q-req"><div class="q-req-l"><b>' + esc(w.full_name || w.email) + "</b> " + (w.dept ? '<span class="hubmuted">' + esc(w.dept) + "</span>" : "") + "<br>🏪 " + esc(w.customer) + " · <b>" + Number(w.amount).toLocaleString("vi-VN") + "đ</b> · " + w.contracts + " HĐ · " + esc(w.deal_date)
-          + ' · <a href="' + esc(w.link) + '" target="_blank" rel="noopener">🔗 Link</a>' + (w.note ? '<br><span class="hubmuted">📝 ' + esc(w.note) + "</span>" : "") + '</div><div class="q-req-r"><button class="q-ok" data-whok="' + w.id + '">✓ Duyệt</button><button class="q-no" data-whno="' + w.id + '">✕</button></div></div>';
+        return '<div class="q-req"><div class="q-req-l"><b>' + esc(w.full_name || w.email) + "</b> " + (w.dept ? '<span class="hubmuted">' + esc(w.dept) + "</span>" : "") + "<br><b>" + Number(w.amount).toLocaleString("vi-VN") + "đ</b> · " + esc(w.deal_date)
+          + (/^https?:/.test(w.link || "") ? ' · <a href="' + esc(w.link) + '" target="_blank" rel="noopener">🔗 Link</a>' : "") + (w.note ? '<br><span class="hubmuted">📝 ' + esc(w.note) + "</span>" : "") + '</div><div class="q-req-r"><button class="q-ok" data-whok="' + w.id + '">✓ Duyệt</button><button class="q-no" data-whno="' + w.id + '">✕</button></div></div>';
       }).join("") || '<div class="hubmuted" style="font-size:12.5px">Không có yêu cầu chờ duyệt.</div>') : "";
       var today = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
-      el.innerHTML = '<div class="hubcard" style="margin-top:12px"><h3>🐋 Ghi nhận Kình Ngư Sát Thủ<span class="hs"><button class="hubbtn" id="wh-add" style="padding:6px 12px;font-size:12.5px">＋ Gửi yêu cầu ghi nhận</button></span></h3>'
-        + '<div class="hubmuted" style="font-size:12px;margin-bottom:6px">Chốt được bill từ ' + wm(WMIN) + ' trở lên (chưa thuế)? Gửi yêu cầu kèm link — GĐTT duyệt xong bill sẽ lên thẻ <b>Kình Ngư Sát Thủ</b> ở Bảng Phong Thần, xếp hạng theo từng bill.</div>'
-        + '<div class="pg-form" id="whf"><input id="wh-cust" placeholder="Tên khách hàng / quán *">'
-        + '<div class="r2"><input id="wh-amt" inputmode="numeric" placeholder="Tổng giá trị chưa thuế (đ) *"><input id="wh-hd" type="number" min="1" value="1" placeholder="Số HĐ"></div>'
-        + '<div class="r2"><input id="wh-date" type="date" value="' + today + '"><input id="wh-link" placeholder="Link bill / HĐ trên Sapo 360 *"></div>'
-        + '<input id="wh-note" placeholder="Ghi chú (VD: gồm HĐ phần mềm + thiết bị)"><div class="hubmuted" style="font-size:11.5px;margin:-2px 0 6px">Mỗi bill gửi 1 yêu cầu (bill nhiều HĐ thì ghi tổng bill).</div>'
+      el.innerHTML = '<div class="hubcard" style="margin-top:12px"><h3>🐋 Ghi nhận Kình Ngư Sát Thủ<span class="hs"><button class="wh-x" id="wh-x" aria-label="Đóng">✕</button></span></h3>'
+        + '<div class="hubmuted" style="font-size:12px;margin-bottom:6px">Chốt được bill từ ' + wm(WMIN) + ' trở lên (chưa thuế)? Nhập số tiền gửi yêu cầu — GĐTT duyệt xong bill sẽ lên thẻ <b>Kình Ngư Sát Thủ</b> ở Bảng Phong Thần, xếp hạng theo từng bill.</div>'
+        + '<div class="pg-form on" id="whf"><input id="wh-amt" inputmode="numeric" placeholder="Số tiền bill chưa thuế (đ) — VD: 46.750.000" style="font-size:15px;font-weight:700">'
         + '<button class="hubbtn" id="wh-save">Gửi yêu cầu</button></div>'
         + my + gd + "</div>";
-      $("wh-add").onclick = function () { $("whf").classList.toggle("on"); };
+      $("wh-x").onclick = function () { el.classList.remove("on"); };
+      el.onclick = function (e) { if (e.target === el) el.classList.remove("on"); };
+      window.WH_PEND = GD ? pend.length : 0;
+      document.querySelectorAll(".wh-mini").forEach(function (b) { b.innerHTML = "🐋 Gửi ghi nhận" + (window.WH_PEND ? "<i>" + window.WH_PEND + "</i>" : ""); });
       $("wh-amt").oninput = function () { var v = this.value.replace(/\D/g, ""); this.value = v ? Number(v).toLocaleString("vi-VN") : ""; };
       $("wh-save").onclick = function () {
-        var row = { email: ME, customer: $("wh-cust").value.trim(), amount: Number($("wh-amt").value.replace(/\D/g, "")), contracts: parseInt($("wh-hd").value, 10) || 1, deal_date: $("wh-date").value || today, link: $("wh-link").value.trim(), note: $("wh-note").value.trim() || null };
-        if (!row.customer) return toast("Nhập tên khách hàng");
-        if (!(row.amount >= WMIN)) return toast("Chỉ ghi nhận khách từ " + wm(WMIN) + " trở lên");
-        if (row.link.length < 8) return toast("Dán link bill / HĐ để GĐTT kiểm tra");
+        var row = { email: ME, customer: "Bill", amount: Number($("wh-amt").value.replace(/\D/g, "")), contracts: 1, deal_date: today, link: "" };
+        if (!(row.amount >= WMIN)) return toast("Chỉ ghi nhận bill từ " + wm(WMIN) + " trở lên");
         this.disabled = true; var b = this;
-        SB.from("whales").insert(row).then(function (x) { b.disabled = false; if (x.error) return toast("Lỗi: " + x.error.message); toast("🐋 Đã gửi — chờ GĐTT duyệt"); renderWhale(); });
+        SB.from("whales").insert(row).then(function (x) { b.disabled = false; if (x.error) return toast("Lỗi: " + x.error.message); toast("🐋 Đã gửi — chờ GĐTT duyệt"); renderWhale(true); });
       };
       el.querySelectorAll("[data-whdel]").forEach(function (b) { b.onclick = function () { if (!confirm("Huỷ yêu cầu này?")) return; SB.from("whales").delete().eq("id", +b.dataset.whdel).then(renderWhale); }; });
       el.querySelectorAll("[data-whok],[data-whno]").forEach(function (b) { b.onclick = function () { var ok = !!b.dataset.whok; SB.from("whales").update({ status: ok ? "da_duyet" : "tu_choi", reviewed_at: new Date().toISOString() }).eq("id", +(b.dataset.whok || b.dataset.whno)).then(function (x) { if (x.error) return toast("Lỗi: " + x.error.message); toast(ok ? "✅ Đã ghi nhận — tải lại trang để thấy trên Bảng Phong Thần" : "Đã từ chối"); renderWhale(); }); }; });
@@ -484,7 +484,8 @@
     ME = ((window.CLF_USER || {}).email || "").toLowerCase(); GD = (window.CLF_PROFILE || {}).level === "c4";
     SB.from("role_assignments").select("email,full_name,dept").like("dept", "Phòng%").order("full_name").then(function (r) { PEOPLE = r.data || []; });
     loadPrograms(); loadQuest(); renderMe(); renderLB(); renderWhale(); (window.hubEvent ? window.hubEvent() : Promise.resolve()).then(function () { setTimeout(function () { eventPopup(location.hash === "#event"); }, 700); }); window.addEventListener("hashchange", function () { if (location.hash === "#event") eventPopup(true); });
-    if (location.hash === "#hub-programs" || location.hash === "#hub-challenge" || location.hash === "#hub-whale") setTimeout(function () { var t = $(location.hash.slice(1)); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" }); }, 900);
+    if (location.hash === "#hub-whale") setTimeout(window.openWhale, 1200);
+    if (location.hash === "#hub-programs" || location.hash === "#hub-challenge") setTimeout(function () { var t = $(location.hash.slice(1)); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" }); }, 900);
   }
   if (window.CLF_READY) start(); else document.addEventListener("clf-ready", start);
 })();

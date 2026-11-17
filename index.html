@@ -224,6 +224,8 @@
     <style>
       #badgeboard .bch{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-top:1px solid #eef1f6;font-size:13px}
       #badgeboard .bnm{color:#1F2533} #badgeboard .bval{font-weight:800;color:#FF7A00;white-space:nowrap}
+      #badgeboard .wh-mini{border:1px solid #E7C877;background:#FFF8E6;color:#8a5a00;border-radius:16px;padding:4px 10px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}#badgeboard .wh-mini:hover{background:#FFEFC2}#badgeboard .wh-mini i{font-style:normal;background:#E5484D;color:#fff;border-radius:9px;padding:0 5px;margin-left:4px;font-size:10.5px}
+      #badgeboard .wh-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}#badgeboard .wh-row .bpg{margin-top:0}
       #badgeboard .bpg{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;font-size:12px;color:#5B6472}
       #badgeboard .bpb{border:1px solid #ECE4D5;background:#fff;color:#17130D;border-radius:8px;width:30px;height:28px;font-size:13px;cursor:pointer;font-family:inherit}
       #badgeboard .bpb:disabled{opacity:.35;cursor:default}
@@ -274,7 +276,7 @@
       var dsc=c.descr?'<div style="font-size:12px;color:#8a7a55;line-height:1.45;margin:4px 0 2px">'+esc(c.descr)+'</div>':'';
       var cnt=total+(c.code==='kinhngu'?' deal được ghi nhận':' người đạt');
       var pager=pages>1?('<div class="bpg"><button class="bpb" data-code="'+esc(c.code)+'" data-d="-1"'+(pg===0?' disabled':'')+'>◀</button><span>Trang '+(pg+1)+'/'+pages+'</span><button class="bpb" data-code="'+esc(c.code)+'" data-d="1"'+(pg>=pages-1?' disabled':'')+'>▶</button></div>'):'';
-      return '<div class="kpi" style="min-width:240px"><div class="lab" style="font-size:15px;font-weight:700;color:#17130D;display:flex;align-items:center">'+ic+'<span>'+esc(c.name)+'</span></div>'+dsc+'<div style="font-size:12px;color:#5B6472;margin:2px 0 10px">'+cnt+'</div>'+list+pager+'</div>';
+      return '<div class="kpi" style="min-width:240px"><div class="lab" style="font-size:15px;font-weight:700;color:#17130D;display:flex;align-items:center">'+ic+'<span>'+esc(c.name)+'</span></div>'+dsc+'<div style="font-size:12px;color:#5B6472;margin:2px 0 10px">'+cnt+'</div>'+list+(c.code==='kinhngu'?'<div class="wh-row">'+(pager||'<span></span>')+'<button class="wh-mini" onclick="window.openWhale&&openWhale()">🐋 Gửi ghi nhận'+(window.WH_PEND?'<i>'+window.WH_PEND+'</i>':'')+'</button></div>':pager)+'</div>';
     }
     function renderCards(){
       document.getElementById('badgeboard').innerHTML=CHAL.map(cardHtml).join('');
@@ -316,6 +318,6 @@
 <script src="app.js?v=11171016"></script>
 <script src="hub-home.js?v=11161650"></script>
 <script src="quotes.js?v=11161650"></script>
-<script src="hub-extra.js?v=11171024"></script>
+<script src="hub-extra.js?v=11171029"></script>
 </body>
 </html>
