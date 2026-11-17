@@ -385,6 +385,61 @@
       });
     });
   }
+
+  // ================= 🐋 KÌNH NGƯ SÁT THỦ (sale tự gửi yêu cầu ghi nhận, GĐTT duyệt) =================
+  var WMIN = 25e6;
+  function wm(n) { n = Number(n) || 0; return n >= 1e9 ? (Math.round(n / 1e7) / 100 + "").replace(".", ",") + " tỷ" : (Math.round(n / 1e5) / 10 + "").replace(".", ",") + "tr"; }
+  function renderWhale() {
+    var el = $("hub-whale"); if (!el) return;
+    var now = new Date(), per = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+    var d0 = per + "-01", d1 = new Date(now.getFullYear(), now.getMonth() + 1, 1); d1 = d1.getFullYear() + "-" + String(d1.getMonth() + 1).padStart(2, "0") + "-01";
+    Promise.all([
+      SB.from("whales").select("*").eq("status", "da_duyet").gte("deal_date", d0).lt("deal_date", d1),
+      SB.from("whales").select("*").ilike("email", ME).order("created_at", { ascending: false }).limit(10),
+      GD ? SB.from("whales").select("*").eq("status", "cho_duyet").order("created_at") : Promise.resolve({ data: [] })
+    ]).then(function (r) {
+      var ok = r[0].data || [], mine = r[1].data || [], pend = r[2].data || [];
+      var by = {};
+      ok.forEach(function (w) { var k = w.email.toLowerCase(); var o = by[k] || (by[k] = { name: w.full_name || w.email, dept: w.dept, max: 0, cust: "", n: 0 }); var a = Number(w.amount); if (a > o.max) { o.max = a; o.cust = w.customer; } if (a >= WMIN) o.n++; });
+      var L = Object.keys(by).map(function (k) { return by[k]; }).sort(function (a, b) { return b.max - a.max || b.n - a.n; });
+      var MED = ["🥇", "🥈", "🥉"], COL = ["#C2410C", "#24467A", "#9A4E1C"];
+      var rows = L.slice(0, 10).map(function (x, k) {
+        var top = k < 3, c = top ? ' style="color:' + COL[k] + '"' : "";
+        return '<div class="lb-row' + (top ? " t r" + (k + 1) : "") + '"><span class="lb-n">' + (top ? MED[k] : k + 1) + "</span>" + (top ? '<i class="lb-sp s1">✦</i><i class="lb-sp s2">✧</i>' : "")
+          + '<span class="lb-nm"' + c + ">" + esc(x.name) + (x.dept ? " <i>" + esc(x.dept) + "</i>" : "") + '<br><i>🏪 ' + esc(x.cust) + "</i></span><b" + c + ">" + wm(x.max) + "<small>🐋 × " + x.n + "</small></b></div>";
+      }).join("") || '<div class="hubmuted" style="padding:8px 0">Tháng này chưa có Kình Ngư nào được ghi nhận — chốt khách lớn rồi gửi yêu cầu nhé! 🐋</div>';
+      var ST = { cho_duyet: ["⏳ Chờ duyệt", "#B8872F"], da_duyet: ["✅ Đã ghi nhận", "#16A34A"], tu_choi: ["✕ Từ chối", "#C0262D"] };
+      var my = mine.length ? '<div class="q-sub" style="margin-top:10px">📄 Yêu cầu của tôi</div>' + mine.map(function (w) {
+        return '<div class="q-req"><div class="q-req-l"><b>' + esc(w.customer) + "</b> · " + wm(w.amount) + " · " + w.contracts + ' HĐ <span style="color:' + ST[w.status][1] + ';font-weight:700">' + ST[w.status][0] + "</span></div>"
+          + (w.status === "cho_duyet" ? '<div class="q-req-r"><button data-whdel="' + w.id + '">Huỷ</button></div>' : "") + "</div>";
+      }).join("") : "";
+      var gd = GD ? '<div class="q-sub" style="margin-top:10px">📥 Chờ anh duyệt (' + pend.length + ")</div>" + (pend.map(function (w) {
+        return '<div class="q-req"><div class="q-req-l"><b>' + esc(w.full_name || w.email) + "</b> " + (w.dept ? '<span class="hubmuted">' + esc(w.dept) + "</span>" : "") + "<br>🏪 " + esc(w.customer) + " · <b>" + Number(w.amount).toLocaleString("vi-VN") + "đ</b> · " + w.contracts + " HĐ · " + esc(w.deal_date)
+          + ' · <a href="' + esc(w.link) + '" target="_blank" rel="noopener">🔗 Link</a>' + (w.note ? '<br><span class="hubmuted">📝 ' + esc(w.note) + "</span>" : "") + '</div><div class="q-req-r"><button class="q-ok" data-whok="' + w.id + '">✓ Duyệt</button><button class="q-no" data-whno="' + w.id + '">✕</button></div></div>';
+      }).join("") || '<div class="hubmuted" style="font-size:12.5px">Không có yêu cầu chờ duyệt.</div>') : "";
+      var today = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+      el.innerHTML = '<div class="hubcard" style="margin-top:12px"><h3>🐋 Kình Ngư Sát Thủ <span class="hubmuted" style="font-weight:500;font-size:12.5px">· tháng ' + (now.getMonth() + 1) + '</span><span class="hs"><button class="hubbtn" id="wh-add" style="padding:6px 12px;font-size:12.5px">＋ Gửi yêu cầu ghi nhận</button></span></h3>'
+        + '<div class="hubmuted" style="font-size:12px;margin-bottom:6px">Tính theo <b>1 khách hàng</b> (gộp mọi HĐ của khách đó, giá trị chưa thuế). Mỗi sale lấy khách lớn nhất để xếp hạng · 🐋 = số khách từ ' + wm(WMIN) + ' trở lên · bằng nhau thì ai nhiều 🐋 hơn đứng trên.</div>'
+        + '<div class="pg-form" id="whf"><input id="wh-cust" placeholder="Tên khách hàng / quán (merchant) *">'
+        + '<div class="r2"><input id="wh-amt" inputmode="numeric" placeholder="Tổng giá trị chưa thuế (đ) *"><input id="wh-hd" type="number" min="1" value="1" placeholder="Số HĐ"></div>'
+        + '<div class="r2"><input id="wh-date" type="date" value="' + today + '"><input id="wh-link" placeholder="Link bill / HĐ trên Sapo 360 *"></div>'
+        + '<input id="wh-note" placeholder="Ghi chú (VD: gồm HĐ phần mềm + thiết bị)"><div class="hubmuted" style="font-size:11.5px;margin:-2px 0 6px">Chỉ ghi nhận khách từ ' + wm(WMIN) + ' trở lên. Nhiều HĐ của cùng 1 khách → gộp chung 1 yêu cầu.</div>'
+        + '<button class="hubbtn" id="wh-save">Gửi yêu cầu</button></div>'
+        + rows + my + gd + "</div>";
+      $("wh-add").onclick = function () { $("whf").classList.toggle("on"); };
+      $("wh-amt").oninput = function () { var v = this.value.replace(/\D/g, ""); this.value = v ? Number(v).toLocaleString("vi-VN") : ""; };
+      $("wh-save").onclick = function () {
+        var row = { email: ME, customer: $("wh-cust").value.trim(), amount: Number($("wh-amt").value.replace(/\D/g, "")), contracts: parseInt($("wh-hd").value, 10) || 1, deal_date: $("wh-date").value || today, link: $("wh-link").value.trim(), note: $("wh-note").value.trim() || null };
+        if (!row.customer) return toast("Nhập tên khách hàng");
+        if (!(row.amount >= WMIN)) return toast("Chỉ ghi nhận khách từ " + wm(WMIN) + " trở lên");
+        if (row.link.length < 8) return toast("Dán link bill / HĐ để GĐTT kiểm tra");
+        this.disabled = true; var b = this;
+        SB.from("whales").insert(row).then(function (x) { b.disabled = false; if (x.error) return toast("Lỗi: " + x.error.message); toast("🐋 Đã gửi — chờ GĐTT duyệt"); renderWhale(); });
+      };
+      el.querySelectorAll("[data-whdel]").forEach(function (b) { b.onclick = function () { if (!confirm("Huỷ yêu cầu này?")) return; SB.from("whales").delete().eq("id", +b.dataset.whdel).then(renderWhale); }; });
+      el.querySelectorAll("[data-whok],[data-whno]").forEach(function (b) { b.onclick = function () { var ok = !!b.dataset.whok; SB.from("whales").update({ status: ok ? "da_duyet" : "tu_choi", reviewed_at: new Date().toISOString() }).eq("id", +(b.dataset.whok || b.dataset.whno)).then(function (x) { if (x.error) return toast("Lỗi: " + x.error.message); toast(ok ? "✅ Đã ghi nhận" : "Đã từ chối"); renderWhale(); }); }; });
+    });
+  }
   // ================= POPUP SỰ KIỆN (lần đầu vào) =================
   function eventPopup(force) {
     var EV = window.HUB_EVENT; if (!EV) return;
@@ -437,8 +492,8 @@
     SB = window.SB; if (!SB) return;
     ME = ((window.CLF_USER || {}).email || "").toLowerCase(); GD = (window.CLF_PROFILE || {}).level === "c4";
     SB.from("role_assignments").select("email,full_name,dept").like("dept", "Phòng%").order("full_name").then(function (r) { PEOPLE = r.data || []; });
-    loadPrograms(); loadQuest(); renderMe(); renderLB(); (window.hubEvent ? window.hubEvent() : Promise.resolve()).then(function () { setTimeout(function () { eventPopup(location.hash === "#event"); }, 700); }); window.addEventListener("hashchange", function () { if (location.hash === "#event") eventPopup(true); });
-    if (location.hash === "#hub-programs" || location.hash === "#hub-challenge") setTimeout(function () { var t = $(location.hash.slice(1)); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" }); }, 900);
+    loadPrograms(); loadQuest(); renderMe(); renderLB(); renderWhale(); (window.hubEvent ? window.hubEvent() : Promise.resolve()).then(function () { setTimeout(function () { eventPopup(location.hash === "#event"); }, 700); }); window.addEventListener("hashchange", function () { if (location.hash === "#event") eventPopup(true); });
+    if (location.hash === "#hub-programs" || location.hash === "#hub-challenge" || location.hash === "#hub-whale") setTimeout(function () { var t = $(location.hash.slice(1)); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" }); }, 900);
   }
   if (window.CLF_READY) start(); else document.addEventListener("clf-ready", start);
 })();

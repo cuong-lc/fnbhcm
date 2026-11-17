@@ -269,6 +269,7 @@
         const br = r[6].count || 0, sp = r[7].count || 0;
         if (br) items.push({ act: 1, icon: "🏛️", text: br + " đề xuất danh hiệu chờ duyệt", href: "badges.html" });
         if (sp) items.push({ act: 1, icon: "💬", text: sp + " kịch bản chốt chờ duyệt", href: "kichban.html" });
+        try { const wh = await SB.from("whales").select("id", { count: "exact", head: true }).eq("status", "cho_duyet"); if (wh.count) items.unshift({ act: 1, icon: "🐋", text: wh.count + " yêu cầu ghi nhận Kình Ngư chờ anh duyệt", href: "index.html#hub-whale" }); } catch (e) {}
         try { const rd = await SB.from("redemptions").select("id", { count: "exact", head: true }).eq("status", "cho_trao"); if (rd.count) items.unshift({ act: 1, icon: "🎁", text: rd.count + " yêu cầu đổi quà chờ anh gửi voucher", href: "index.html#hub-challenge" }); } catch (e) {}
         items.push({ icon: "📊", text: "Xem báo cáo tuần & điểm sức khoẻ đội ngũ", href: "report.html" });
       }
