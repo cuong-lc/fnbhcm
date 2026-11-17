@@ -135,7 +135,7 @@
     const isLeader = isGD || (window.CLF_PROFILE && window.CLF_PROFILE.level === "c3");
     const staff = isStaffView();
     // Menu gom nhóm: mục đơn + nhóm thả xuống
-    const tools = [["video.html", '🎬 Kho video <span class="soon">Beta</span>'], ["kichban.html", '💬 Kịch bản chốt <span class="soon">Coming soon</span>']].concat(isLeader ? [["camnangleader.html", "📘 Cẩm nang Leader"]] : []);
+    const tools = (isGD ? [["video.html", '🎬 Kho video <span class="soon">Beta</span>']] : []).concat([["kichban.html", '💬 Kịch bản chốt <span class="soon">Coming soon</span>']]).concat(isLeader ? [["camnangleader.html", "📘 Cẩm nang Leader"]] : []);
     const levels = LEVELS.filter(canSeeLevel).filter((l) => !(staff && l.id === "c3")).map((l) => [l.file, l.short]).concat(staff ? [] : [["rubric.html", "📏 Rubric"]]);
     const admin = isGD ? [["popup.html", "🎁 Quản lý Popup"], ["badges.html", "🏛️ Phong Thần"], ["report.html", "📊 Báo cáo tuần"], ["people.html", "🔒 Hồ sơ NS"]] : [];
     const menu = [["index.html", "🏠 Trang chủ"], ["map.html", "🗺️ Bản đồ KH"], { label: "🧰 Công cụ", items: tools }, { label: "📚 Khung năng lực", items: levels }]
