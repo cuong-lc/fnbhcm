@@ -200,7 +200,8 @@
         + '<div id="qtf"><select id="qt-to"><option value="">Tặng cho…</option></select><input id="qt-n" type="number" min="1" placeholder="Số điểm"><input id="qt-note" placeholder="Lời nhắn (tuỳ chọn)"><button class="hubbtn" id="qt-ok">Tặng</button> <button class="hubbtn ghost" id="qt-x">Huỷ</button></div>';
     }
     h += '<div class="q-task"><span style="font-size:18px">📍</span><div style="flex:1"><b>Nhiệm vụ: Gắn cờ quán trên bản đồ</b><div class="hubmuted" style="font-size:12px">Mỗi cờ = +1 điểm</div></div><a class="hubbtn" href="map.html" style="text-decoration:none">Gắn cờ →</a></div>';
-    var groups = [["📇 Lead công ty", function (w) { return w.per_user_max != null; }], ["💎 Voucher đặc biệt", function (w) { return w.per_user_max == null && /đặc biệt/i.test(w.name); }], ["🖥️ Thiết bị & gói", function (w) { return w.per_user_max == null && !/đặc biệt|1 năm/i.test(w.name); }], ["🎟️ Voucher 1 năm", function (w) { return w.per_user_max == null && /1 năm/i.test(w.name); }]];
+    var groups = [["📇 Lead công ty", function (w) { return w.per_user_max != null; }], ["💎 Voucher đặc biệt", function (w) { return w.per_user_max == null && /đặc biệt/i.test(w.name); }], ["🖥️ Thiết bị & gói", function (w) { return w.per_user_max == null && !/đặc biệt|1 năm/i.test(w.name) && /^(S\d|Pro\b)|gói/i.test(w.name); }], ["🎟️ Voucher 1 năm", function (w) { return w.per_user_max == null && /1 năm/i.test(w.name); }],
+      ["📦 Khác", function (w) { return w.per_user_max == null && !/đặc biệt|1 năm/i.test(w.name) && !/^(S\d|Pro\b)|gói/i.test(w.name); }]];
     rw += '<div class="q-sub">🛍️ Đổi quà <span class="hubmuted" style="font-weight:400;font-size:11.5px">· bấm Đổi → GĐTT liên hệ gửi voucher & trừ điểm</span></div>';
     groups.forEach(function (g) {
       var L = rewards.filter(g[1]); if (!L.length) return;
