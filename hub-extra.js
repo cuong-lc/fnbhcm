@@ -219,19 +219,19 @@
           var used = USED[w.id] || 0, room = Math.max(0, w.per_user_max - used), mx = Math.max(0, Math.min(room, left != null ? left : room, Math.floor(bal / w.cost)));
           return '<div class="q-lead"><div style="display:flex;align-items:center;gap:8px"><span style="flex:1"><b>' + esc(w.icon || "📇") + " " + esc(w.name) + '</b><div class="hubmuted" style="font-size:11.5px">' + esc(w.descr || "") + "</div></span><b style=\"color:#B8872F;white-space:nowrap\">" + w.cost + ' điểm/slot</b></div>'
             + '<div class="q-lead-st"><span>Còn <b>' + Math.max(0, left != null ? left : 0) + "</b>/" + (w.total || w.stock || "∞") + " slot</span><span>Bạn đã đổi <b>" + used + "</b>/" + w.per_user_max + "</span></div>"
-            + (GD ? '<div class="q-adm" style="margin-top:6px"><button data-rwcost="' + w.id + '" data-ct="' + w.cost + '" data-nm="' + esc(w.name) + '">✏️ Điểm</button> <button data-rwoff="' + w.id + '">Ẩn</button></div>'
+            + (GD ? '<div class="q-adm" style="margin-top:6px"><button data-rwcost="' + w.id + '" data-ct="' + w.cost + '" data-nm="' + esc(w.name) + '">✏️ Điểm</button> <button data-rwlink="' + w.id + '" data-on="' + (w.need_link === false ? 0 : 1) + '" title="Bật/tắt yêu cầu dán link khi đổi">' + (w.need_link === false ? "🔗 Không cần link" : "🔗 Cần link") + '</button> <button data-rwoff="' + w.id + '">Ẩn</button></div>'
               : '<div class="q-lead-act"><input type="number" min="1" max="' + Math.max(1, mx) + '" value="' + (mx ? 1 : 0) + '" id="qty-' + w.id + '"' + (mx ? "" : " disabled") + '><span class="hubmuted" style="font-size:11.5px">slot = <b id="qtyl-' + w.id + '">' + (mx ? 4 : 0) + "</b> lead</span>"
                 + '<button class="q-go" data-rdq="' + w.id + '" data-nm="' + esc(w.name) + '" data-ct="' + w.cost + '" data-mx="' + mx + '"' + (mx ? "" : " disabled") + ">" + (out ? "Hết slot" : room <= 0 ? "Đã đủ " + w.per_user_max : short ? "Thiếu điểm" : "Đổi") + "</button></div>")
             + "</div>";
         }
         var nm = esc(w.name.replace(/^Voucher đặc biệt — /, ""));
         return '<div class="q-row" style="align-items:center"><span style="flex:1"><b>' + esc(w.icon || "🎁") + " " + nm + '</b> <span class="hubmuted" style="font-size:11.5px">' + (left != null ? "· còn " + Math.max(0, left) : "") + '</span></span><b style="color:#B8872F;white-space:nowrap">' + w.cost + " điểm</b>"
-          + (GD ? '<span class="q-adm"><button data-rwcost="' + w.id + '" data-ct="' + w.cost + '" data-nm="' + esc(w.name) + '">✏️ Điểm</button> <button data-rwoff="' + w.id + '">Ẩn</button></span>'
-            : '<button class="q-go" data-rd="' + w.id + '" data-nm="' + esc(w.name) + '" data-ct="' + w.cost + '"' + (out || short ? " disabled" : "") + ">" + (out ? "Hết" : short ? "Thiếu " + (w.cost - bal) : "Đổi") + "</button>")
+          + (GD ? '<span class="q-adm"><button data-rwcost="' + w.id + '" data-ct="' + w.cost + '" data-nm="' + esc(w.name) + '">✏️ Điểm</button> <button data-rwlink="' + w.id + '" data-on="' + (w.need_link === false ? 0 : 1) + '" title="Bật/tắt yêu cầu dán link khi đổi">' + (w.need_link === false ? "🔗 Không cần link" : "🔗 Cần link") + '</button> <button data-rwoff="' + w.id + '">Ẩn</button></span>'
+            : '<button class="q-go" data-rd="' + w.id + '" data-nl="' + (w.need_link === false ? 0 : 1) + '" data-nm="' + esc(w.name) + '" data-ct="' + w.cost + '"' + (out || short ? " disabled" : "") + ">" + (out ? "Hết" : short ? "Thiếu " + (w.cost - bal) : "Đổi") + "</button>")
           + "</div>";
       }).join("") + "</div>";
     });
-    if (GD) rw += '<div style="margin-top:8px"><button class="hubbtn ghost" id="rw-add">＋ Thêm phần thưởng</button></div><div class="pg-form" id="rwf"><div class="r2"><input id="rw-icon" placeholder="Icon (VD 🎟️)"><input id="rw-cost" type="number" placeholder="Số điểm"></div><input id="rw-name" placeholder="Tên phần thưởng"><input id="rw-desc" placeholder="Mô tả"><input id="rw-stock" type="number" placeholder="Số lượng (bỏ trống = không giới hạn)"><button class="hubbtn" id="rw-save">Lưu</button></div>';
+    if (GD) rw += '<div style="margin-top:8px"><button class="hubbtn ghost" id="rw-add">＋ Thêm phần thưởng</button></div><div class="pg-form" id="rwf"><div class="r2"><input id="rw-icon" placeholder="Icon (VD 🎟️)"><input id="rw-cost" type="number" placeholder="Số điểm"></div><input id="rw-name" placeholder="Tên phần thưởng"><input id="rw-desc" placeholder="Mô tả"><input id="rw-stock" type="number" placeholder="Số lượng (bỏ trống = không giới hạn)"><label style="display:flex;align-items:center;gap:6px;font-size:12.5px;margin:2px 0 8px"><input type="checkbox" id="rw-link" checked style="width:auto;margin:0"> Bắt sale dán link đơn hàng / khách hàng khi đổi</label><button class="hubbtn" id="rw-save">Lưu</button></div>';
     // Lịch sử / quản lý
     if (GD) {
       var pend = reds.filter(function (x) { return x.status === "cho_trao"; });
@@ -283,9 +283,12 @@
       };
     });
     document.querySelectorAll("[data-rd]").forEach(function (b) { b.onclick = function () {
-      var link = prompt("Đổi “" + b.dataset.nm + "” (" + b.dataset.ct + " điểm)\n\nDán LINK đơn hàng / báo giá / khách hàng để GĐTT add voucher vào:", "");
-      if (link === null) return;
-      link = link.trim(); if (link.length < 5) { toast("Cần dán link để GĐTT add voucher nhé"); return; }
+      var link = null;
+      if (b.dataset.nl !== "0") {
+        link = prompt("Đổi “" + b.dataset.nm + "” (" + b.dataset.ct + " điểm)\n\nDán LINK đơn hàng / báo giá / khách hàng để GĐTT add voucher vào:", "");
+        if (link === null) return;
+        link = link.trim(); if (link.length < 5) { toast("Cần dán link để GĐTT add voucher nhé"); return; }
+      } else if (!confirm("Đổi “" + b.dataset.nm + "” với " + b.dataset.ct + " điểm?")) return;
       b.disabled = true; SB.rpc("redeem_reward", { p_reward: +b.dataset.rd, p_qty: 1, p_link: link }).then(function (r) {
         if (r.error) { b.disabled = false; return toast("Lỗi: " + r.error.message); }
         if (window.confetti) window.confetti({ particleCount: 140, spread: 80, origin: { y: 0.6 }, colors: ["#C8912E", "#F0D48A", "#FF7A00", "#16D865"] });
@@ -310,12 +313,13 @@
     var ra = $("rw-add"); if (ra) {
       ra.onclick = function () { $("rwf").classList.toggle("on"); };
       $("rw-save").onclick = function () {
-        var row = { icon: $("rw-icon").value.trim() || "🎁", name: $("rw-name").value.trim(), descr: $("rw-desc").value.trim() || null, cost: parseInt($("rw-cost").value, 10) || 0, sort: 10, stock: $("rw-stock").value === "" ? null : parseInt($("rw-stock").value, 10) };
+        var row = { icon: $("rw-icon").value.trim() || "🎁", name: $("rw-name").value.trim(), descr: $("rw-desc").value.trim() || null, cost: parseInt($("rw-cost").value, 10) || 0, sort: 10, stock: $("rw-stock").value === "" ? null : parseInt($("rw-stock").value, 10), need_link: $("rw-link").checked };
         if (!row.name || row.cost <= 0) return toast("Nhập tên và số điểm");
         SB.from("rewards").insert(row).then(function (r) { if (r.error) return toast("Lỗi: " + r.error.message); toast("Đã thêm phần thưởng"); loadQuest(); });
       };
     }
     document.querySelectorAll("[data-rwcost]").forEach(function (b) { b.onclick = function () { var v = prompt("Số điểm mới cho: " + b.dataset.nm, b.dataset.ct); if (v == null) return; v = parseInt(v, 10); if (!(v > 0)) return toast("Nhập số điểm > 0"); SB.from("rewards").update({ cost: v }).eq("id", +b.dataset.rwcost).then(function (r) { if (r.error) return toast("Lỗi: " + r.error.message); toast("Đã đổi thành " + v + " điểm"); loadQuest(); }); }; });
+    document.querySelectorAll("[data-rwlink]").forEach(function (b) { b.onclick = function () { var on = b.dataset.on !== "1"; SB.from("rewards").update({ need_link: on }).eq("id", +b.dataset.rwlink).then(function (r) { if (r.error) return toast("Lỗi: " + r.error.message); toast(on ? "Đã bật: bắt dán link khi đổi" : "Đã tắt: đổi không cần link"); loadQuest(); }); }; });
     document.querySelectorAll("[data-rwoff]").forEach(function (b) { b.onclick = function () { if (!confirm("Ẩn phần thưởng này?")) return; SB.from("rewards").update({ active: false }).eq("id", +b.dataset.rwoff).then(function () { loadQuest(); }); }; });
   }
   function fillPeople() {
