@@ -288,11 +288,7 @@
   function refresh(){V.forEach(function(v){delete v._h;});load().then(render);}
   function run(){
     var P=window.CLF_PROFILE||{};ME=((window.CLF_USER||{}).email||'').toLowerCase();GD=P.level==='c4';
-    if(!GD){
-      $('kv-sub').textContent='Đang hoàn thiện — sắp ra mắt!';
-      $('kv-root').innerHTML='<div class="hubcard soon-hero"><div class="big">🎬</div><h2>Kho video — Sắp ra mắt</h2><p class="hubmuted">Kho video demo &amp; hướng dẫn Sapo FnB để gửi khách chỉ 1 chạm đang được hoàn thiện.<br>Tìm theo tính năng, mô hình quán, nỗi đau của khách · copy link kèm lời nhắn · đăng video nhận điểm Nhiệm vụ.</p><p style="margin-top:14px"><span class="soon" style="font-size:12px;padding:5px 12px;border-radius:20px;background:linear-gradient(135deg,#F0D48A,#D4A94C);font-weight:800">Coming soon</span></p></div>';
-      return;
-    }
+    $('kv-sub').innerHTML='Video demo &amp; hướng dẫn để gửi khách — tìm theo tính năng, mô hình, nỗi đau của khách, copy link kèm lời nhắn chỉ 1 chạm. <b>Bản thử nghiệm</b> — có gì chưa ổn góp ý ở tab 💡 giúp nhé!';
     var h=location.hash.slice(1);if(['kho','dang','gopy','duyet','tag'].indexOf(h)>=0)TAB=h;
     load().then(render);
   }
