@@ -790,8 +790,8 @@
       (r[0].data || []).forEach((h) => items.push("<b>" + esc(h.icon || "🏅") + " Vinh danh " + esc(h.names) + "</b> — " + esc(h.title)));
       const seen = {};
       (r[1].data || []).filter((e) => e.kind !== "honor").forEach((e) => {
-        // Mỗi mục chỉ lấy tin mới nhất: lên hạng → theo danh hiệu (phần sau "·"); loại khác → theo người + loại
-        const t = String(e.title || ""), k = e.kind === "rank" ? "rank|" + (t.split("·").pop() || "").trim() : e.kind + "|" + (e.full_name || t);
+        // Mỗi người trong mỗi danh hiệu chỉ lấy tin mới nhất (bỏ các bậc cũ trùng lặp)
+        const t = String(e.title || ""), k = e.kind === "rank" ? "rank|" + (t.split("·").pop() || "").trim() + "|" + (e.full_name || t.split(" lên ")[0]) : e.kind + "|" + (e.full_name || t);
         if (seen[k]) return; seen[k] = 1; items.push(esc(e.icon || "✨") + " " + esc(t));
       });
       if (!items.length) return;
