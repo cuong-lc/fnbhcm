@@ -135,7 +135,7 @@
     const isLeader = isGD || (window.CLF_PROFILE && window.CLF_PROFILE.level === "c3");
     const staff = isStaffView();
     // Menu gom nhóm: mục đơn + nhóm thả xuống
-    const tools = [["kichban.html", '💬 Kịch bản chốt <span class="soon">Coming soon</span>']].concat(isLeader ? [["camnangleader.html", "📘 Cẩm nang Leader"]] : []);
+    const tools = [["video.html", '🎬 Kho video <span class="soon">Coming soon</span>'], ["kichban.html", '💬 Kịch bản chốt <span class="soon">Coming soon</span>']].concat(isLeader ? [["camnangleader.html", "📘 Cẩm nang Leader"]] : []);
     const levels = LEVELS.filter(canSeeLevel).filter((l) => !(staff && l.id === "c3")).map((l) => [l.file, l.short]).concat(staff ? [] : [["rubric.html", "📏 Rubric"]]);
     const admin = isGD ? [["popup.html", "🎁 Quản lý Popup"], ["badges.html", "🏛️ Phong Thần"], ["report.html", "📊 Báo cáo tuần"], ["people.html", "🔒 Hồ sơ NS"]] : [];
     const menu = [["index.html", "🏠 Trang chủ"], ["map.html", "🗺️ Bản đồ KH"], { label: "🧰 Công cụ", items: tools }, { label: "📚 Khung năng lực", items: levels }]
@@ -269,6 +269,7 @@
         const br = r[6].count || 0, sp = r[7].count || 0;
         if (br) items.push({ act: 1, icon: "🏛️", text: br + " đề xuất danh hiệu chờ duyệt", href: "badges.html" });
         if (sp) items.push({ act: 1, icon: "💬", text: sp + " kịch bản chốt chờ duyệt", href: "kichban.html" });
+        try { const vp = await SB.from("videos").select("id", { count: "exact", head: true }).eq("status", "cho_duyet"); if (vp.count) items.unshift({ act: 1, icon: "🎬", text: vp.count + " video chờ anh duyệt vào Kho video", href: "video.html#duyet" }); } catch (e) {}
         try { const wh = await SB.from("whales").select("id", { count: "exact", head: true }).eq("status", "cho_duyet"); if (wh.count) items.unshift({ act: 1, icon: "🐋", text: wh.count + " yêu cầu ghi nhận Kình Ngư chờ anh duyệt", href: "index.html#hub-whale" }); } catch (e) {}
         try { const rd = await SB.from("redemptions").select("id", { count: "exact", head: true }).eq("status", "cho_trao"); if (rd.count) items.unshift({ act: 1, icon: "🎁", text: rd.count + " yêu cầu đổi quà chờ anh gửi voucher", href: "index.html#hub-challenge" }); } catch (e) {}
         items.push({ icon: "📊", text: "Xem báo cáo tuần & điểm sức khoẻ đội ngũ", href: "report.html" });

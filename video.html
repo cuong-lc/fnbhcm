@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<title>Kho video · FNBHCM HUB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="auth.js"></script>
+<style>
+.kv-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.kv-tabs button{border:1px solid var(--line);background:#fff;border-radius:20px;padding:7px 14px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;color:#5B6472}
+.kv-tabs button.on{background:linear-gradient(135deg,#F0D48A,#D4A94C);color:#17130D;border-color:#D4A94C}
+.kv-tabs i{font-style:normal;background:#E5484D;color:#fff;border-radius:9px;padding:0 6px;margin-left:4px;font-size:11px}
+.kv-search{display:flex;gap:8px;align-items:center;background:#fff;border:1.5px solid #E7C877;border-radius:12px;padding:8px 12px}
+.kv-search input{flex:1;border:0;outline:0;font-family:inherit;font-size:15px;background:transparent}
+.kv-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.kv-row .lb{font-size:12px;font-weight:700;color:#8a7a55;margin-right:2px}
+.chip{border:1px solid #E7DCC4;background:#fff;border-radius:16px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:inherit;color:#5b4a2a}
+.chip.on{background:#17130D;color:#FFE8B0;border-color:#17130D}
+.chip.mh{background:#FFF8E6;border-color:#E7C877;font-weight:700}
+.chip.mh.on{background:#B8872F;color:#fff;border-color:#B8872F}
+.kv-sel{border:1px solid #E7DCC4;border-radius:8px;padding:5px 8px;font-family:inherit;font-size:12.5px;background:#fff}
+.kv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-top:14px}
+.vc{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .15s}
+.vc:hover{box-shadow:0 8px 22px rgba(23,19,13,.1)}
+.vc.sel{outline:2.5px solid #D4A94C}
+.vc .th{position:relative;aspect-ratio:16/9;background:#111 center/cover no-repeat;cursor:pointer}
+.vc .th::after{content:'▶';position:absolute;inset:0;margin:auto;width:46px;height:46px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px}
+.vc .bd{position:absolute;top:6px;left:6px;display:flex;gap:4px}
+.vc .bd span{font-size:10.5px;font-weight:800;border-radius:6px;padding:2px 6px;background:rgba(0,0,0,.65);color:#fff}
+.vc .bd .demo{background:#E5484D}
+.vc .ck{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:6px;background:rgba(255,255,255,.9);border:0;cursor:pointer;font-size:14px}
+.vc .ct{padding:10px 12px;flex:1;display:flex;flex-direction:column;gap:6px}
+.vc .tt{font-weight:700;font-size:13.5px;line-height:1.35;color:#17130D}
+.vc .tg{display:flex;flex-wrap:wrap;gap:4px}.vc .tg span{font-size:10.5px;background:#F5F0E4;color:#6b5b3a;border-radius:10px;padding:1px 7px}
+.vc .ow{font-size:11.5px;color:#9a8f78}
+.vc .ac{display:flex;gap:6px;padding:0 12px 12px;flex-wrap:wrap}
+.vc .ac button{border:1px solid #E7DCC4;background:#fff;border-radius:8px;padding:5px 8px;font-size:12px;font-family:inherit;cursor:pointer;font-weight:600;color:#5b4a2a}
+.vc .ac .send{background:linear-gradient(135deg,#F0D48A,#D4A94C);border-color:#D4A94C;color:#17130D;flex:1}
+.tray{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:70;background:#17130D;color:#FFE8B0;border-radius:30px;padding:8px 10px 8px 18px;display:none;align-items:center;gap:10px;box-shadow:0 10px 30px rgba(0,0,0,.35);font-size:13.5px}
+.tray.on{display:flex}.tray button{border:0;border-radius:20px;padding:7px 14px;font-weight:800;font-family:inherit;cursor:pointer}
+.tray .go{background:linear-gradient(135deg,#FFE08A,#D4A94C);color:#17130D}.tray .cl{background:#3a2f1c;color:#FFE8B0}
+.modal{position:fixed;inset:0;z-index:9990;background:rgba(10,8,4,.7);display:none;align-items:center;justify-content:center;padding:16px}
+.modal.on{display:flex}
+.modal .box{background:#fff;border-radius:14px;width:min(860px,96vw);max-height:92vh;overflow:auto;position:relative}
+.modal .x{position:absolute;top:8px;right:10px;border:0;background:rgba(0,0,0,.5);color:#fff;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:16px;z-index:2}
+.frm label{display:block;font-size:12px;font-weight:700;color:var(--gray);margin:10px 0 4px}
+.frm input,.frm select,.frm textarea{width:100%;box-sizing:border-box;border:1.5px solid #ddd3bf;border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13.5px}
+.frm .r2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.frm .chips{display:flex;flex-wrap:wrap;gap:5px}
+.warn{background:#FFF4E5;border:1px solid #F5C26B;color:#8a5a00;border-radius:8px;padding:7px 10px;font-size:12.5px;margin-top:8px}
+.li{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid #f1ece0}
+.li:first-child{border-top:0}
+.li img{width:110px;aspect-ratio:16/9;object-fit:cover;border-radius:8px;flex:none}
+.li .m{flex:1;min-width:0;font-size:13px}
+.st{display:inline-block;font-size:11px;font-weight:700;border-radius:12px;padding:1px 8px;margin-left:4px}
+.st.cho_duyet,.st.moi{background:#FFF4E5;color:#B8872F}.st.da_duyet,.st.da_dang{background:#E7F8EE;color:#0E8A4A}.st.tu_choi,.st.dong{background:#F1EEE8;color:#8A8170}.st.da_giao,.st.dang_quay{background:#EAF2FF;color:#0057C7}
+.vote{border:1px solid #E7DCC4;background:#fff;border-radius:16px;padding:4px 10px;font-weight:800;cursor:pointer;font-family:inherit;flex:none}
+.vote.on{background:#FFD36B;border-color:#E0A82E}
+.soon-hero{text-align:center;padding:60px 20px}
+.soon-hero .big{font-size:64px}
+.soon-hero h2{margin:10px 0 6px}
+.cnt{font-size:12.5px;color:#8a7a55;margin-top:10px}
+@media(max-width:720px){.frm .r2{grid-template-columns:1fr}.li img{width:80px}}
+</style>
+</head>
+<body data-page="video">
+<div class="topbar"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> FNBHCM HUB</a>
+  <nav class="nav" id="nav"></nav>
+</div></div>
+<header class="hero">
+  <span class="box1"></span><span class="box2"></span>
+  <div class="wrap">
+    <div class="eyebrow">Công cụ cho sale</div>
+    <h1>🎬 Kho video Sapo FnB</h1>
+    <p id="kv-sub">Video demo &amp; hướng dẫn để gửi khách — tìm theo tính năng, mô hình, nỗi đau của khách, copy link kèm lời nhắn chỉ 1 chạm.</p>
+  </div>
+</header>
+<main class="wrap">
+<section class="section" style="padding-top:14px" id="kv-root"><div class="hubmuted">Đang tải…</div></section>
+</main>
+<div class="tray" id="tray"><span id="tray-n"></span><button class="go" id="tray-go">💬 Copy trọn bộ</button><button class="cl" id="tray-cl">Bỏ chọn</button></div>
+<div class="modal" id="mdl"><div class="box"><button class="x" id="mdl-x">✕</button><div id="mdl-in"></div></div></div>
+<footer class="foot" id="foot"></footer>
+<script src="framework-data.js"></script>
+<script src="app.js"></script>
+<script>
+(function(){
+  function $(id){return document.getElementById(id);}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();}
+  function toast(m){var t=$('hub-toast');if(!t){t=document.createElement('div');t.id='hub-toast';t.className='hub-toast';document.body.appendChild(t);}t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},3000);}
+  function copy(txt,msg){(navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(function(){toast(msg||'Đã copy');},function(){var a=document.createElement('textarea');a.value=txt;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();toast(msg||'Đã copy');});}
+  var GROUPS=['Bán hàng','Mặt hàng & thực đơn','Tồn kho','Thu chi','Khách hàng & tích điểm','Khuyến mãi','Nhân viên & chấm công','Web / QR order','Food App','Bar/Bếp','Báo cáo & quản trị','Thiết bị','Hoá đơn điện tử'];
+  var DIMS={tinhnang:'⚙️ Tính năng',app:'📱 Ứng dụng / thiết bị',mohinh:'🏪 Mô hình',noidau:'😣 Nỗi đau khách'};
+  var PRESET={'Cafe':['Order & bán hàng','Thanh toán QR','Thẻ rung','In bill / tem','QR order tại bàn','Food App (Grab/Shopee)'],'Trà sữa':['In bill / tem','Food App (Grab/Shopee)','Thẻ rung','Thanh toán QR','Order & bán hàng'],'Nhà hàng':['Order & bán hàng','Bar / Bếp','Máy cầm tay','In bill / tem','Báo cáo & quản lý từ xa'],'Quán nhậu':['Máy cầm tay','Order & bán hàng','Bar / Bếp','Thanh toán QR'],'Bida':['Tính tiền theo giờ','Bida'],'Karaoke':['Tính tiền theo giờ','Karaoke'],'Tiệm bánh':['Tính tiền theo cân','In bill / tem','Mặt hàng & thực đơn'],'Xe đẩy':['Order & bán hàng','Thanh toán QR','Máy cầm tay'],'Sân thể thao':['Tính tiền theo giờ','Thanh toán QR'],'Chuỗi':['Chuỗi','Báo cáo & quản lý từ xa','Quản lý nhân viên']};
+  var ME='',GD=false,V=[],TAGS=[],SYN={},NM={},FB=[],VOTES=[],TAB='kho',F={q:'',vtype:'',fmt:'',grp:'',tags:[],mh:''},SEL={};
+  function link(v){return v.fmt==='short'?'https://youtube.com/shorts/'+v.yt_id:'https://youtu.be/'+v.yt_id;}
+  function msgOf(v){if(v.msg)return v.msg.replace(/\{link\}/g,link(v)).replace(/\{title\}/g,v.title);return v.vtype==='demo'?'Anh/chị xem thử video này để hình dung rõ hơn cách làm trên Sapo FnB nhé: "'+v.title+'" 👉 '+link(v):'Em gửi anh/chị video hướng dẫn "'+v.title+'" ạ 👉 '+link(v);}
+  function thumb(id){return 'https://i.ytimg.com/vi/'+id+'/hqdefault.jpg';}
+  function ytId(u){var m=String(u||'').match(/(?:youtu\.be\/|shorts\/|v=|embed\/|live\/)([A-Za-z0-9_-]{11})/);return m?m[1]:(/^[A-Za-z0-9_-]{11}$/.test(u)?u:null);}
+  function hay(v){if(v._h)return v._h;var s=[v.title,v.grp].concat(v.apps||[],v.tags||[]);(v.tags||[]).concat(v.apps||[]).forEach(function(t){if(SYN[t])s.push(SYN[t]);});s.push(NM[(v.owner_email||'').toLowerCase()]||'');return v._h=norm(s.join(' '));}
+
+  function load(){
+    return Promise.all([
+      SB.from('videos').select('*').order('created_at',{ascending:false}),
+      SB.from('video_tags').select('*').order('dim').order('sort'),
+      SB.from('role_assignments').select('email,full_name'),
+      SB.from('video_feedback').select('*').order('created_at',{ascending:false}),
+      SB.from('video_votes').select('feedback_id,email')
+    ]).then(function(r){
+      V=r[0].data||[];TAGS=r[1].data||[];SYN={};TAGS.forEach(function(t){SYN[t.label]=(SYN[t.label]||'')+' '+(t.syn||'');});
+      NM={};(r[2].data||[]).forEach(function(x){NM[(x.email||'').toLowerCase()]=x.full_name;});
+      FB=r[3].data||[];VOTES=r[4].data||[];
+    });
+  }
+  function tagsOf(dim){return TAGS.filter(function(t){return t.dim===dim;}).map(function(t){return t.label;});}
+  function pend(){return V.filter(function(v){return v.status==='cho_duyet';}).length;}
+
+  function render(){
+    var nP=pend(),nF=FB.filter(function(f){return f.status==='moi';}).length;
+    var tabs=[['kho','🎬 Kho video'],['dang','📤 Đăng video'],['gopy','💡 Góp ý & đề xuất'+(GD&&nF?'<i>'+nF+'</i>':'')]];
+    if(GD) tabs.push(['duyet','✅ Duyệt'+(nP?'<i>'+nP+'</i>':'')],['tag','🏷️ Quản lý tag']);
+    $('kv-root').innerHTML='<div class="kv-tabs">'+tabs.map(function(t){return '<button data-t="'+t[0]+'" class="'+(TAB===t[0]?'on':'')+'">'+t[1]+'</button>';}).join('')+'</div><div id="kv-body"></div>';
+    document.querySelectorAll('.kv-tabs button').forEach(function(b){b.onclick=function(){TAB=b.dataset.t;history.replaceState(null,'','#'+TAB);render();};});
+    ({kho:renderKho,dang:renderDang,gopy:renderGopy,duyet:renderDuyet,tag:renderTag}[TAB]||renderKho)();
+  }
+
+  // ===== KHO =====
+  function filtered(){
+    var qs=norm(F.q).split(' ').filter(Boolean);
+    var preset=F.mh?PRESET[F.mh]||[F.mh]:null;
+    var L=V.filter(function(v){
+      if(v.status!=='da_duyet')return false;
+      if(F.vtype&&v.vtype!==F.vtype)return false;
+      if(F.fmt&&v.fmt!==F.fmt)return false;
+      if(F.grp&&v.grp!==F.grp)return false;
+      var all=(v.tags||[]).concat(v.apps||[]);
+      if(F.tags.length&&!F.tags.every(function(t){return all.indexOf(t)>=0;}))return false;
+      if(preset&&!all.some(function(t){return preset.indexOf(t)>=0||t===F.mh;}))return false;
+      if(qs.length){var h=hay(v);if(!qs.every(function(q){return h.indexOf(q)>=0;}))return false;}
+      return true;
+    });
+    return L.sort(function(a,b){return (a.vtype==='demo'?0:1)-(b.vtype==='demo'?0:1)||(b.approved_at||'').localeCompare(a.approved_at||'');});
+  }
+  function renderKho(){
+    var mh=tagsOf('mohinh');
+    $('kv-body').innerHTML='<div class="kv-search">🔍<input id="kv-q" placeholder="Tìm: grab, tính giờ, máy in, chấm công, thất thoát… (không cần dấu)" value="'+esc(F.q)+'"></div>'
+      +'<div class="kv-row"><span class="lb">🏪 Bộ video theo mô hình:</span>'+mh.map(function(m){return '<button class="chip mh'+(F.mh===m?' on':'')+'" data-mh="'+esc(m)+'">'+esc(m)+'</button>';}).join('')+'</div>'
+      +'<div class="kv-row"><span class="lb">Loại:</span>'+[['','Tất cả'],['demo','🎯 Demo gửi khách'],['huongdan','📘 Hướng dẫn sau bán']].map(function(o){return '<button class="chip'+(F.vtype===o[0]?' on':'')+'" data-vt="'+o[0]+'">'+o[1]+'</button>';}).join('')
+      +' <select class="kv-sel" id="kv-fmt"><option value="">Mọi độ dài</option><option value="short"'+(F.fmt==='short'?' selected':'')+'>⚡ Shorts</option><option value="long"'+(F.fmt==='long'?' selected':'')+'>🎞️ Video dài</option></select>'
+      +' <select class="kv-sel" id="kv-grp"><option value="">Mọi nhóm tính năng</option>'+GROUPS.map(function(g){return '<option'+(F.grp===g?' selected':'')+'>'+esc(g)+'</option>';}).join('')+'</select>'
+      +(F.q||F.vtype||F.fmt||F.grp||F.tags.length||F.mh?' <button class="chip" id="kv-clr">✕ Xoá lọc</button>':'')+'</div>'
+      +'<div class="kv-row"><span class="lb">🏷️</span>'+tagsOf('tinhnang').concat(tagsOf('noidau')).map(function(t){return '<button class="chip'+(F.tags.indexOf(t)>=0?' on':'')+'" data-tg="'+esc(t)+'">'+esc(t)+'</button>';}).join('')+'</div>'
+      +'<div id="kv-res"></div>';
+    var q=$('kv-q');q.oninput=function(){F.q=this.value;drawRes();};
+    document.querySelectorAll('[data-mh]').forEach(function(b){b.onclick=function(){F.mh=F.mh===b.dataset.mh?'':b.dataset.mh;renderKho();};});
+    document.querySelectorAll('[data-vt]').forEach(function(b){b.onclick=function(){F.vtype=b.dataset.vt;renderKho();};});
+    document.querySelectorAll('[data-tg]').forEach(function(b){b.onclick=function(){var t=b.dataset.tg,i=F.tags.indexOf(t);if(i>=0)F.tags.splice(i,1);else F.tags.push(t);renderKho();};});
+    $('kv-fmt').onchange=function(){F.fmt=this.value;drawRes();};$('kv-grp').onchange=function(){F.grp=this.value;drawRes();};
+    if($('kv-clr'))$('kv-clr').onclick=function(){F={q:'',vtype:'',fmt:'',grp:'',tags:[],mh:''};renderKho();};
+    drawRes();
+  }
+  function card(v){
+    var nm=NM[(v.owner_email||'').toLowerCase()]||v.owner_email;
+    return '<div class="vc'+(SEL[v.id]?' sel':'')+'"><div class="th" data-play="'+v.id+'" style="background-image:url('+thumb(v.yt_id)+')"><div class="bd">'+(v.vtype==='demo'?'<span class="demo">🎯 DEMO</span>':'<span>📘 HD</span>')+'<span>'+(v.fmt==='short'?'⚡ Short':'🎞️ Dài')+'</span></div><button class="ck" data-ck="'+v.id+'" title="Chọn để gửi trọn bộ">'+(SEL[v.id]?'✅':'☐')+'</button></div>'
+      +'<div class="ct"><div class="tt">'+esc(v.title)+'</div><div class="tg">'+(v.tags||[]).slice(0,4).map(function(t){return '<span>'+esc(t)+'</span>';}).join('')+'</div><div class="ow">🎥 '+esc(nm)+(v.grp?' · '+esc(v.grp):'')+'</div></div>'
+      +'<div class="ac"><button class="send" data-send="'+v.id+'">💬 Gửi khách</button><button data-cp="'+v.id+'" title="Copy link">🔗</button><button data-fb="'+v.id+'" title="Góp ý video này">🚩</button>'+(GD?'<button data-ed="'+v.id+'" title="Sửa">✏️</button>':'')+'</div></div>';
+  }
+  function drawRes(){
+    var L=filtered();
+    $('kv-res').innerHTML='<div class="cnt">'+L.length+' video'+(F.mh?' cho mô hình <b>'+esc(F.mh)+'</b> (demo xếp trước)':'')+'</div><div class="kv-grid">'+L.map(card).join('')+'</div>'+(L.length?'':'<div class="hubmuted" style="padding:20px 0">Chưa có video phù hợp — <a href="#" id="kv-sug">đề xuất video này</a> để team quay nhé.</div>');
+    bindCards($('kv-res'));
+    if($('kv-sug'))$('kv-sug').onclick=function(e){e.preventDefault();TAB='gopy';render();setTimeout(function(){$('fb-kind').value='de_xuat';$('fb-txt').value=F.q?('Cần video về: '+F.q):'';$('fb-txt').focus();},50);};
+  }
+  function byId(id){return V.filter(function(v){return v.id===+id;})[0];}
+  function bindCards(root){
+    root.querySelectorAll('[data-play]').forEach(function(b){b.onclick=function(e){if(e.target.closest('[data-ck]'))return;play(byId(b.dataset.play));};});
+    root.querySelectorAll('[data-ck]').forEach(function(b){b.onclick=function(e){e.stopPropagation();var id=+b.dataset.ck;if(SEL[id])delete SEL[id];else SEL[id]=1;drawRes();tray();};});
+    root.querySelectorAll('[data-send]').forEach(function(b){b.onclick=function(){copy(msgOf(byId(b.dataset.send)),'💬 Đã copy lời nhắn + link — dán vào Zalo cho khách nhé');};});
+    root.querySelectorAll('[data-cp]').forEach(function(b){b.onclick=function(){copy(link(byId(b.dataset.cp)),'🔗 Đã copy link');};});
+    root.querySelectorAll('[data-fb]').forEach(function(b){b.onclick=function(){var v=byId(b.dataset.fb);TAB='gopy';render();setTimeout(function(){$('fb-kind').value='gop_y';$('fb-kind').onchange();$('fb-vid').value=v.id;$('fb-txt').focus();},50);};});
+    root.querySelectorAll('[data-ed]').forEach(function(b){b.onclick=function(){editor(byId(b.dataset.ed));};});
+  }
+  function tray(){var n=Object.keys(SEL).length;$('tray').classList.toggle('on',n>0);$('tray-n').textContent='Đã chọn '+n+' video';}
+  $('tray-cl').onclick=function(){SEL={};tray();if($('kv-res'))drawRes();};
+  $('tray-go').onclick=function(){var L=V.filter(function(v){return SEL[v.id];});var t='Em gửi anh/chị bộ video tham khảo về Sapo FnB ạ:\n'+L.map(function(v,i){return (i+1)+'. '+v.title+' 👉 '+link(v);}).join('\n')+'\nAnh/chị xem có gì thắc mắc cứ nhắn em nhé!';copy(t,'💬 Đã copy trọn bộ '+L.length+' video');};
+  function modal(html){$('mdl-in').innerHTML=html;$('mdl').classList.add('on');}
+  function closeM(){$('mdl').classList.remove('on');$('mdl-in').innerHTML='';}
+  $('mdl-x').onclick=closeM;$('mdl').onclick=function(e){if(e.target===$('mdl'))closeM();};
+  function play(v){modal('<div style="aspect-ratio:'+(v.fmt==='short'?'9/16;max-height:80vh;margin:auto':'16/9')+';background:#000"><iframe src="https://www.youtube.com/embed/'+v.yt_id+'?autoplay=1&rel=0" style="width:100%;height:100%;border:0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div><div style="padding:12px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b style="flex:1;min-width:200px">'+esc(v.title)+'</b><button class="hubbtn" id="pl-send">💬 Gửi khách</button><button class="hubbtn ghost" id="pl-cp">🔗 Copy link</button></div>');$('pl-send').onclick=function(){copy(msgOf(v),'💬 Đã copy lời nhắn + link');};$('pl-cp').onclick=function(){copy(link(v),'🔗 Đã copy link');};}
+
+  // ===== CHỌN TAG (dùng chung đăng / sửa) =====
+  function chipPick(dim,sel,id){return '<div class="chips" id="'+id+'">'+tagsOf(dim).map(function(t){return '<button type="button" class="chip'+(sel.indexOf(t)>=0?' on':'')+'" data-v="'+esc(t)+'">'+esc(t)+'</button>';}).join('')+'</div>';}
+  function bindPick(root){root.querySelectorAll('.chips .chip').forEach(function(b){b.onclick=function(){b.classList.toggle('on');};});}
+  function picked(id){return [].map.call(document.querySelectorAll('#'+id+' .chip.on'),function(b){return b.dataset.v;});}
+  function formFields(v){
+    return '<div class="r2"><div><label>Nhóm tính năng</label><select id="f-grp">'+GROUPS.map(function(g){return '<option'+(v.grp===g?' selected':'')+'>'+esc(g)+'</option>';}).join('')+'</select></div>'
+      +'<div><label>Loại video</label><select id="f-vt"><option value="demo"'+(v.vtype==='demo'?' selected':'')+'>🎯 Demo — gửi khách đang tìm hiểu</option><option value="huongdan"'+(v.vtype!=='demo'?' selected':'')+'>📘 Hướng dẫn — gửi khách đã mua</option></select></div></div>'
+      +'<label>📱 Ứng dụng / thiết bị</label>'+chipPick('app',v.apps||[],'p-app')
+      +'<label>⚙️ Tính năng</label>'+chipPick('tinhnang',v.tags||[],'p-tn')
+      +'<label>🏪 Mô hình phù hợp (bỏ trống nếu dùng chung)</label>'+chipPick('mohinh',v.tags||[],'p-mh')
+      +'<label>😣 Nỗi đau khách giải quyết</label>'+chipPick('noidau',v.tags||[],'p-nd');
+  }
+  function readFields(){return {grp:$('f-grp').value,vtype:$('f-vt').value,apps:picked('p-app'),tags:picked('p-tn').concat(picked('p-mh'),picked('p-nd'))};}
+  function editor(v){
+    modal('<div class="frm" style="padding:18px"><h3 style="margin:0 0 6px">✏️ Sửa video</h3><label>Tiêu đề</label><input id="f-title" value="'+esc(v.title)+'">'
+      +'<div class="r2"><div><label>Link YouTube</label><input id="f-link" value="'+esc(link(v))+'"></div><div><label>Độ dài</label><select id="f-fmt"><option value="short"'+(v.fmt==='short'?' selected':'')+'>⚡ Shorts</option><option value="long"'+(v.fmt!=='short'?' selected':'')+'>🎞️ Video dài</option></select></div></div>'
+      +formFields(v)+'<label>Lời nhắn gửi khách (tuỳ chọn — dùng {link} và {title}; bỏ trống = mẫu tự động)</label><textarea id="f-msg" rows="2">'+esc(v.msg||'')+'</textarea>'
+      +'<div style="display:flex;gap:8px;margin-top:14px"><button class="hubbtn" id="f-save">💾 Lưu</button><button class="hubbtn ghost" id="f-hide">'+(v.status==='da_duyet'?'🙈 Ẩn khỏi kho':'✅ Hiện lại')+'</button></div></div>');
+    bindPick($('mdl-in'));
+    $('f-save').onclick=function(){var id=ytId($('f-link').value);if(!id)return toast('Link YouTube không hợp lệ');var row=Object.assign(readFields(),{title:$('f-title').value.trim(),yt_id:id,fmt:$('f-fmt').value,msg:$('f-msg').value.trim()||null});SB.from('videos').update(row).eq('id',v.id).then(function(x){if(x.error)return toast('Lỗi: '+x.error.message);toast('Đã lưu');closeM();refresh();});};
+    $('f-hide').onclick=function(){SB.from('videos').update({status:v.status==='da_duyet'?'tu_choi':'da_duyet',points:0}).eq('id',v.id).then(function(){closeM();refresh();});};
+  }
+
+  // ===== ĐĂNG VIDEO =====
+  function renderDang(){
+    var mine=V.filter(function(v){return (v.owner_email||'').toLowerCase()===ME;});
+    $('kv-body').innerHTML='<div class="hubcard frm"><h3>📤 Đăng video lên Kho</h3><div class="hubmuted" style="font-size:12.5px">Đăng video lên kênh YouTube chung trước, rồi dán link vào đây. GĐTT duyệt xong video lên Kho và bạn được cộng <b>5–10 điểm</b> Nhiệm vụ.</div>'
+      +'<label>Link YouTube *</label><input id="f-link" placeholder="https://youtu.be/... hoặc https://youtube.com/shorts/...">'
+      +'<label>Tiêu đề *</label><input id="f-title" placeholder="Tự điền khi dán link — sửa lại cho dễ hiểu với khách">'
+      +'<div id="f-warn"></div>'+formFields({tags:[],apps:[]})
+      +'<div style="margin-top:14px"><button class="hubbtn" id="f-sub">Gửi duyệt</button></div></div>'
+      +'<div class="hubcard" style="margin-top:14px"><h3>📄 Video của tôi</h3>'+(mine.length?mine.map(function(v){return '<div class="li"><img src="'+thumb(v.yt_id)+'"><div class="m"><b>'+esc(v.title)+'</b><span class="st '+v.status+'">'+({cho_duyet:'⏳ Chờ duyệt',da_duyet:'✅ Đã lên kho · +'+(v.points||0)+'đ',tu_choi:'✕ Không duyệt'}[v.status])+'</span><div class="hubmuted" style="font-size:12px">'+esc(v.grp||'')+'</div></div>'+(v.status==='cho_duyet'?'<button class="chip" data-del="'+v.id+'">Huỷ</button>':'')+'</div>';}).join(''):'<div class="hubmuted">Bạn chưa đăng video nào.</div>')+'</div>';
+    bindPick($('kv-body'));
+    $('f-link').onchange=$('f-link').onblur=function(){var id=ytId(this.value);if(!id)return;var dup=V.filter(function(v){return v.yt_id===id;})[0];if(dup){$('f-warn').innerHTML='<div class="warn">⛔ Video này đã có trong kho: <b>'+esc(dup.title)+'</b></div>';return;}
+      fetch('https://noembed.com/embed?url='+encodeURIComponent('https://www.youtube.com/watch?v='+id)).then(function(r){return r.json();}).then(function(j){if(j&&j.title&&!$('f-title').value){$('f-title').value=j.title;$('f-title').oninput();}}).catch(function(){});};
+    $('f-title').oninput=function(){var w=norm(this.value).split(' ').filter(function(x){return x.length>2;});if(w.length<3){$('f-warn').innerHTML='';return;}
+      var sim=V.filter(function(v){var h=norm(v.title);var hit=w.filter(function(x){return h.indexOf(x)>=0;}).length;return hit/w.length>=0.6;}).slice(0,3);
+      $('f-warn').innerHTML=sim.length?'<div class="warn">⚠️ Có thể trùng với: '+sim.map(function(v){return '<b>'+esc(v.title)+'</b>';}).join(' · ')+' — kiểm tra trước khi gửi nhé.</div>':'';};
+    $('f-sub').onclick=function(){var id=ytId($('f-link').value),t=$('f-title').value.trim();if(!id)return toast('Dán link YouTube hợp lệ');if(!t)return toast('Nhập tiêu đề');if(V.some(function(v){return v.yt_id===id;}))return toast('Video này đã có trong kho');
+      var f=readFields();if(!f.tags.length)return toast('Chọn ít nhất 1 tag tính năng');
+      var row=Object.assign(f,{yt_id:id,title:t,fmt:/shorts\//.test($('f-link').value)?'short':'long',owner_email:ME,status:'cho_duyet'});
+      this.disabled=true;var b=this;SB.from('videos').insert(row).then(function(x){b.disabled=false;if(x.error)return toast('Lỗi: '+(/duplicate/.test(x.error.message)?'video đã có trong kho':x.error.message));toast('🎬 Đã gửi — chờ GĐTT duyệt');refresh();});};
+    document.querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){if(!confirm('Huỷ video này?'))return;SB.from('videos').delete().eq('id',+b.dataset.del).then(refresh);};});
+  }
+
+  // ===== GÓP Ý & ĐỀ XUẤT =====
+  var FST={moi:'🆕 Mới',da_giao:'👤 Đã giao',dang_quay:'🎥 Đang quay',da_dang:'✅ Đã đăng',dong:'Đã đóng'};
+  function renderGopy(){
+    var vc={},mine={};VOTES.forEach(function(x){vc[x.feedback_id]=(vc[x.feedback_id]||0)+1;if((x.email||'').toLowerCase()===ME)mine[x.feedback_id]=1;});
+    var dx=FB.filter(function(f){return f.kind==='de_xuat';}).sort(function(a,b){return (a.status==='dong'||a.status==='da_dang')-(b.status==='dong'||b.status==='da_dang')||(vc[b.id]||0)-(vc[a.id]||0);});
+    var gy=FB.filter(function(f){return f.kind==='gop_y';});
+    var vt=V.filter(function(v){return v.status==='da_duyet';});
+    function row(f){var v=f.video_id?byId(f.video_id):null;return '<div class="li">'+(f.kind==='de_xuat'?'<button class="vote'+(mine[f.id]?' on':'')+'" data-vote="'+f.id+'">👍 '+(vc[f.id]||0)+'</button>':'<span style="font-size:20px">🚩</span>')
+      +'<div class="m"><div>'+esc(f.content)+'</div>'+(v?'<div class="hubmuted" style="font-size:12px">🎬 '+esc(v.title)+'</div>':'')+'<div class="hubmuted" style="font-size:11.5px">'+esc(f.full_name||f.email)+' · '+new Date(f.created_at).toLocaleDateString('vi-VN')+(f.assignee?' · giao: <b>'+esc(f.assignee)+'</b>':'')+' <span class="st '+f.status+'">'+FST[f.status]+'</span></div></div>'
+      +(GD?'<select class="kv-sel" data-fst="'+f.id+'">'+Object.keys(FST).map(function(k){return '<option value="'+k+'"'+(f.status===k?' selected':'')+'>'+FST[k]+'</option>';}).join('')+'</select>':'')
+      +(GD||(f.email||'').toLowerCase()===ME?'<button class="chip" data-fdel="'+f.id+'">🗑</button>':'')+'</div>';}
+    $('kv-body').innerHTML='<div class="hubcard frm"><h3>💡 Gửi góp ý / đề xuất</h3><div class="r2"><div><label>Loại</label><select id="fb-kind"><option value="de_xuat">💡 Đề xuất video mới (khách hay hỏi mà chưa có)</option><option value="gop_y">🚩 Góp ý video đã có (lỗi, cũ, khó hiểu…)</option></select></div><div id="fb-vwrap" style="display:none"><label>Video</label><select id="fb-vid">'+vt.map(function(v){return '<option value="'+v.id+'">'+esc(v.title)+'</option>';}).join('')+'</select></div></div>'
+      +'<label>Nội dung</label><textarea id="fb-txt" rows="3" placeholder="VD: Khách quán nhậu hay hỏi cách gộp bàn / tách bill — chưa có video"></textarea><div style="margin-top:10px"><button class="hubbtn" id="fb-send">Gửi</button></div></div>'
+      +'<div class="hubcard" style="margin-top:14px"><h3>💡 Đề xuất video mới <span class="hubmuted" style="font-size:12px;font-weight:500">· bấm 👍 nếu bạn cũng cần — nhiều 👍 được ưu tiên quay</span></h3>'+(dx.map(row).join('')||'<div class="hubmuted">Chưa có đề xuất.</div>')+'</div>'
+      +'<div class="hubcard" style="margin-top:14px"><h3>🚩 Góp ý video</h3>'+(gy.map(row).join('')||'<div class="hubmuted">Chưa có góp ý.</div>')+'</div>';
+    $('fb-kind').onchange=function(){$('fb-vwrap').style.display=this.value==='gop_y'?'':'none';};
+    $('fb-send').onclick=function(){var k=$('fb-kind').value,t=$('fb-txt').value.trim();if(t.length<5)return toast('Nhập nội dung');var row={kind:k,content:t,email:ME,video_id:k==='gop_y'?+$('fb-vid').value:null};SB.from('video_feedback').insert(row).then(function(x){if(x.error)return toast('Lỗi: '+x.error.message);toast('Đã gửi — cảm ơn bạn!');refresh();});};
+    document.querySelectorAll('[data-vote]').forEach(function(b){b.onclick=function(){var id=+b.dataset.vote;(mine[id]?SB.from('video_votes').delete().eq('feedback_id',id).ilike('email',ME):SB.from('video_votes').insert({feedback_id:id,email:ME})).then(refresh);};});
+    document.querySelectorAll('[data-fst]').forEach(function(s){s.onchange=function(){var up={status:s.value};if(s.value==='da_giao'){var a=prompt('Giao cho ai quay? (tên)');if(a)up.assignee=a;}SB.from('video_feedback').update(up).eq('id',+s.dataset.fst).then(refresh);};});
+    document.querySelectorAll('[data-fdel]').forEach(function(b){b.onclick=function(){if(!confirm('Xoá mục này?'))return;SB.from('video_feedback').delete().eq('id',+b.dataset.fdel).then(refresh);};});
+  }
+
+  // ===== DUYỆT (GĐTT) =====
+  function renderDuyet(){
+    var P=V.filter(function(v){return v.status==='cho_duyet';});
+    $('kv-body').innerHTML='<div class="hubcard"><h3>✅ Video chờ duyệt ('+P.length+')</h3>'+(P.map(function(v){return '<div class="li"><img src="'+thumb(v.yt_id)+'" data-pv="'+v.id+'" style="cursor:pointer"><div class="m"><b>'+esc(v.title)+'</b><div class="hubmuted" style="font-size:12px">🎥 '+esc(NM[(v.owner_email||'').toLowerCase()]||v.owner_email)+' · '+esc(v.grp||'')+' · '+(v.vtype==='demo'?'🎯 Demo':'📘 HD')+' · '+(v.fmt==='short'?'⚡ Short':'🎞️ Dài')+'</div><div class="vc"><div class="tg" style="padding:4px 0">'+(v.tags||[]).concat(v.apps||[]).map(function(t){return '<span>'+esc(t)+'</span>';}).join('')+'</div></div></div>'
+      +'<div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end"><select class="kv-sel" id="pt-'+v.id+'"><option value="10">+10 điểm</option><option value="5">+5 điểm</option><option value="0">0 điểm</option></select><div style="display:flex;gap:4px"><button class="chip" data-ed="'+v.id+'">✏️</button><button class="hubbtn" data-ok="'+v.id+'" style="padding:5px 10px">✓ Duyệt</button><button class="chip" data-no="'+v.id+'">✕</button></div></div></div>';}).join('')||'<div class="hubmuted">Không có video chờ duyệt.</div>')+'</div>';
+    document.querySelectorAll('[data-pv]').forEach(function(b){b.onclick=function(){play(byId(b.dataset.pv));};});
+    document.querySelectorAll('[data-ed]').forEach(function(b){b.onclick=function(){editor(byId(b.dataset.ed));};});
+    document.querySelectorAll('[data-ok]').forEach(function(b){b.onclick=function(){var id=+b.dataset.ok;SB.from('videos').update({status:'da_duyet',points:+$('pt-'+id).value}).eq('id',id).then(function(x){if(x.error)return toast('Lỗi: '+x.error.message);toast('✅ Đã duyệt & cộng điểm');refresh();});};});
+    document.querySelectorAll('[data-no]').forEach(function(b){b.onclick=function(){if(!confirm('Không duyệt video này?'))return;SB.from('videos').update({status:'tu_choi',points:0}).eq('id',+b.dataset.no).then(refresh);};});
+  }
+
+  // ===== QUẢN LÝ TAG (GĐTT) =====
+  function renderTag(){
+    var used={};V.forEach(function(v){(v.tags||[]).concat(v.apps||[]).forEach(function(t){used[t]=(used[t]||0)+1;});});
+    $('kv-body').innerHTML='<div class="hubcard"><h3>🏷️ Bộ tag chuẩn</h3><div class="hubmuted" style="font-size:12.5px;margin-bottom:8px">Người đăng chỉ được chọn tag có sẵn → không bị trùng kiểu "Food app / FoodApp". Ô "từ đồng nghĩa" giúp tìm kiếm: gõ "grab" vẫn ra Food App.</div>'
+      +Object.keys(DIMS).map(function(d){return '<div style="margin-top:12px"><b>'+DIMS[d]+'</b>'+TAGS.filter(function(t){return t.dim===d;}).map(function(t){return '<div class="li" style="padding:5px 0"><div class="m"><b>'+esc(t.label)+'</b> <span class="hubmuted" style="font-size:11.5px">· '+(used[t.label]||0)+' video · đồng nghĩa: '+esc(t.syn||'—')+'</span></div><button class="chip" data-tsyn="'+t.id+'">✏️</button><button class="chip" data-tdel="'+t.id+'">🗑</button></div>';}).join('')
+        +'<div class="frm" style="display:flex;gap:6px;margin-top:6px"><input id="tn-'+d+'" placeholder="Tag mới"><input id="ts-'+d+'" placeholder="Từ đồng nghĩa (không dấu, cách nhau dấu cách)"><button class="hubbtn" data-tadd="'+d+'" style="flex:none">＋</button></div></div>';}).join('')+'</div>';
+    document.querySelectorAll('[data-tadd]').forEach(function(b){b.onclick=function(){var d=b.dataset.tadd,l=$('tn-'+d).value.trim();if(!l)return;var dupe=TAGS.filter(function(t){return norm(t.label)===norm(l);})[0];if(dupe)return toast('Đã có tag "'+dupe.label+'"');SB.from('video_tags').insert({dim:d,label:l,syn:norm($('ts-'+d).value)||null,sort:99}).then(function(x){if(x.error)return toast('Lỗi: '+x.error.message);refresh();});};});
+    document.querySelectorAll('[data-tsyn]').forEach(function(b){b.onclick=function(){var t=TAGS.filter(function(x){return x.id===+b.dataset.tsyn;})[0];var s=prompt('Từ đồng nghĩa cho "'+t.label+'" (không dấu):',t.syn||'');if(s==null)return;SB.from('video_tags').update({syn:norm(s)}).eq('id',t.id).then(refresh);};});
+    document.querySelectorAll('[data-tdel]').forEach(function(b){b.onclick=function(){var t=TAGS.filter(function(x){return x.id===+b.dataset.tdel;})[0];if(!confirm('Xoá tag "'+t.label+'"? (video đang gắn vẫn giữ chữ này)'))return;SB.from('video_tags').delete().eq('id',t.id).then(refresh);};});
+  }
+
+  function refresh(){V.forEach(function(v){delete v._h;});load().then(render);}
+  function run(){
+    var P=window.CLF_PROFILE||{};ME=((window.CLF_USER||{}).email||'').toLowerCase();GD=P.level==='c4';
+    if(!GD){
+      $('kv-sub').textContent='Đang hoàn thiện — sắp ra mắt!';
+      $('kv-root').innerHTML='<div class="hubcard soon-hero"><div class="big">🎬</div><h2>Kho video — Sắp ra mắt</h2><p class="hubmuted">Kho video demo &amp; hướng dẫn Sapo FnB để gửi khách chỉ 1 chạm đang được hoàn thiện.<br>Tìm theo tính năng, mô hình quán, nỗi đau của khách · copy link kèm lời nhắn · đăng video nhận điểm Nhiệm vụ.</p><p style="margin-top:14px"><span class="soon" style="font-size:12px;padding:5px 12px;border-radius:20px;background:linear-gradient(135deg,#F0D48A,#D4A94C);font-weight:800">Coming soon</span></p></div>';
+      return;
+    }
+    var h=location.hash.slice(1);if(['kho','dang','gopy','duyet','tag'].indexOf(h)>=0)TAB=h;
+    load().then(render);
+  }
+  if(window.CLF_READY) run(); else document.addEventListener('clf-ready', run);
+})();
+</script>
+</body>
+</html>
