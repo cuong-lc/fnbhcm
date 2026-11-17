@@ -252,7 +252,7 @@
         if (left) items.push({ act: 1, icon: "✅", text: "Còn " + left + " mục checklist Cấp 1 chưa tích", href: "cap-1-nhan-vien.html" });
       }
       // Sự kiện đang chạy → xem lại popup
-      try { const EV = await window.hubEvent(); if (EV && Date.now() < Date.parse(EV.end)) items.unshift({ act: 1, icon: "🎁", text: "Sự kiện: " + EV.title + " — xem lại", href: "index.html#event" }); } catch (e) {}
+      try { const EV = await window.hubEvent(); if (EV && Date.now() < Date.parse(EV.end)) items.unshift({ act: 1, icon: "🎁", text: "Sự kiện: " + EV.title + " — xem lại", href: "#event" }); } catch (e) {}
       // Chương trình mới (7 ngày, chưa xem)
       try {
         const q = r[5] || [], seen = JSON.parse(localStorage.getItem("hubAnnSeen") || "[]");
@@ -726,6 +726,62 @@
     return `rgba(${r},${g},${b},${a})`;
   }
 
+  // ================= POPUP SỰ KIỆN (lần đầu vào) =================
+  window.hubEventPopup = function eventPopup(force) {
+    var $ = function (id) { return document.getElementById(id); };
+    var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+    var EV = window.HUB_EVENT; if (!EV) return;
+    var KEY = EV.key, END = Date.parse(EV.end);
+    if (Date.now() > END) { var f0 = $("hp-fab"); if (f0) f0.remove(); return; }
+    if (!$("hp-style")) {
+      var st = document.createElement("style"); st.id = "hp-style";
+      st.textContent = "@keyframes hpIn{from{opacity:0;transform:scale(.85) translateY(20px)}to{opacity:1;transform:none}}@keyframes hpGlow{0%,100%{box-shadow:0 0 30px rgba(255,180,40,.45),0 20px 60px rgba(0,0,0,.6)}50%{box-shadow:0 0 60px rgba(255,200,60,.85),0 20px 60px rgba(0,0,0,.6)}}"
+        + "@keyframes hpBob{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-4px) rotate(-8deg)}75%{transform:translateY(-4px) rotate(8deg)}}@keyframes hpRing{0%,100%{box-shadow:0 0 0 0 rgba(255,190,60,.55),0 6px 18px rgba(0,0,0,.25)}50%{box-shadow:0 0 0 10px rgba(255,190,60,0),0 6px 18px rgba(0,0,0,.25)}}"
+        + ".hp-ov{position:fixed;inset:0;z-index:9999;background:rgba(10,8,4,.72);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px}"
+        + ".hp-card{position:relative;width:min(440px,92vw);border-radius:18px;overflow:hidden;background:#110d06;border:2px solid #E7C877;animation:hpIn .45s cubic-bezier(.2,.9,.3,1.2),hpGlow 2.2s ease-in-out .45s infinite}"
+        + ".hp-card img{display:block;width:100%;height:auto;cursor:pointer}"
+        + ".hp-x{position:absolute;top:8px;right:8px;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.5);background:rgba(0,0,0,.55);color:#fff;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}"
+        + ".hp-x:hover{background:rgba(0,0,0,.8)}"
+        + ".hp-bar{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px 12px;background:linear-gradient(180deg,#1b1408,#0d0a05)}"
+        + ".hp-no{background:none;border:0;color:#cdbf9c;font-size:12.5px;cursor:pointer;font-family:inherit;text-decoration:underline}"
+        + ".hp-go{border:0;border-radius:10px;padding:9px 14px;font-weight:800;font-size:13.5px;cursor:pointer;font-family:inherit;background:linear-gradient(135deg,#FFE08A,#D4A94C);color:#17130D}"
+        + "#hp-fab{position:fixed;right:20px;bottom:20px;z-index:60;display:flex;align-items:center;gap:8px;padding:10px 16px 10px 12px;border-radius:30px;border:2px solid #fff;background:linear-gradient(135deg,#FFE08A,#D4A94C 55%,#B8872F);color:#17130D;font-family:inherit;font-weight:800;font-size:14px;cursor:pointer;animation:hpRing 1.8s ease-out infinite}"
+        + "#hp-fab span{display:inline-block;font-size:24px;animation:hpBob 1.6s ease-in-out infinite}"
+        + "#hp-fab i{position:absolute;top:-4px;right:-2px;width:14px;height:14px;border-radius:50%;background:#E5484D;border:2px solid #fff}"
+        + "#hp-fab b{font-weight:800;white-space:nowrap}"
+        + "#hp-fab:hover{transform:translateY(-2px)}@media(max-width:720px){#hp-fab{right:12px;bottom:70px;padding:8px 12px 8px 10px;font-size:12.5px}#hp-fab span{font-size:20px}}";
+      document.head.appendChild(st);
+    }
+    var fab = $("hp-fab");
+    if (!fab) {
+      fab = document.createElement("button"); fab.id = "hp-fab"; fab.type = "button"; fab.setAttribute("aria-label", "Xem sự kiện");
+      fab.innerHTML = "<span>🎁</span><b>Xem sự kiện</b><i></i>"; fab.title = EV.title || "";
+      fab.onclick = function () { eventPopup(true); };
+      document.body.appendChild(fab);
+    }
+    var off = false; try { off = localStorage.getItem(KEY) === "off"; } catch (e) {}
+    if (!force && (off || window._hpShown)) { fab.style.display = ""; return; }
+    if (document.querySelector(".hp-ov")) return;
+    window._hpShown = 1; fab.style.display = "none";
+    var ov = document.createElement("div"); ov.className = "hp-ov";
+    ov.innerHTML = '<div class="hp-card" role="dialog" aria-label="Sự kiện"><button class="hp-x" aria-label="Đóng">✕</button>'
+      + '<img src="' + esc(EV.img) + '" alt="' + esc(EV.alt || EV.title || "") + '">'
+      + '<div class="hp-bar"><button class="hp-no">' + (off ? "Đã tắt tự hiện" : "Không hiện lại lần sau") + '</button>' + (EV.target ? '<button class="hp-go">' + esc(EV.cta || "Xem ngay →") + "</button>" : "") + "</div></div>";
+    document.body.appendChild(ov);
+    var close = function () { ov.remove(); fab.style.display = ""; if (location.hash === "#event") history.replaceState(null, "", location.pathname + location.search); };
+    var go = function () { close(); if (EV.target && !$(EV.target)) { location.href = "index.html#" + EV.target; return; } var t = EV.target ? $(EV.target) : null; if (t) window.scrollTo({ top: t.getBoundingClientRect().top + scrollY - 80, behavior: "smooth" }); };
+    ov.querySelector(".hp-x").onclick = close; if (!ov.querySelector(".hp-go")) ov.querySelector(".hp-bar").insertAdjacentHTML("beforeend", '<button class="hp-go">Đã hiểu</button>');
+    ov.querySelector(".hp-no").onclick = function () { try { localStorage.setItem(KEY, "off"); } catch (e) {} close(); };
+    ov.querySelector(".hp-go").onclick = go; ov.querySelector("img").onclick = go;
+    ov.addEventListener("click", function (e) { if (e.target === ov) close(); });
+    document.addEventListener("keydown", function k(e) { if (e.key === "Escape") { close(); document.removeEventListener("keydown", k); } });
+  };
+  function startEventPopup() {
+    if (!window.SB || !window.CLF_READY || window._evStarted) return; window._evStarted = 1;
+    window.hubEvent().then(function () { setTimeout(function () { window.hubEventPopup(location.hash === "#event"); }, 800); });
+    window.addEventListener("hashchange", function () { if (location.hash === "#event") window.hubEventPopup(true); });
+  }
+
   // ---- init (chờ auth.js nạp xong tiến độ: window.CLF_READY / sự kiện 'clf-ready') ----
   function startRender() {
     const page = document.body.dataset.page;
@@ -738,7 +794,7 @@
     const file = location.pathname.split("/").pop() || "index.html";
     buildNav(file);
     buildFoot();
-    const go = () => { buildNav(file); startRender(); };
+    const go = () => { buildNav(file); startRender(); try { startEventPopup(); } catch (e) {} };
     if (window.CLF_READY || !window.SB) go();
     else document.addEventListener("clf-ready", go, { once: true });
   });
