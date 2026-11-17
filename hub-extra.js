@@ -412,8 +412,8 @@
       }).join("") || '<div class="hubmuted" style="font-size:12.5px">Không có yêu cầu chờ duyệt.</div>') : "";
       var today = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
       el.innerHTML = '<div class="hubcard" style="margin-top:12px"><h3>🐋 Ghi nhận Kình Ngư Sát Thủ<span class="hs"><button class="wh-x" id="wh-x" aria-label="Đóng">✕</button></span></h3>'
-        + '<div class="hubmuted" style="font-size:12px;margin-bottom:6px">Chốt được bill từ ' + wm(WMIN) + ' trở lên (chưa thuế)? Nhập số tiền gửi yêu cầu — GĐTT duyệt xong bill sẽ lên thẻ <b>Kình Ngư Sát Thủ</b> ở Bảng Phong Thần, xếp hạng theo từng bill.</div>'
-        + '<div class="pg-form on" id="whf"><input id="wh-amt" inputmode="numeric" placeholder="Số tiền bill chưa thuế (đ) — VD: 46.750.000" style="font-size:15px;font-weight:700">'
+        + '<div class="hubmuted" style="font-size:12px;margin-bottom:6px">Chốt được bill từ ' + wm(WMIN) + ' trở lên? Nhập đúng số tiền trên bill (không cần tách thuế) để gửi yêu cầu — GĐTT duyệt xong bill sẽ lên thẻ <b>Kình Ngư Sát Thủ</b> ở Bảng Phong Thần, xếp hạng theo từng bill.</div>'
+        + '<div class="pg-form on" id="whf"><input id="wh-amt" inputmode="numeric" placeholder="Số tiền trên bill (đ) — VD: 46.750.000" style="font-size:15px;font-weight:700">'
         + '<button class="hubbtn" id="wh-save">Gửi yêu cầu</button></div>'
         + my + gd + "</div>";
       $("wh-x").onclick = function () { el.classList.remove("on"); };
