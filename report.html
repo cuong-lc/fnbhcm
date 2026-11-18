@@ -45,6 +45,7 @@
   </div>
 </header>
 <main class="wrap">
+  <section class="section" style="padding-top:14px" id="rp-usage"></section>
   <section class="section" style="padding-top:14px" id="rp-root"><div class="hubmuted">Đang tải…</div></section>
 </main>
 <footer class="foot" id="foot"></footer>
@@ -115,6 +116,33 @@
         +'<span>'+sm(x.last_rev)+' / '+sm(x.chuan)+'</span><span>'+x.pins30+'</span><span>'+(x.level==='c3'?'—':x.ck_pct+'%')+'</span>'
         +'<span>'+(isNew(x)?'<span class="flag new">🆕 mới vào</span>':'')+(x.flags||[]).map(function(f){return '<span class="flag">'+esc(f)+'</span>';}).join('')+'</span></div>'; }).join('');
   }
+  if(window.CLF_READY) run(); else document.addEventListener('clf-ready', run);
+})();
+</script>
+<script>
+(function(){
+  function $(id){return document.getElementById(id);}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  var NAME={index:'🏠 Trang chủ',map:'🗺️ Bản đồ KH',video:'🎬 Kho video',profile:'👤 Hồ sơ',dashboard:'📊 Dashboard',kichban:'💬 Kịch bản chốt',camnangleader:'📘 Cẩm nang Leader',report:'📊 Báo cáo tuần',badges:'🏛️ Phong Thần',people:'🔒 Hồ sơ NS',popup:'🎁 Quản lý Popup',rubric:'📏 Rubric','cap-1-nhan-vien':'📚 Cấp 1','cap-2-chuyen-gia':'📚 Cấp 2','cap-3-truong-phong':'📚 Cấp 3','cap-4-giam-doc-trung-tam':'📚 Cấp 4'};
+  function dur(s){s=Number(s)||0;if(!s)return '—';return s>=60?Math.floor(s/60)+'p'+(s%60?(' '+s%60+'s'):''):s+'s';}
+  var DAYS=7;
+  function load(){
+    SB.rpc('usage_stats',{p_days:DAYS}).then(function(r){
+      var el=$('rp-usage');if(r.error){el.innerHTML='';return;}
+      var d=r.data||{},t=d.total||{},P=d.by_page||[],D=d.by_day||[],G=d.by_dept||[],U=d.top_users||[];
+      var mx=Math.max.apply(null,P.map(function(x){return x.views;}).concat([1])),mxd=Math.max.apply(null,D.map(function(x){return x.views;}).concat([1]));
+      el.innerHTML='<div class="hubcard"><h3>📈 Lượt dùng web<span class="hs"><select id="us-d" style="padding:4px 8px;border:1px solid #ddd3bf;border-radius:8px;font-family:inherit"><option value="1">Hôm nay</option><option value="7">7 ngày</option><option value="30">30 ngày</option></select></span></h3>'
+        +(t.views?'':'<div class="hubmuted">Bộ đếm mới bật — số liệu sẽ có dần khi mọi người vào web.</div>')
+        +'<div class="rp-kpis" style="margin-bottom:12px"><div class="rp-k"><div class="l">Lượt xem trang</div><div class="v">'+(t.views||0)+'</div></div><div class="rp-k"><div class="l">Người dùng</div><div class="v">'+(t.users||0)+'</div></div><div class="rp-k"><div class="l">Trang hot nhất</div><div class="v" style="font-size:16px">'+esc(P[0]?(NAME[P[0].page]||P[0].page):'—')+'</div></div><div class="rp-k"><div class="l">TB lượt/người</div><div class="v">'+(t.users?Math.round(t.views/t.users*10)/10:0)+'</div></div></div>'
+        +'<div style="display:grid;grid-template-columns:1.3fr 1fr;gap:16px">'
+        +'<div><b style="font-size:13px">Theo trang</b>'+P.map(function(x){return '<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin:5px 0"><span style="width:130px;flex:none">'+esc(NAME[x.page]||x.page)+'</span><span style="flex:1;height:8px;background:#F3EEE2;border-radius:6px;overflow:hidden"><span style="display:block;height:100%;width:'+Math.round(x.views/mx*100)+'%;background:#D4A94C"></span></span><span style="width:120px;text-align:right" class="hubmuted">'+x.views+' lượt · '+x.users+' người · '+dur(x.avg_s)+'</span></div>';}).join('')+'</div>'
+        +'<div><b style="font-size:13px">Theo ngày</b>'+D.map(function(x){var dd=String(x.d).split('-');return '<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin:5px 0"><span style="width:44px">'+dd[2]+'/'+dd[1]+'</span><span style="flex:1;height:8px;background:#F3EEE2;border-radius:6px;overflow:hidden"><span style="display:block;height:100%;width:'+Math.round(x.views/mxd*100)+'%;background:#24467A"></span></span><span style="width:90px;text-align:right" class="hubmuted">'+x.views+' · '+x.users+' người</span></div>';}).join('')
+        +'<b style="font-size:13px;display:block;margin-top:10px">Theo phòng</b>'+G.map(function(x){return '<div style="display:flex;justify-content:space-between;font-size:12.5px;margin:3px 0"><span>'+esc(x.dept)+'</span><span class="hubmuted">'+x.views+' lượt · '+x.users+' người</span></div>';}).join('')
+        +'<b style="font-size:13px;display:block;margin-top:10px">Dùng nhiều nhất</b>'+U.map(function(x,i){return '<div style="display:flex;justify-content:space-between;font-size:12.5px;margin:3px 0"><span>'+(i+1)+'. '+esc(x.name)+'</span><span class="hubmuted">'+x.views+' lượt · '+x.mins+' phút</span></div>';}).join('')+'</div></div></div>';
+      $('us-d').value=String(DAYS);$('us-d').onchange=function(){DAYS=+this.value;load();};
+    });
+  }
+  function run(){ if(((window.CLF_PROFILE||{}).level)==='c4') load(); }
   if(window.CLF_READY) run(); else document.addEventListener('clf-ready', run);
 })();
 </script>

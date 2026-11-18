@@ -814,6 +814,20 @@
     }).catch(() => {});
   }
 
+  // ---- Đếm lượt xem trang (page_views) + thời gian ở lại ----
+  function startTracking() {
+    if (!window.SB || !window.CLF_READY || window._pvStarted) return; window._pvStarted = 1;
+    const me = ((window.CLF_USER || {}).email || "").toLowerCase(); if (!me) return;
+    const page = (location.pathname.split("/").pop() || "index").replace(/\.html$/, "") || "index";
+    let id = null, acc = 0, since = document.visibilityState === "visible" ? Date.now() : 0;
+    const total = () => Math.round((acc + (since ? Date.now() - since : 0)) / 1000);
+    const flush = () => { if (id) window.SB.from("page_views").update({ dur_s: Math.min(total(), 4 * 3600) }).eq("id", id).then(() => {}, () => {}); };
+    window.SB.from("page_views").insert({ email: me, page }).select("id").single().then((r) => { if (r && r.data) id = r.data.id; }, () => {});
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") { if (since) { acc += Date.now() - since; since = 0; } flush(); } else since = Date.now(); });
+    window.addEventListener("pagehide", flush);
+    setInterval(() => { if (document.visibilityState === "visible") flush(); }, 60000);
+  }
+
   function startEventPopup() {
     if (!window.SB || !window.CLF_READY || window._evStarted) return; window._evStarted = 1;
     window.hubEvent().then(function () { setTimeout(function () { window.hubEventPopup(location.hash === "#event"); }, 800); });
@@ -832,7 +846,7 @@
     const file = location.pathname.split("/").pop() || "index.html";
     buildNav(file);
     buildFoot();
-    const go = () => { buildNav(file); startRender(); try { startEventPopup(); startTicker(); } catch (e) {} };
+    const go = () => { buildNav(file); startRender(); try { startEventPopup(); startTicker(); startTracking(); } catch (e) {} };
     if (window.CLF_READY || !window.SB) go();
     else document.addEventListener("clf-ready", go, { once: true });
   });
