@@ -53,6 +53,7 @@
     ".rw-gear{border:1px solid #ECE4D5;background:#fff;border-radius:8px;width:30px;height:28px;cursor:pointer;font-size:14px;flex:none;margin-left:6px}.rw-gear:hover{background:#FFF6DD;border-color:#E7C877}",
     "#rwm{position:fixed;inset:0;z-index:9995;background:rgba(10,8,4,.55);display:flex;align-items:center;justify-content:center;padding:16px}#rwm .bx{background:#fff;border-radius:14px;width:min(420px,94vw);padding:16px 18px;max-height:90vh;overflow:auto}",
     "#rwm label{display:block;font-size:12px;font-weight:700;color:#7a6a4a;margin:9px 0 3px}#rwm input[type=text],#rwm input[type=number]{width:100%;box-sizing:border-box;border:1.5px solid #ddd3bf;border-radius:8px;padding:7px 9px;font-family:inherit;font-size:14px}#rwm .r2{display:grid;grid-template-columns:1fr 1fr;gap:8px}#rwm .ft{display:flex;gap:8px;margin-top:14px;align-items:center}",
+    "#qt-sug{display:none;position:absolute;left:0;right:0;top:100%;z-index:30;background:#fff;border:1px solid #E7DCC4;border-radius:10px;box-shadow:0 10px 24px rgba(23,19,13,.12);max-height:260px;overflow:auto;margin-top:-4px}#qt-sug .qs{padding:7px 10px;font-size:13px;cursor:pointer;border-top:1px solid #F4EEE2}#qt-sug .qs:first-child{border-top:0}#qt-sug .qs:hover{background:#FFF6DD}#qt-sug .qs span{color:#9a8f78;font-size:11.5px}",
     ".q-sub{font-size:12.5px;font-weight:800;color:#17130D;margin:12px 0 6px}",
     ".q-row{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:5px 0;border-top:1px solid #F4EEE2}",
     ".q-row .c{font-family:monospace;font-weight:800;color:#8a6a1e}",
@@ -207,7 +208,7 @@
     var h = '', rw = '';
     if (!GD) {
       h += '<div class="q-bal"><div><div class="l">Điểm khả dụng</div><div class="n">' + bal + '</div><div class="l">Đã kiếm ' + (me.earned || 0) + (pendPts > 0 ? " · đang chờ đổi " + pendPts : "") + '</div></div><button id="q-give">🔁 Tặng điểm</button></div>'
-        + '<div id="qtf"><select id="qt-to"><option value="">Tặng cho…</option></select><input id="qt-n" type="number" min="1" placeholder="Số điểm"><input id="qt-note" placeholder="Lời nhắn (tuỳ chọn)"><button class="hubbtn" id="qt-ok">Tặng</button> <button class="hubbtn ghost" id="qt-x">Huỷ</button></div>';
+        + '<div id="qtf"><div style="position:relative"><input id="qt-q" autocomplete="off" placeholder="🔍 Gõ tên người nhận (VD: Mi, Tùng…)"><input type="hidden" id="qt-to"><div id="qt-sug"></div></div><input id="qt-n" type="number" min="1" placeholder="Số điểm"><input id="qt-note" placeholder="Lời nhắn (tuỳ chọn)"><button class="hubbtn" id="qt-ok">Tặng</button> <button class="hubbtn ghost" id="qt-x">Huỷ</button></div>';
     }
     h += '<div class="q-task"><span style="font-size:18px">📍</span><div style="flex:1"><b>Nhiệm vụ: Gắn cờ quán trên bản đồ</b><div class="hubmuted" style="font-size:12px">Mỗi cờ = +1 điểm</div></div><a class="hubbtn" href="map.html" style="text-decoration:none">Gắn cờ →</a></div>';
     var groups = [["📇 Lead công ty", function (w) { return w.per_user_max != null; }], ["💎 Voucher đặc biệt", function (w) { return w.per_user_max == null && /đặc biệt/i.test(w.name); }], ["🖥️ Thiết bị & gói", function (w) { return w.per_user_max == null && !/đặc biệt|1 năm/i.test(w.name) && /^(S\d|Pro\b)|gói/i.test(w.name); }], ["🎟️ Voucher 1 năm", function (w) { return w.per_user_max == null && /1 năm/i.test(w.name); }],
@@ -304,9 +305,9 @@
       $("qt-x").onclick = function () { $("qtf").classList.remove("on"); };
       $("qt-ok").onclick = function () {
         var to = $("qt-to").value, n = parseInt($("qt-n").value, 10) || 0;
-        if (!to || n <= 0) return toast("Chọn người nhận và số điểm");
+        if (!to || n <= 0) return toast("Chọn người nhận trong danh sách gợi ý và nhập số điểm");
         if (n > bal) return toast("Bạn chỉ có " + bal + " điểm");
-        if (!confirm("Tặng " + n + " điểm cho " + $("qt-to").selectedOptions[0].text + "?")) return;
+        if (!confirm("Tặng " + n + " điểm cho " + $("qt-q").value + "?")) return;
         SB.rpc("transfer_points", { p_to: to, p_amount: n, p_note: $("qt-note").value.trim() || null }).then(function (r) { if (r.error) return toast("Lỗi: " + r.error.message); toast("Đã tặng " + n + " điểm 💛"); loadQuest(); });
       };
     }
@@ -325,9 +326,18 @@
     document.querySelectorAll("[data-rwset]").forEach(function (b) { b.onclick = function () { rewardEditor(window._RW[+b.dataset.rwset]); }; });
   }
   function fillPeople() {
-    var s = $("qt-to"); if (!s) return;
-    var go = function () { s.innerHTML = '<option value="">Tặng cho…</option>' + PEOPLE.filter(function (p) { return p.email.toLowerCase() !== ME; }).map(function (p) { return '<option value="' + esc(p.email) + '">' + esc(p.full_name || p.email) + " · " + esc((p.dept || "").replace("Phòng ", "")) + "</option>"; }).join(""); };
-    if (PEOPLE) go(); else SB.from("role_assignments").select("email,full_name,dept").like("dept", "Phòng%").order("full_name").then(function (r) { PEOPLE = r.data || []; go(); });
+    var q = $("qt-q"), box = $("qt-sug"); if (!q) return;
+    var nm = function (x) { return String(x || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d"); };
+    var draw = function () {
+      var t = nm(q.value.trim()); $("qt-to").value = "";
+      var L = (window._CP || []).filter(function (p) { return p.email !== ME && (!t || nm(p.full_name + " " + p.dept + " " + p.email).indexOf(t) >= 0); }).slice(0, 8);
+      box.innerHTML = L.length ? L.map(function (p) { return '<div class="qs" data-e="' + esc(p.email) + '" data-n="' + esc(p.full_name) + '"><b>' + esc(p.full_name) + '</b> <span>' + esc(p.dept) + "</span></div>"; }).join("") : '<div class="qs" style="cursor:default;color:#9a8f78">Không tìm thấy</div>';
+      box.style.display = "block";
+      box.querySelectorAll("[data-e]").forEach(function (d) { d.onmousedown = function (e) { e.preventDefault(); q.value = d.dataset.n; $("qt-to").value = d.dataset.e; box.style.display = "none"; $("qt-n").focus(); }; });
+    };
+    q.oninput = draw; q.onfocus = draw; q.onblur = function () { setTimeout(function () { box.style.display = "none"; }, 150); };
+    if (!window._CP) SB.rpc("center_people").then(function (r) { window._CP = r.data || []; if (document.activeElement === q) draw(); });
+    setTimeout(function () { q.focus(); }, 50);
   }
 
   // ================= THÔNG ĐIỆP MỖI NGÀY (không trùng ai trong ngày, 500 ngày không lặp) =================
