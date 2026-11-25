@@ -444,7 +444,7 @@
   }
   // ================= 🔥 ĐẤU TRƯỜNG (thi đua phòng, số lấy từ leaderboard_daily kind=phong) =================
   // Sửa kèo ở ARENA: duel = 2 phòng đọ doanh thu, ms = mốc từng phòng. Hết hạn 3 ngày thì tự ẩn.
-  var ARENA = { title: "ĐẤU TRƯỜNG THÁNG 11", end: "2026-11-30T23:59:59+07:00", endTxt: "23:59 · 30/11", duel: [2, 5], ms: [{ f: 4, goal: 200e6, ic: "🎯" }, { f: 1, goal: 600e6, ic: "🚀" }, { f: 3, goal: 500e6, ic: "⚡" }] };
+  var ARENA = { title: "ĐẤU TRƯỜNG THÁNG 11", end: "2026-11-30T23:59:59+07:00", endTxt: "23:59 · 30/11", duel: [2, 5], ms: [{ f: 1, goal: 600e6, ic: "🚀" }, { f: 3, goal: 500e6, ic: "⚡" }, { f: 4, goal: 200e6, ic: "🎯" }] };
   var AR_CSS = [
     "#hub-arena .td{position:relative;border-radius:16px;padding:10px 11px;overflow:hidden;color:#fff;border:1.5px solid #ff7a1a;background:radial-gradient(120% 80% at 50% 110%,#7a1d00 0%,#2a0d02 45%,#140803 100%);animation:arB 2.2s ease-in-out infinite}",
     "@keyframes arB{0%,100%{box-shadow:0 0 10px rgba(255,110,20,.45),inset 0 0 18px rgba(255,90,0,.25)}50%{box-shadow:0 0 22px rgba(255,150,30,.85),inset 0 0 26px rgba(255,120,0,.4)}}",
