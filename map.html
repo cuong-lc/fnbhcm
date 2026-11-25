@@ -284,7 +284,17 @@
     if(!window.SB){ $('count').textContent='Chưa đăng nhập'; return; }
     SB.rpc('active_members').then(function(m){
       ACTIVE={}; (m.data||[]).forEach(function(x){ if(x.email) ACTIVE[x.email.toLowerCase()]=x.full_name||x.email; });
-      SB.from('places').select('*').then(function(r){
+      // Supabase trả tối đa 1000 dòng/lần → tải theo trang cho đủ
+      var PAGE=1000, all=[];
+      function fetchPage(from){
+        return SB.from('places').select('*').order('id',{ascending:true}).range(from,from+PAGE-1).then(function(r){
+          if(r.error) return r;
+          all=all.concat(r.data||[]);
+          if((r.data||[]).length===PAGE) return fetchPage(from+PAGE);
+          return {data:all};
+        });
+      }
+      fetchPage(0).then(function(r){
         if(r.error){ $('count').textContent='Lỗi tải dữ liệu'; return; }
         DATA=r.data||[]; window.__places={}; DATA.forEach(function(p){window.__places[p.id]=p;});
         renderAll(true);
