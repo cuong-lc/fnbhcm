@@ -444,9 +444,9 @@
   }
   // ================= 🔥 ĐẤU TRƯỜNG (thi đua phòng, số lấy từ leaderboard_daily kind=phong) =================
   // Sửa kèo ở ARENA: duel = 2 phòng đọ doanh thu, ms = mốc từng phòng. Hết hạn 3 ngày thì tự ẩn.
-  var ARENA = { title: "ĐẤU TRƯỜNG THÁNG 11", end: "2026-11-30T23:59:59+07:00", endTxt: "23:59 ngày 30/11", duel: [2, 3], ms: [{ f: 4, goal: 200e6, ic: "🎯" }, { f: 1, goal: 600e6, ic: "🚀" }, { f: 3, goal: 500e6, ic: "⚡" }] };
+  var ARENA = { title: "ĐẤU TRƯỜNG THÁNG 11", end: "2026-11-30T23:59:59+07:00", endTxt: "23:59 · 30/11", duel: [2, 3], ms: [{ f: 4, goal: 200e6, ic: "🎯" }, { f: 1, goal: 600e6, ic: "🚀" }, { f: 3, goal: 500e6, ic: "⚡" }] };
   var AR_CSS = [
-    "#hub-arena{margin-top:10px}#hub-arena .td{position:relative;border-radius:16px;padding:12px;overflow:hidden;color:#fff;border:1.5px solid #ff7a1a;background:radial-gradient(120% 80% at 50% 110%,#7a1d00 0%,#2a0d02 45%,#140803 100%);animation:arB 2.2s ease-in-out infinite}",
+    "#hub-arena .td{position:relative;border-radius:16px;padding:10px 11px;overflow:hidden;color:#fff;border:1.5px solid #ff7a1a;background:radial-gradient(120% 80% at 50% 110%,#7a1d00 0%,#2a0d02 45%,#140803 100%);animation:arB 2.2s ease-in-out infinite}",
     "@keyframes arB{0%,100%{box-shadow:0 0 10px rgba(255,110,20,.45),inset 0 0 18px rgba(255,90,0,.25)}50%{box-shadow:0 0 22px rgba(255,150,30,.85),inset 0 0 26px rgba(255,120,0,.4)}}",
     "#hub-arena .ar-fl{position:absolute;left:-10%;right:-10%;bottom:-30px;height:90px;pointer-events:none;filter:blur(6px);opacity:.75;background:radial-gradient(40px 60px at 10% 100%,#ffb300,transparent 70%),radial-gradient(50px 80px at 30% 100%,#ff5a00,transparent 70%),radial-gradient(40px 70px at 50% 100%,#ffcc33,transparent 70%),radial-gradient(55px 85px at 70% 100%,#ff4000,transparent 70%),radial-gradient(40px 65px at 90% 100%,#ffa000,transparent 70%);animation:arFl 1.1s ease-in-out infinite alternate}",
     "@keyframes arFl{0%{transform:scaleY(1) translateX(0)}50%{transform:scaleY(1.18) translateX(6px)}100%{transform:scaleY(.92) translateX(-5px)}}",
@@ -454,27 +454,27 @@
     "#hub-arena .td>*:not(.ar-fl):not(.ar-sp){position:relative;z-index:1}",
     "#hub-arena .ar-hd{display:flex;align-items:center;gap:8px;flex-wrap:wrap}#hub-arena .ar-fi{display:inline-block;font-size:18px;animation:arBob .7s ease-in-out infinite alternate}@keyframes arBob{to{transform:translateY(-2px) scale(1.12)}}",
     "#hub-arena .ar-ttl{font-weight:900;font-size:16px;letter-spacing:.6px;background:linear-gradient(90deg,#fff3c4,#ffb347,#ff5e1a,#ffb347,#fff3c4);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:arSh 3s linear infinite}@keyframes arSh{to{background-position:200% center}}",
-    "#hub-arena .ar-cd{margin-left:auto;display:flex;gap:4px;align-items:center}#hub-arena .ar-u{min-width:36px;text-align:center;background:linear-gradient(180deg,#3b1406,#1a0702);border:1px solid #ff7a1a;border-radius:8px;padding:3px 4px 2px;box-shadow:0 0 8px rgba(255,110,20,.45)}",
-    "#hub-arena .ar-u b{display:block;font-size:17px;font-weight:900;color:#ffd36b;font-variant-numeric:tabular-nums;line-height:1.1;text-shadow:0 0 8px rgba(255,140,0,.9)}#hub-arena .ar-u i{display:block;font-style:normal;font-size:9.5px;color:#f3c9a0;letter-spacing:.4px}",
-    "#hub-arena .ar-c{color:#ff7a1a;font-weight:900;animation:arBl 1s steps(1) infinite}@keyframes arBl{50%{opacity:.2}}#hub-arena .ar-cdl{font-size:11px;color:#f3c9a0;width:100%;text-align:right;margin-top:3px}",
+    "#hub-arena .ar-r2{display:flex;align-items:center;gap:6px;margin-top:6px}#hub-arena .ar-cd{margin-left:auto;display:flex;gap:3px;align-items:center}#hub-arena .ar-u{min-width:30px;text-align:center;background:linear-gradient(180deg,#3b1406,#1a0702);border:1px solid #ff7a1a;border-radius:7px;padding:2px 3px 1px;box-shadow:0 0 8px rgba(255,110,20,.45)}",
+    "#hub-arena .ar-u b{display:block;font-size:14.5px;font-weight:900;color:#ffd36b;font-variant-numeric:tabular-nums;line-height:1.1;text-shadow:0 0 8px rgba(255,140,0,.9)}#hub-arena .ar-u i{display:block;font-style:normal;font-size:8.5px;color:#f3c9a0;letter-spacing:.4px}",
+    "#hub-arena .ar-c{color:#ff7a1a;font-weight:900;animation:arBl 1s steps(1) infinite}@keyframes arBl{50%{opacity:.2}}#hub-arena .ar-cdl{font-size:11px;color:#f3c9a0;line-height:1.3}",
     "#hub-arena .td.last .ar-u{background:linear-gradient(180deg,#ff2a2a,#a30000);border-color:#ff4d4d;animation:arLp .8s ease-in-out infinite}#hub-arena .td.last .ar-u b,#hub-arena .td.last .ar-u i{color:#fff;text-shadow:0 0 6px #fff}@keyframes arLp{50%{transform:scale(1.08);box-shadow:0 0 16px #ff2a2a}}#hub-arena .td.last .ar-cdl{color:#ff3b3b;font-weight:900;font-size:12px;animation:arBl .8s steps(1) infinite}",
-    "#hub-arena .td.over .ar-cdl{color:#ffd36b;font-weight:900;font-size:13px;text-align:center}",
-    "#hub-arena .ar-duel{position:relative;margin-top:10px;border-radius:12px;padding:10px 12px;background:rgba(0,0,0,.35);border:1px solid rgba(255,150,60,.4)}#hub-arena .ar-dt{font-size:11.5px;font-weight:900;color:#ffcf6e;text-align:center;letter-spacing:1px}",
-    "#hub-arena .ar-row{display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px}#hub-arena .ar-tm{font-weight:900;font-size:17px}#hub-arena .ar-tm small{display:block;font-weight:700;font-size:13px;color:#ffd9a8}#hub-arena .ar-tm.r{text-align:right}#hub-arena .ar-cr{display:inline-block;animation:arBob .8s ease-in-out infinite alternate}",
+    "#hub-arena .td.over .ar-cdl{color:#ffd36b;font-weight:900;font-size:12px}",
+    "#hub-arena .ar-duel{position:relative;margin-top:8px;border-radius:12px;padding:7px 10px 8px;background:rgba(0,0,0,.35);border:1px solid rgba(255,150,60,.4)}#hub-arena .ar-dt{font-size:11.5px;font-weight:900;color:#ffcf6e;text-align:center;letter-spacing:1px}",
+    "#hub-arena .ar-row{display:flex;align-items:center;justify-content:space-between;margin:2px 0 6px}#hub-arena .ar-tm{font-weight:900;font-size:15.5px}#hub-arena .ar-tm small{display:block;font-weight:700;font-size:12.5px;color:#ffd9a8}#hub-arena .ar-tm.r{text-align:right}#hub-arena .ar-cr{display:inline-block;animation:arBob .8s ease-in-out infinite alternate}",
     "#hub-arena .ar-up{display:inline-block;font-size:10.5px;font-weight:900;border-radius:8px;padding:0 5px;margin:0 4px;background:rgba(110,231,160,.18);color:#7dffb0}",
-    "#hub-arena .ar-vs{font-weight:900;font-size:24px;color:#fff;font-style:italic;text-shadow:0 0 6px #ff9a00,0 0 16px #ff4d00,0 0 28px #ff2a00;animation:arVs 1.2s ease-in-out infinite}@keyframes arVs{50%{transform:scale(1.15) rotate(-4deg)}}",
+    "#hub-arena .ar-vs{font-weight:900;font-size:21px;color:#fff;font-style:italic;text-shadow:0 0 6px #ff9a00,0 0 16px #ff4d00,0 0 28px #ff2a00;animation:arVs 1.2s ease-in-out infinite}@keyframes arVs{50%{transform:scale(1.15) rotate(-4deg)}}",
     "#hub-arena .ar-tug{position:relative;height:12px;border-radius:7px;display:flex;background:rgba(255,255,255,.14)}#hub-arena .ar-tug i{display:block;height:100%}#hub-arena .ar-tug .a{border-radius:7px 0 0 7px;background:linear-gradient(90deg,#ff3d00,#ff9800,#ffd54f)}#hub-arena .ar-tug .b{border-radius:0 7px 7px 0;background:linear-gradient(90deg,#4fc3f7,#1e66f5,#3b2bd6)}",
     "#hub-arena .ar-k{position:absolute;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:radial-gradient(circle,#fff 0 20%,#ffd36b 35%,#ff6a00 65%,transparent 72%);animation:arSk .5s ease-in-out infinite alternate}@keyframes arSk{to{transform:scale(1.35)}}",
-    "#hub-arena .ar-lead{font-size:12px;text-align:center;margin-top:7px;color:#ffcf6e;font-weight:700}",
+    "#hub-arena .ar-lead{font-size:11.5px;text-align:center;margin-top:5px;color:#ffcf6e;font-weight:700}",
     "#hub-arena .ar-boom{position:absolute;inset:0;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-direction:column;pointer-events:none;opacity:0;z-index:5;background:radial-gradient(circle,rgba(255,230,120,.95),rgba(255,110,0,.9) 55%,rgba(200,30,0,.92));color:#fff;text-align:center}",
     "#hub-arena .ar-boom b{font-size:22px;font-weight:900;letter-spacing:1px;text-shadow:0 2px 0 #a32000,0 0 14px #fff}#hub-arena .ar-boom span{font-size:12.5px;font-weight:800}",
     "#hub-arena .ar-duel.swap .ar-boom{animation:arBoom 2.8s ease-out forwards}#hub-arena .ar-duel.swap{animation:arShk .5s linear 2}@keyframes arBoom{0%{opacity:0;transform:scale(.4)}12%{opacity:1;transform:scale(1.06)}20%{transform:scale(1)}75%{opacity:1}100%{opacity:0}}@keyframes arShk{20%{transform:translateX(-4px) rotate(-1deg)}40%{transform:translateX(4px) rotate(1deg)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}",
     "#hub-arena .ar-ray{position:absolute;left:50%;top:50%;width:6px;height:6px;border-radius:50%;background:#fff3b0;box-shadow:0 0 8px #ff9a00;opacity:0}#hub-arena .ar-duel.swap .ar-ray{animation:arRay 1.1s ease-out forwards}@keyframes arRay{0%{opacity:1;transform:translate(0,0)}100%{opacity:0;transform:translate(var(--x),var(--y))}}",
-    "#hub-arena .ar-ms{margin-top:8px;border-radius:12px;padding:8px 11px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,150,60,.4)}",
-    "#hub-arena .ar-top{display:flex;align-items:baseline;gap:6px;font-size:13.5px;white-space:nowrap}#hub-arena .ar-top b{font-weight:900}#hub-arena .ar-top .pc{margin-left:auto;font-weight:900;color:#ffcf6e;font-size:13px}",
-    "#hub-arena .ar-bar{height:10px;background:rgba(255,255,255,.14);border-radius:6px;margin-top:6px;position:relative}#hub-arena .ar-bar i{position:relative;display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#ff3d00,#ff7b00,#ffb300,#ff7b00,#ff3d00);background-size:200% 100%;animation:arFlow 1.4s linear infinite;box-shadow:0 0 10px rgba(255,110,0,.6)}@keyframes arFlow{to{background-position:-200% 0}}",
-    "#hub-arena .ar-bar i:after{content:'🔥';position:absolute;right:-8px;top:50%;transform:translateY(-58%);font-size:15px;animation:arBob .6s ease-in-out infinite alternate}",
-    "#hub-arena .ar-sub{font-size:11.5px;color:#f3c9a0;margin-top:5px}#hub-arena .ar-sub b{color:#fff}",
+    "#hub-arena .ar-ms{margin-top:6px;border-radius:11px;padding:6px 10px 6px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,150,60,.4)}",
+    "#hub-arena .ar-top{display:flex;align-items:baseline;gap:5px;font-size:13px;white-space:nowrap}#hub-arena .ar-top b{font-weight:900}#hub-arena .ar-top .pc{margin-left:auto;font-weight:900;color:#ffcf6e;font-size:13px}",
+    "#hub-arena .ar-bar{height:8px;background:rgba(255,255,255,.14);border-radius:6px;margin-top:5px;position:relative}#hub-arena .ar-bar i{position:relative;display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#ff3d00,#ff7b00,#ffb300,#ff7b00,#ff3d00);background-size:200% 100%;animation:arFlow 1.4s linear infinite;box-shadow:0 0 10px rgba(255,110,0,.6)}@keyframes arFlow{to{background-position:-200% 0}}",
+    "#hub-arena .ar-bar i:after{content:'🔥';position:absolute;right:-8px;top:50%;transform:translateY(-58%);font-size:13px;animation:arBob .6s ease-in-out infinite alternate}",
+    "#hub-arena .ar-sub{font-size:11px;color:#f3c9a0;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#hub-arena .ar-sub b{color:#fff}",
     "#hub-arena .ar-ms.done{border-color:#ffc83d;background:linear-gradient(135deg,rgba(255,213,79,.25),rgba(255,140,0,.12));animation:arGd 1.8s ease-in-out infinite}@keyframes arGd{50%{box-shadow:0 0 16px rgba(255,200,60,.75)}}",
     "#hub-arena .ar-ms.done .ar-bar i{background:linear-gradient(90deg,#ffc83d,#fff6c8,#ffc83d);background-size:200% 100%}#hub-arena .ar-ms.done .ar-bar i:after{content:'🏆'}",
     "#hub-arena .ar-st{display:inline-block;font-size:10.5px;font-weight:900;color:#3a2000;background:linear-gradient(135deg,#fff3b0,#ffc83d);border-radius:10px;padding:1px 7px;margin-right:4px;letter-spacing:.4px}",
@@ -485,6 +485,7 @@
     var el = $("hub-arena"); if (!el) return;
     var END = Date.parse(ARENA.end);
     if (Date.now() > END + 3 * 864e5) { el.style.display = "none"; return; }
+    var lp = $("lb-phong-in"); if (lp) lp.style.display = "none"; // tạm ẩn Top phòng khi có Đấu trường
     if (!$("ar-css")) { var st = document.createElement("style"); st.id = "ar-css"; st.textContent = AR_CSS; document.head.appendChild(st); }
     function fnb(x) { var m = String((x.name || "") + " " + (x.dept || "")).match(/FNB\s*(\d+)/i); return m ? +m[1] : null; }
     function pick(L) { var o = {}; L.forEach(function (x) { var k = fnb(x); if (k != null && o[k] == null) o[k] = Number(x.value) || 0; }); return o; }
@@ -492,7 +493,7 @@
     var NOW = pick(rows.filter(function (x) { return x.kind === "phong"; }));
     SB.from("leaderboard_daily").select("snap_date,name,dept,value").eq("kind", "phong").lt("snap_date", d).gte("snap_date", d.slice(0, 8) + "01").order("snap_date", { ascending: false }).limit(40).then(function (r) {
       var P = r.data || [], pd = P.length ? P[0].snap_date : null, PREV = pick(P.filter(function (x) { return x.snap_date === pd; }));
-      function up(k) { return pd && PREV[k] != null && NOW[k] - PREV[k] > 0 ? '<span class="ar-up">▲ +' + M(NOW[k] - PREV[k]) + "</span>" : ""; }
+      function up(k) { return pd && PREV[k] != null && NOW[k] - PREV[k] > 0 ? '<span class="ar-up" title="So với hôm qua">▲ +' + M(NOW[k] - PREV[k]) + "</span>" : ""; }
       var A = ARENA.duel[0], B = ARENA.duel[1], va = NOW[A] || 0, vb = NOW[B] || 0, aLead = va >= vb, tot = va + vb, pa = tot ? (va / tot * 100).toFixed(1) : 50;
       var L = aLead ? A : B, F = aLead ? B : A, gap = Math.abs(va - vb), over = Date.now() > END;
       var swapped = pd && PREV[A] != null && PREV[B] != null && (PREV[A] >= PREV[B]) !== aLead && gap > 0;
@@ -500,17 +501,16 @@
       var daysLeft = Math.max(1, Math.ceil((END - Date.now()) / 864e5));
       var duel = '<div class="ar-duel" id="ar-duel"><div class="ar-dt">🥊 ĐỌ DOANH THU 🥊</div><div class="ar-row"><div class="ar-tm">' + (aLead && gap ? '<span class="ar-cr">👑</span> ' : "") + "FNB " + A + "<small>" + M(va) + up(A) + '</small></div><div class="ar-vs">VS</div><div class="ar-tm r">' + (!aLead ? '<span class="ar-cr">👑</span> ' : "") + "FNB " + B + "<small>" + up(B) + M(vb) + "</small></div></div>"
         + '<div class="ar-tug"><i class="a" style="width:' + pa + '%"></i><i class="b" style="width:' + (100 - pa) + '%"></i><span class="ar-k" style="left:' + pa + '%"></span></div>'
-        + '<div class="ar-lead">' + (!gap ? "⚖️ Hai đội đang hoà!" : (over ? "🏆 FNB " + L + " thắng · hơn " + M(gap) : "🔥 FNB " + L + " đang dẫn · hơn " + M(gap) + " — FNB " + F + " bám đuổi!")) + "</div>"
+        + '<div class="ar-lead">' + (!gap ? "⚖️ Hai đội đang hoà!" : (over ? "🏆 FNB " + L + " thắng · hơn " + M(gap) : "🔥 FNB " + L + " đang dẫn · hơn " + M(gap))) + "</div>"
         + '<div class="ar-boom"><b>⚡ ĐỔI NGÔI! ⚡</b><span>FNB ' + L + " vượt lên dẫn đầu</span></div>" + rays + "</div>";
       var ms = ARENA.ms.map(function (m) {
         var v = NOW[m.f] || 0, pc = Math.round(v / m.goal * 100), done = v >= m.goal, left = m.goal - v;
         return '<div class="ar-ms' + (done ? " done" : "") + '"><div class="ar-top"><span>' + m.ic + "</span><b>FNB " + m.f + "</b> · mốc " + M(m.goal) + '<span class="pc">' + M(v) + " · " + pc + "%</span></div>"
           + '<div class="ar-bar"><i style="width:' + Math.min(100, pc) + '%"></i></div>'
-          + '<div class="ar-sub">' + (done ? '<span class="ar-st">✅ ĐÃ CÁN MỐC</span>Vượt <b>' + M(-left) + "</b> 🎉" : (over ? "Về đích " + pc + "% mốc" : "Còn <b>" + M(left) + "</b> · cần ~<b>" + M(left / daysLeft) + "/ngày</b>")) + (up(m.f) ? " · " + up(m.f).replace("</span>", " hôm qua</span>") : "") + "</div></div>";
+          + '<div class="ar-sub">' + (done ? '<span class="ar-st">✅ ĐÃ CÁN MỐC</span>Vượt <b>' + M(-left) + "</b> 🎉" : (over ? "Về đích " + pc + "% mốc" : "Còn <b>" + M(left) + "</b> · ~<b>" + M(left / daysLeft) + "/ngày</b>")) + (up(m.f) ? " " + up(m.f) : "") + "</div></div>";
       }).join("");
       el.innerHTML = '<div class="td"><div class="ar-fl"></div><div class="ar-hd"><span class="ar-fi">🔥</span><div class="ar-ttl">' + esc(ARENA.title) + "</div>"
-        + '<div class="ar-cd"><div class="ar-u"><b id="ar-d">0</b><i>NGÀY</i></div><span class="ar-c">:</span><div class="ar-u"><b id="ar-h">00</b><i>GIỜ</i></div><span class="ar-c">:</span><div class="ar-u"><b id="ar-m">00</b><i>PHÚT</i></div><span class="ar-c">:</span><div class="ar-u"><b id="ar-s">00</b><i>GIÂY</i></div></div>'
-        + '<div class="ar-cdl" id="ar-cdl"></div></div>' + duel + ms + "</div>";
+        + '</div><div class="ar-r2"><div class="ar-cdl" id="ar-cdl"></div><div class="ar-cd"><div class="ar-u"><b id="ar-d">0</b><i>NGÀY</i></div><span class="ar-c">:</span><div class="ar-u"><b id="ar-h">00</b><i>GIỜ</i></div><span class="ar-c">:</span><div class="ar-u"><b id="ar-m">00</b><i>PHÚT</i></div><span class="ar-c">:</span><div class="ar-u"><b id="ar-s">00</b><i>GIÂY</i></div></div></div>' + duel + ms + "</div>";
       var td = el.querySelector(".td");
       for (var j = 0; j < 16; j++) { var s = document.createElement("span"); s.className = "ar-sp"; s.style.left = (Math.random() * 100) + "%"; s.style.setProperty("--dx", (Math.random() * 60 - 30) + "px"); s.style.animationDuration = (2.2 + Math.random() * 2.5) + "s"; s.style.animationDelay = (Math.random() * 3) + "s"; td.appendChild(s); }
       function p2(n) { return (n < 10 ? "0" : "") + n; }
@@ -518,7 +518,7 @@
         if (!$("ar-d")) { clearInterval(AR_TIMER); return; }
         var t = Math.max(0, END - Date.now()) / 1000 | 0;
         td.classList.toggle("last", t > 0 && t < 86400); td.classList.toggle("over", t === 0);
-        $("ar-cdl").textContent = t === 0 ? "🏁 ĐÃ CHỐT SỔ — chúc mừng các đội!" : (t < 86400 ? "⚠️ GIỜ CHÓT — chốt sổ 23:59 tối nay!" : "⏳ Chốt sổ " + ARENA.endTxt);
+        $("ar-cdl").textContent = t === 0 ? "🏁 ĐÃ CHỐT SỔ" : (t < 86400 ? "⚠️ GIỜ CHÓT!" : "⏳ Chốt " + ARENA.endTxt);
         $("ar-d").textContent = t / 86400 | 0; $("ar-h").textContent = p2(t % 86400 / 3600 | 0); $("ar-m").textContent = p2(t % 3600 / 60 | 0); $("ar-s").textContent = p2(t % 60);
       }
       clearInterval(AR_TIMER); tick(); AR_TIMER = setInterval(tick, 1000);
