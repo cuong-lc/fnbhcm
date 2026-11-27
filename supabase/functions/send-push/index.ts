@@ -86,7 +86,9 @@ Deno.serve(async (req) => {
             endpoint: s.endpoint,
             keys: { p256dh: s.p256dh, auth: s.auth },
           },
-          payload
+          payload,
+          // urgency high: Apple/FCM giao ngay, không gom chờ lúc máy "thức" (mặc định normal → trễ khi màn hình tắt)
+          { urgency: 'high', TTL: 86400 }
         );
         sent++;
         okIds.push(s.id);
