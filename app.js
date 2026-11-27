@@ -176,7 +176,7 @@
       wrap.appendChild(bell);
       const pop = document.createElement("div");
       pop.className = "bellpop"; pop.id = "bellpop";
-      pop.innerHTML = '<div class="bp-h">📋 Việc của bạn hôm nay</div><div class="bp-b">Đang tải…</div>';
+      pop.innerHTML = '<div class="bp-h">📋 Việc của bạn hôm nay</div><div class="bp-push" id="bp-push"></div><div class="bp-b">Đang tải…</div>';
       wrap.appendChild(pop);
       const escH = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
       bell.addEventListener("click", (e) => { e.stopPropagation(); pop.classList.toggle("on"); });
@@ -834,6 +834,140 @@
     window.addEventListener("hashchange", function () { if (location.hash === "#event") window.hubEventPopup(true); });
   }
 
+  // ---- Web Push (PWA): đăng ký Service Worker & nút bật/tắt trong chuông ----
+  function setupPush() {
+    if (!window.SB || !window.CLF_READY || window._pushStarted) return;
+    window._pushStarted = 1;
+    const box = byId("bp-push");
+    if (!box) return;
+    if (!byId("push-style")) {
+      const st = document.createElement("style");
+      st.id = "push-style";
+      st.textContent = ".bp-push{margin:6px 0 8px;padding:8px 10px;border-radius:10px;background:#FFFCF5;border:1px solid #ECE4D5;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12.5px}"
+        + ".bp-push .bp-pbtn{border:1px solid #D4A94C;background:linear-gradient(135deg,#F0D48A,#D4A94C);color:#17130D;font-weight:700;font-size:12px;border-radius:8px;padding:5px 10px;cursor:pointer;font-family:inherit;white-space:nowrap}"
+        + ".bp-push .bp-pbtn.off{background:#FBF3E2;border-color:#ECE4D5;color:#6B6150;font-weight:600}"
+        + ".bp-push .bp-pnote{font-size:12px;color:#6B6150;line-height:1.4;flex:1 1 100%}";
+      document.head.appendChild(st);
+    }
+    const me = ((window.CLF_USER || {}).email || "").toLowerCase();
+    if (!me) return;
+
+    const b64ToU8 = (b64) => {
+      const pad = "=".repeat((4 - (b64.length % 4)) % 4);
+      const raw = atob((b64 + pad).replace(/-/g, "+").replace(/_/g, "/"));
+      const out = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+      return out;
+    };
+
+    const pushToast = (msg, onClick) => {
+      const t = document.createElement("div");
+      t.className = "hub-toast";
+      t.textContent = msg;
+      if (onClick) {
+        t.style.cursor = "pointer";
+        t.onclick = () => { t.remove(); onClick(); };
+      }
+      document.body.appendChild(t);
+      requestAnimationFrame(() => t.classList.add("show"));
+      setTimeout(() => { t.classList.remove("show"); setTimeout(() => t.remove(), 350); }, 5000);
+    };
+
+    const supported = ("serviceWorker" in navigator) && ("PushManager" in window) && ("Notification" in window);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+
+    if (!supported) {
+      if (isIOS && !isStandalone) {
+        box.innerHTML = '<span>Thông báo đẩy</span><button type="button" class="bp-pbtn" id="bp-pbtn">🔔 Bật thông báo</button><div class="bp-pnote" id="bp-pnote" style="display:none">📱 Trên iPhone: bấm <b>Chia sẻ (□↑)</b> ở Safari → <b>Thêm vào MH chính</b>, rồi mở HUB từ icon đó để bật lại (iOS 16.4+).</div>';
+        box.querySelector("#bp-pbtn").onclick = (e) => {
+          e.stopPropagation();
+          const n = box.querySelector("#bp-pnote");
+          if (n) n.style.display = n.style.display === "none" ? "block" : "none";
+        };
+      } else {
+        box.innerHTML = '<span class="bp-pnote">🔕 Trình duyệt này chưa hỗ trợ thông báo đẩy.</span>';
+      }
+      return;
+    }
+
+    const renderPushBtn = async (reg) => {
+      if (Notification.permission === "denied") {
+        box.innerHTML = '<span class="bp-pnote">🔕 Bạn đang chặn thông báo — bật lại trong Cài đặt trình duyệt.</span>';
+        return null;
+      }
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        box.innerHTML = '<span style="color:#0a7a3a;font-weight:700">✅ Đã bật trên máy này</span><button type="button" class="bp-pbtn off" id="bp-pbtn">🔕 Tắt thông báo</button>';
+        box.querySelector("#bp-pbtn").onclick = async (e) => {
+          e.stopPropagation();
+          const btn = e.currentTarget; btn.disabled = true; btn.textContent = "Đang tắt…";
+          try {
+            const ep = sub.endpoint;
+            await sub.unsubscribe();
+            await window.SB.from("push_subscriptions").delete().eq("endpoint", ep);
+            pushToast("🔕 Đã tắt thông báo trên máy này.");
+          } catch (err) {
+            pushToast("Lỗi tắt thông báo: " + (err && err.message ? err.message : err));
+          }
+          renderPushBtn(reg);
+        };
+        return sub;
+      }
+      box.innerHTML = '<span>Nhận tin duyệt quà &amp; nhắc việc</span><button type="button" class="bp-pbtn" id="bp-pbtn">🔔 Bật thông báo</button>';
+      box.querySelector("#bp-pbtn").onclick = async (e) => {
+        e.stopPropagation();
+        if (!window.VAPID_PUBLIC) { pushToast("Lỗi: chưa cấu hình VAPID_PUBLIC."); return; }
+        const btn = e.currentTarget; btn.disabled = true; btn.textContent = "Đang bật…";
+        try {
+          const perm = await Notification.requestPermission();
+          if (perm !== "granted") { renderPushBtn(reg); return; }
+          const newSub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: b64ToU8(window.VAPID_PUBLIC)
+          });
+          const j = newSub.toJSON();
+          const r = await window.SB.from("push_subscriptions").upsert({
+            email: me,
+            endpoint: j.endpoint,
+            p256dh: (j.keys && j.keys.p256dh) || "",
+            auth: (j.keys && j.keys.auth) || "",
+            ua: (navigator.userAgent || "").slice(0, 240)
+          }, { onConflict: "endpoint" });
+          if (r.error) {
+            await newSub.unsubscribe().catch(() => {});
+            pushToast("Lỗi bật thông báo: " + r.error.message);
+          } else {
+            pushToast("✅ Đã bật thông báo trên máy này!");
+          }
+        } catch (err) {
+          pushToast("Lỗi bật thông báo: " + (err && err.message ? err.message : err));
+        }
+        renderPushBtn(reg);
+      };
+      return null;
+    };
+
+    navigator.serviceWorker.register("/sw.js").then(async (reg) => {
+      const sub = await renderPushBtn(reg);
+      if (!sub && Notification.permission === "default" && window.VAPID_PUBLIC) {
+        let lastAsk = 0;
+        try { lastAsk = Number(localStorage.getItem("hubPushAsk") || 0); } catch (_) {}
+        if (!lastAsk || (Date.now() - lastAsk > 7 * 864e5)) {
+          try { localStorage.setItem("hubPushAsk", String(Date.now())); } catch (_) {}
+          setTimeout(() => {
+            pushToast("🔔 Bật thông báo để nhận tin khi duyệt đổi quà — bấm vào đây để mở!", () => {
+              const p = byId("bellpop");
+              if (p) p.classList.add("on");
+            });
+          }, 2500);
+        }
+      }
+    }).catch(() => {
+      box.innerHTML = '<span class="bp-pnote">🔕 Chưa đăng ký được Service Worker.</span>';
+    });
+  }
+
   // ---- init (chờ auth.js nạp xong tiến độ: window.CLF_READY / sự kiện 'clf-ready') ----
   function startRender() {
     const page = document.body.dataset.page;
@@ -846,7 +980,7 @@
     const file = location.pathname.split("/").pop() || "index.html";
     buildNav(file);
     buildFoot();
-    const go = () => { buildNav(file); startRender(); try { startEventPopup(); startTicker(); startTracking(); } catch (e) {} };
+    const go = () => { buildNav(file); startRender(); try { startEventPopup(); startTicker(); startTracking(); setupPush(); } catch (e) {} };
     if (window.CLF_READY || !window.SB) go();
     else document.addEventListener("clf-ready", go, { once: true });
   });

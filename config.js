@@ -20,3 +20,6 @@ window.GOONG_KEY4 = 'SnfvxM9Cswjtg8ZLtdbsJinx1kSO5KYEjUwp3rsa'; // key dự phò
 window.VIETMAP_KEY = '14ccd31e3ec6d3cbadc7a85549d358beccbc718516718f49'; // VietMap Default Key — dự phòng khi cả 2 key Goong hết lượt
 /* Maptiles key (hiển thị nền bản đồ Goong). Cũng nên giới hạn domain cuong-lc.github.io. */
 window.GOONG_MAPTILES_KEY = "OvWa4WR5PaarBdssvzbdyh6jrSsx7ouua4qvy2sN";
+
+/* Web Push VAPID public key (khóa công khai, dùng cho PushManager.subscribe). */
+window.VAPID_PUBLIC = "BByFlio7ojFvcigXOL_G-AM_eijW6DUy-xDrWCGwf_f9ref1CB0IDuOJpQFtvsoEJnojZfQvfCHakzBFEkqXupI";
